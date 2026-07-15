@@ -21,6 +21,7 @@ mod rosepine;
 pub mod system_appearance;
 mod terminal_default;
 pub mod tokyonight;
+mod zyth;
 
 pub use color_support::quantize;
 pub use tokyonight::{Theme, pulse_brightness, wave_brightness};
@@ -33,6 +34,8 @@ pub enum ThemeKind {
     TokyoNight = 2,
     RosePineMoon = 3,
     OscuraMidnight = 5,
+    /// Zyth — bright monochrome + Vercel code-snippet colors. Discriminant 6.
+    Zyth = 6,
     /// Meta-variant: follow system dark/light appearance.
     ///
     /// Never stored in `cache::CURRENT` — resolved to a concrete
@@ -51,6 +54,7 @@ impl ThemeKind {
         ThemeKind::TokyoNight,
         ThemeKind::RosePineMoon,
         ThemeKind::OscuraMidnight,
+        ThemeKind::Zyth,
     ];
 
     /// Theme kinds available on the current terminal.
@@ -61,7 +65,10 @@ impl ThemeKind {
         // Two possible results — pick the right const slice based on
         // the detected color level. No heap allocation needed.
         const ALL: &[ThemeKind] = ThemeKind::ALL;
-        const NO_TRUECOLOR: &[ThemeKind] = &[ThemeKind::GrokNight, ThemeKind::GrokDay];
+        // Vercel is a neutral gray ramp (like GrokNight) — ships on
+        // non-truecolor terminals even if fine surface steps collapse.
+        const NO_TRUECOLOR: &[ThemeKind] =
+            &[ThemeKind::GrokNight, ThemeKind::GrokDay, ThemeKind::Zyth];
 
         if color_support::detect().has_truecolor() {
             ALL
@@ -78,6 +85,7 @@ impl ThemeKind {
             Self::GrokDay => "grokday",
             Self::RosePineMoon => "rosepine-moon",
             Self::OscuraMidnight => "oscura-midnight",
+            Self::Zyth => "zyth",
             Self::Auto => "auto",
         }
     }
@@ -85,8 +93,8 @@ impl ThemeKind {
     /// Whether this theme requires truecolor (24-bit RGB) to look correct.
     ///
     /// TokyoNight uses blue-tinted backgrounds that lose their character
-    /// when quantized to 256 or 16 colors. GrokNight uses neutral grays
-    /// that survive quantization cleanly.
+    /// when quantized to 256 or 16 colors. GrokNight / Vercel use neutral
+    /// grays that survive quantization cleanly.
     pub fn requires_truecolor(self) -> bool {
         match self {
             Self::GrokNight => false,
@@ -94,6 +102,7 @@ impl ThemeKind {
             Self::GrokDay => false,
             Self::RosePineMoon => true,
             Self::OscuraMidnight => true,
+            Self::Zyth => false,
             // Auto is resolved to a concrete theme before rendering.
             Self::Auto => false,
         }
@@ -112,6 +121,8 @@ impl ThemeKind {
                 Some(Self::RosePineMoon)
             }
             "oscura" | "oscura-midnight" => Some(Self::OscuraMidnight),
+            "zyth" | "zyth-mono" | "vercel" | "vercel-mono" | "geist" | "mono"
+            | "monochrome" => Some(Self::Zyth),
             _ => None,
         }
     }
@@ -143,10 +154,12 @@ pub fn canonical_name(value: &str) -> Option<&'static str> {
 pub fn display_name_for_canonical(value: &str) -> &str {
     match value {
         "auto" => "Auto",
-        "groknight" => "Grok Night",
-        "grokday" => "Grok Day",
+        "groknight" => "Zyth Dark",
+        "grokday" => "Zyth Light",
         "tokyonight" => "Tokyo Night",
         "rosepine-moon" => "Rose Pine Moon",
+        "oscura-midnight" => "Oscura Midnight",
+        "zyth" => "ZYTH",
         other => other,
     }
 }
@@ -275,6 +288,7 @@ impl Theme {
             ThemeKind::GrokDay => Self::grokday(),
             ThemeKind::RosePineMoon => Self::rosepine_moon(),
             ThemeKind::OscuraMidnight => Self::oscura_midnight(),
+            ThemeKind::Zyth => Self::zyth(),
             // Auto is resolved to a concrete theme before being stored;
             // if reached, fall back to GrokNight.
             ThemeKind::Auto => Self::groknight(),
@@ -703,6 +717,7 @@ mod tests {
         assert!(Theme::tokyonight().is_dark());
         assert!(Theme::rosepine_moon().is_dark());
         assert!(Theme::oscura_midnight().is_dark());
+        assert!(Theme::zyth().is_dark());
         assert!(!Theme::grokday().is_dark());
     }
 
@@ -985,6 +1000,7 @@ mod tests {
                 ThemeKind::TokyoNight => Theme::tokyonight(),
                 ThemeKind::RosePineMoon => Theme::rosepine_moon(),
                 ThemeKind::OscuraMidnight => Theme::oscura_midnight(),
+                ThemeKind::Zyth => Theme::zyth(),
                 ThemeKind::Auto => unreachable!("ALL excludes Auto"),
             };
             let track = lum(theme.scrollbar_bg, "scrollbar_bg", kind);
@@ -1133,6 +1149,9 @@ mod tests {
             ThemeKind::from_name("oscura-midnight"),
             Some(ThemeKind::OscuraMidnight)
         );
+        assert_eq!(ThemeKind::from_name("zyth"), Some(ThemeKind::Zyth));
+        assert_eq!(ThemeKind::from_name("geist"), Some(ThemeKind::Zyth));
+        assert_eq!(ThemeKind::from_name("mono"), Some(ThemeKind::Zyth));
     }
 
     /// `FromStr` agrees with `from_name` for all canonicals + aliases.
@@ -1156,6 +1175,13 @@ mod tests {
             ("rose-pine", ThemeKind::RosePineMoon),
             ("rosepine-moon", ThemeKind::RosePineMoon),
             ("rose-pine-moon", ThemeKind::RosePineMoon),
+            ("oscura", ThemeKind::OscuraMidnight),
+            ("oscura-midnight", ThemeKind::OscuraMidnight),
+            ("zyth", ThemeKind::Zyth),
+            ("zyth-mono", ThemeKind::Zyth),
+            ("geist", ThemeKind::Zyth),
+            ("mono", ThemeKind::Zyth),
+            ("monochrome", ThemeKind::Zyth),
         ];
         for (name, expected) in cases {
             assert_eq!(

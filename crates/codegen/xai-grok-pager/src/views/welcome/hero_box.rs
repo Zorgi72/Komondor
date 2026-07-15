@@ -28,14 +28,15 @@ const LOGO_H_PAD: u16 = 3;
 /// message never paints over the button.
 const UPGRADE_CTA_ROWS: u16 = 2;
 
-const HERO_SUBTITLE: &str = "Thanks for trying Grok Build, give feedback with /feedback!";
+const HERO_SUBTITLE: &str = "";
 
 use super::{PROMPT_HEIGHT, VERSION_GAP};
 
 /// Rows the "thanks" subtitle occupies. Hidden when the in-box info slot
 /// (changelog / announcement) is shown, to keep the box compact.
-fn subtitle_rows(info_height: u16) -> u16 {
-    if info_height > 0 { 0 } else { 1 }
+fn subtitle_rows(_info_height: u16) -> u16 {
+    // Subtitle disabled for Zyth — logo + menu only.
+    0
 }
 
 /// Height of the hero box's right column: version + optional subtitle +

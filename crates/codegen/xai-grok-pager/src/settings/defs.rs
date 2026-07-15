@@ -46,13 +46,13 @@ const THEME_CHOICES: &[EnumChoice] = &[
     },
     EnumChoice {
         canonical: "groknight",
-        display: "Grok Night",
-        description: "Neutral dark with magenta accent.",
+        display: "Zyth Dark",
+        description: "Neutral dark (Zyth).",
     },
     EnumChoice {
         canonical: "grokday",
-        display: "Grok Day",
-        description: "Light theme for bright environments.",
+        display: "Zyth Light",
+        description: "Light theme (Zyth).",
     },
     EnumChoice {
         canonical: "tokyonight",
@@ -69,6 +69,11 @@ const THEME_CHOICES: &[EnumChoice] = &[
         canonical: "oscura-midnight",
         display: "Oscura Midnight",
         description: "Deep dark with warm accents; needs truecolor.",
+    },
+    EnumChoice {
+        canonical: "zyth",
+        display: "ZYTH",
+        description: "Bright monochrome + Vercel code colors.",
     },
 ];
 
@@ -463,13 +468,13 @@ const VOICE_STT_LANGUAGE_CHOICES: &[EnumChoice] = &[
 const CONCRETE_THEME_CHOICES: &[EnumChoice] = &[
     EnumChoice {
         canonical: "groknight",
-        display: "Grok Night",
-        description: "Neutral dark with magenta accent.",
+        display: "Zyth Dark",
+        description: "Neutral dark (Zyth).",
     },
     EnumChoice {
         canonical: "grokday",
-        display: "Grok Day",
-        description: "Light theme for bright environments.",
+        display: "Zyth Light",
+        description: "Light theme (Zyth).",
     },
     EnumChoice {
         canonical: "tokyonight",
@@ -485,6 +490,11 @@ const CONCRETE_THEME_CHOICES: &[EnumChoice] = &[
         canonical: "oscura-midnight",
         display: "Oscura Midnight",
         description: "Deep dark with warm accents; needs truecolor.",
+    },
+    EnumChoice {
+        canonical: "zyth",
+        display: "ZYTH",
+        description: "Bright monochrome + Vercel code colors.",
     },
 ];
 

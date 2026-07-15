@@ -11685,6 +11685,7 @@ mod tests {
             // Resolved via `Theme::current()` rather than a constructor
             // because `theme::oscura` is a private module.
             crate::theme::ThemeKind::OscuraMidnight => crate::theme::Theme::current(),
+            crate::theme::ThemeKind::Zyth => crate::theme::Theme::zyth(),
             crate::theme::ThemeKind::Auto => crate::theme::Theme::groknight(),
         };
         assert_ne!(

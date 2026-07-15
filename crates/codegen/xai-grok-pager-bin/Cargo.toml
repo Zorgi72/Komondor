@@ -15,6 +15,11 @@ default-run = "xai-grok-pager"
 name = "xai-grok-pager"
 path = "src/main.rs"
 
+# User-facing Zyth CLI entrypoint (same binary, different argv0 name).
+[[bin]]
+name = "zyth"
+path = "src/main.rs"
+
 [dependencies]
 # The pager library (all application logic + the public API main.rs drives).
 xai-grok-pager = { path = "../xai-grok-pager" }

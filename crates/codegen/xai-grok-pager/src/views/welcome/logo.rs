@@ -12,13 +12,14 @@ use ratatui::widgets::{Paragraph, Widget};
 use crate::render::color::blend_color;
 use crate::theme::Theme;
 
+// Zyth mark (ASCII `$` art). Full + compact tiers for different terminal heights.
 const LOGO: &str = include_str!("../../../assets/logo/logo07.txt");
 const LOGO_SMALL: &str = include_str!("../../../assets/logo/logo05.txt");
 
-/// Height at or above which the small logo is shown (below it, no logo).
-const SMALL_LOGO_MIN_HEIGHT: u16 = 22;
+/// Height at or above which the compact logo is shown (below it, no logo).
+const SMALL_LOGO_MIN_HEIGHT: u16 = 40;
 /// Height at or above which the full logo is shown.
-const FULL_LOGO_MIN_HEIGHT: u16 = 26;
+const FULL_LOGO_MIN_HEIGHT: u16 = 78;
 
 fn pick_logo(window_height: u16) -> Option<&'static str> {
     pick_logo_for(window_height, logo_hidden())
@@ -35,9 +36,10 @@ fn pick_logo_for(window_height: u16, hidden: bool) -> Option<&'static str> {
     }
 }
 
-/// The braille art has no ASCII stand-in; see the module doc.
+/// Zyth logo is plain ASCII (`$` / `@`) and renders on all terminals,
+/// including legacy Windows consoles.
 fn logo_hidden() -> bool {
-    crate::glyphs::is_legacy_windows_console()
+    false
 }
 
 fn non_empty_lines(logo: &str) -> impl Iterator<Item = &str> {

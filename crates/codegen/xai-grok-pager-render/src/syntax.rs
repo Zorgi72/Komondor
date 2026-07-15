@@ -2,6 +2,7 @@
 //!
 //! Provides lazily-initialized `Syntect` instances for code highlighting.
 //! Dark themes (GrokNight, TokyoNight) share `grok-night.tmTheme`;
+//! Zyth uses Vercel-accurate `zyth.tmTheme`;
 //! GrokDay uses `grok-day.tmTheme` with deepened colors for light backgrounds.
 
 use std::sync::OnceLock;
@@ -13,6 +14,7 @@ use crate::theme::ThemeKind;
 static SYNTECT_GROKNIGHT: OnceLock<Syntect> = OnceLock::new();
 static SYNTECT_TOKYONIGHT: OnceLock<Syntect> = OnceLock::new();
 static SYNTECT_GROKDAY: OnceLock<Syntect> = OnceLock::new();
+static SYNTECT_ZYTH: OnceLock<Syntect> = OnceLock::new();
 
 /// Convert syntect style to ratatui foreground-only style, quantized for terminal color support.
 pub fn syntect_to_ratatui_fg(style: syntect::highlighting::Style) -> ratatui::style::Style {
@@ -66,6 +68,8 @@ pub fn highlight_line(
 /// Returns the syntect instance matching the active theme.
 pub fn get_syntect() -> &'static Syntect {
     match crate::theme::Theme::current_kind() {
+        ThemeKind::Zyth => SYNTECT_ZYTH
+            .get_or_init(|| Syntect::new(include_bytes!("../assets/zyth.tmTheme"))),
         ThemeKind::GrokNight
         | ThemeKind::RosePineMoon
         | ThemeKind::OscuraMidnight
