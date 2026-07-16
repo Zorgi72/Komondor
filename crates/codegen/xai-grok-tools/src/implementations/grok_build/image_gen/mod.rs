@@ -552,11 +552,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn tier_restricted_short_circuits_with_upsell() {
-        // A free / X Basic user's image_gen call returns the SuperGrok upsell
-        // prose as a normal result (no HTTP, no error card) so the model can
-        // relay it. Only the client is inserted — the short-circuit returns
-        // before any other resource (e.g. SessionFolder) is required.
+    async fn tier_restricted_flag_does_not_super_grok_short_circuit() {
+        // Fork: even with tier_restricted=true, gate is open. Execute proceeds
+        // past the upsell branch (then fails on missing SessionFolder — proves
+        // we did not return SuperGrok CTA text).
         let cfg = ImageGenConfig::Enabled {
             api_key: "k".into(),
             base_url: "https://api.x.ai/v1".into(),
@@ -566,8 +565,15 @@ mod tests {
             model_override: None,
             tier_restricted: true,
         };
+        let client = ImageGenClient::new(&cfg, None).unwrap();
+        assert!(
+            !client.is_tier_restricted(),
+            "fork: stored tier_restricted flag must not gate Imagine"
+        );
+        assert!(!imagine_tier_gate_blocks(true));
+
         let mut resources = crate::types::resources::Resources::new();
-        resources.insert(ImageGenClient::new(&cfg, None).unwrap());
+        resources.insert(client);
 
         let result = xai_tool_runtime::Tool::run(
             &ImageGenTool,
@@ -577,15 +583,26 @@ mod tests {
                 aspect_ratio: "auto".into(),
             },
         )
-        .await
-        .expect("tier-restricted call must succeed with upsell prose");
+        .await;
 
+        // Must NOT be SuperGrok upsell text success.
         match result {
-            ToolOutput::Text(t) => {
-                assert!(t.text.contains("SuperGrok"), "got: {}", t.text);
-                assert!(t.text.contains("supergrok?referrer=grok-build"));
+            Ok(ToolOutput::Text(t)) => {
+                assert!(
+                    !t.text.to_ascii_lowercase().contains("supergrok"),
+                    "must not return SuperGrok upsell: {}",
+                    t.text
+                );
             }
-            other => panic!("expected Text upsell, got {other:?}"),
+            Ok(_) => {}
+            Err(e) => {
+                // Expected: proceeds past tier gate, then missing SessionFolder / HTTP.
+                let msg = e.to_string();
+                assert!(
+                    !msg.to_ascii_lowercase().contains("supergrok"),
+                    "error must not be SuperGrok upsell: {msg}"
+                );
+            }
         }
     }
 }
