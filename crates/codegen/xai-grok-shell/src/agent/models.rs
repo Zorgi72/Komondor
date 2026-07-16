@@ -224,6 +224,30 @@ impl ModelsManager {
         })
     }
 
+    /// Apply a catalog the same way a successful network refresh does.
+    ///
+    /// Returns `false` when sticky Zyth blocked a non-gateway overwrite (or
+    /// when the apply otherwise failed). Public so integration tests can
+    /// drive the real race without re-implementing policy.
+    pub fn try_apply_catalog(&self, models: IndexMap<String, ModelEntry>) -> bool {
+        let cfg = self.inner.cfg.read().clone();
+        let applied = self.apply_refresh_result(&cfg, Some(models), None);
+        if applied {
+            self.notify_models_updated();
+        }
+        applied
+    }
+
+    /// Hot-reload from an explicit `models_cache.json` path (production uses
+    /// `~/.grok/models_cache.json` via [`Self::reload_from_disk_cache`]).
+    pub fn reload_from_models_cache_path(&self, path: &std::path::Path) {
+        let cache = ModelsCacheManager {
+            path: path.to_owned(),
+            ttl: CACHE_TTL,
+        };
+        self.reload_from_cache_manager(&cache);
+    }
+
     fn clear_gateway_sticky(&self) {
         self.inner
             .gateway_catalog_sticky
