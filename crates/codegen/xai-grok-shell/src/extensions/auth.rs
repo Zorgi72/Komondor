@@ -189,7 +189,10 @@ async fn handle_get_url(agent: &MvpAgent) -> ExtResult {
     }))
 }
 
-/// `/logoutzyth` — remove Zyth scopes + matching virtual key; keep SpaceXAI.
+/// `/logoutzyth` — remove Zyth scopes + gateway models; keep the CLI session.
+///
+/// Does **not** clear SpaceXAI OIDC or force a full logout. The pager must
+/// never treat this as `LogoutComplete` (welcome screen).
 async fn handle_logoutzyth(agent: &MvpAgent) -> ExtResult {
     let grok_home = crate::util::grok_home::grok_home();
     // Snapshot in-memory key before disk logout so we can drop it even if the
@@ -200,21 +203,29 @@ async fn handle_logoutzyth(agent: &MvpAgent) -> ExtResult {
         acp::Error::internal_error().data(format!("failed to logoutzyth: {e}"))
     })?;
 
-    // Re-sync sampling API key after logout. Always refresh when we cleared
-    // the disk key **or** when the in-memory key looked like the Zyth session
-    // (env was match-cleared by deactivate_zyth_runtime).
+    // Drop Zyth gateway key from sampling config so inference no longer hits
+    // ai-gateway. Keep any remaining disk/env API key (non-Zyth BYOK).
     if result.cleared_api_key || result.was_logged_in {
         let mut sampling_config = agent.sampling_config.borrow_mut();
         let disk_or_env = crate::auth::read_api_key(&grok_home).or_else(|| {
             crate::agent::auth_method::read_xai_api_key_env().ok()
         });
-        // If prior in-memory key equals nothing left on disk/env, drop it.
         if result.cleared_api_key
             || prior_sampling_key
                 .as_ref()
                 .is_some_and(|k| disk_or_env.as_ref() != Some(k))
         {
             sampling_config.api_key = disk_or_env;
+        }
+    }
+
+    // If AuthManager was holding a Zyth-minted entry in memory (should be rare;
+    // loginzyth writes a separate scope), drop it and re-read disk so SpaceXAI
+    // OIDC can re-surface without a full clear().
+    if let Some(current) = agent.auth_manager.current_or_expired() {
+        if crate::auth::is_zyth_auth_entry(&current) {
+            agent.auth_manager.clear_in_memory();
+            agent.auth_manager.force_reload_from_disk();
         }
     }
 
@@ -227,14 +238,12 @@ async fn handle_logoutzyth(agent: &MvpAgent) -> ExtResult {
     )
     .in_scope(|| {});
 
-    // Restore endpoints + catalog the same way SpaceXAI logout refreshes models
-    // after identity change — but only after disk restore of pre-Zyth cache.
+    // Strip [ZYTH] gateway catalog / restore pre-Zyth models. Does not log out.
     agent.models_manager.uninstall_gateway_catalog().await;
 
-    // Still have SpaceXAI OIDC or another API key?
-    let still_authenticated = agent.auth_manager.current_or_expired().is_some()
-        || crate::auth::read_api_key(&grok_home).is_some()
-        || crate::agent::auth_method::has_xai_api_key_env();
+    // Remaining non-Zyth credentials (informational for clients; must NOT drive
+    // welcome-screen navigation — see pager send_logoutzyth).
+    let still_authenticated = remaining_non_zyth_auth(&grok_home, agent);
 
     let message = crate::auth::format_logoutzyth_result(&result);
     to_raw_response(&serde_json::json!({
@@ -247,8 +256,34 @@ async fn handle_logoutzyth(agent: &MvpAgent) -> ExtResult {
         "restored_models": result.restored_models,
         "api_key_env_still_set": result.api_key_env_still_set,
         "still_authenticated": still_authenticated,
+        // Explicit contract for older pagers that used to map !still → full logout.
+        "force_welcome": false,
         "message": message,
     }))
+}
+
+/// True if any non-Zyth credential remains after logoutzyth (disk + env + manager).
+fn remaining_non_zyth_auth(grok_home: &std::path::Path, agent: &MvpAgent) -> bool {
+    if crate::agent::auth_method::has_xai_api_key_env() {
+        return true;
+    }
+    if crate::auth::read_api_key(grok_home).is_some() {
+        return true;
+    }
+    if let Some(auth) = agent.auth_manager.current_or_expired() {
+        if !crate::auth::is_zyth_auth_entry(&auth) {
+            return true;
+        }
+    }
+    // Disk may still have SpaceXAI OIDC even if AuthManager's active scope was Zyth.
+    match crate::auth::read_auth_json(&grok_home.join("auth.json")) {
+        Ok(store) => store.keys().any(|k| {
+            k != crate::auth::API_KEY_SCOPE && !crate::auth::is_zyth_auth_scope(k)
+        }) || store
+            .get(crate::auth::API_KEY_SCOPE)
+            .is_some_and(|a| !a.key.is_empty()),
+        Err(_) => false,
+    }
 }
 
 async fn handle_logout(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {

@@ -26,7 +26,7 @@ Fork of [xai-org/grok-build](https://github.com/xai-org/grok-build) rebranded as
 | `/login` | SpaceXAI OAuth (`auth.x.ai`) — unchanged upstream path |
 | **`/loginzyth`** | **Zyth AuthStack SSO** (`auth.zyth.app`) + AI Gateway models |
 | `/logout` | Clear default (SpaceXAI) session |
-| **`/logoutzyth`** | Clear **only** Zyth session + gateway models; keep SpaceXAI |
+| **`/logoutzyth`** | Remove **only** Zyth models + gateway access; keep CLI session + SpaceXAI (never forces welcome) |
 
 After `/loginzyth`:
 

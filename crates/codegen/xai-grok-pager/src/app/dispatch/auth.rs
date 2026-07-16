@@ -20,9 +20,10 @@ pub(super) fn dispatch_logout(_app: &mut AppView) -> Vec<Effect> {
     vec![Effect::Logout]
 }
 
-/// `/logoutzyth` — clear Zyth AuthStack / gateway credentials only.
-/// Does **not** return to the welcome screen if a SpaceXAI session remains;
-/// the shell reports whether anything was cleared via toast.
+/// `/logoutzyth` — remove Zyth gateway models / credentials only.
+///
+/// Never returns to the welcome screen or tears down the CLI session, even if
+/// Zyth was the only gateway credential. Outcome is a toast only.
 pub(super) fn dispatch_logoutzyth(_app: &mut AppView) -> Vec<Effect> {
     vec![Effect::LogoutZyth]
 }

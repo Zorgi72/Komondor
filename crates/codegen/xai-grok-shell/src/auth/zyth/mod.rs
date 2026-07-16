@@ -17,8 +17,8 @@ pub use login::{
     persist_zyth_endpoint_overlay, run_loginzyth_flow, zyth_grok_com_config,
 };
 pub use logout::{
-    LogoutZythResult, deactivate_zyth_runtime, format_logoutzyth_result, is_zyth_auth_scope,
-    perform_logoutzyth, zyth_scopes_in_store,
+    LogoutZythResult, deactivate_zyth_runtime, format_logoutzyth_result, is_zyth_auth_entry,
+    is_zyth_auth_scope, perform_logoutzyth, zyth_scopes_in_store,
 };
 pub use models::{
     ZythModelsSyncResult, enrich_ids_for_test, restore_models_after_logoutzyth,

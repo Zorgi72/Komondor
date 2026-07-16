@@ -961,8 +961,8 @@ pub(super) fn dispatch_task_result(result: TaskResult, app: &mut AppView) -> Vec
             was_logged_in: _,
             message,
         } => {
-            // Scoped Zyth logout: keep session if SpaceXAI creds remain.
-            // Surface outcome; do not force welcome / full logout UX.
+            // Scoped Zyth logout: strip gateway models only. Never force
+            // welcome / full CLI logout (that is `/logout` → LogoutComplete).
             app.show_toast(&message);
             vec![]
         }

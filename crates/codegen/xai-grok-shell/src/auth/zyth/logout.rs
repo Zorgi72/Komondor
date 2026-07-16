@@ -257,33 +257,46 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
 }
 
 /// User-facing summary lines for CLI / toast (no secrets).
+///
+/// Emphasizes model access removal — `/logoutzyth` never logs out of the whole CLI.
 pub fn format_logoutzyth_result(r: &LogoutZythResult) -> String {
-    if !r.was_logged_in && !r.cleared_api_key && !r.cleared_endpoints {
-        return "No Zyth session to log out of.".to_owned();
+    if !r.was_logged_in && !r.cleared_api_key && !r.cleared_endpoints && !r.restored_models {
+        return "No Zyth models / gateway session to remove.".to_owned();
     }
     let mut parts = Vec::new();
+    // Lead with models — that is the product intent of /logoutzyth.
+    if r.restored_models {
+        parts.push("Removed Zyth models; restored previous catalog".to_owned());
+    } else if r.was_logged_in || r.cleared_endpoints {
+        parts.push("Removed Zyth gateway models".to_owned());
+    }
     if r.was_logged_in {
         if let Some(ref email) = r.email {
-            parts.push(format!("Logged out of Zyth (was signed in as {email})"));
+            parts.push(format!("cleared Zyth SSO for {email}"));
         } else {
-            parts.push("Logged out of Zyth".to_owned());
+            parts.push("cleared Zyth SSO credentials".to_owned());
         }
     }
     if r.cleared_api_key {
-        parts.push("Cleared Zyth gateway API key".to_owned());
+        parts.push("revoked gateway API key".to_owned());
     }
     if r.cleared_endpoints {
-        parts.push("Restored default AI endpoints".to_owned());
-    }
-    if r.restored_models {
-        parts.push("Restored previous model catalog".to_owned());
-    } else if r.was_logged_in {
-        parts.push("Removed Zyth gateway models from catalog".to_owned());
+        parts.push("restored default AI endpoints".to_owned());
     }
     if r.api_key_env_still_set {
-        parts.push("Note: XAI_API_KEY is still set in the environment".to_owned());
+        parts.push("note: XAI_API_KEY is still set in the environment".to_owned());
     }
-    parts.join(". ") + "."
+    // Capitalize first clause for toast polish.
+    let s = parts.join("; ");
+    let mut chars = s.chars();
+    let mut out = match chars.next() {
+        Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+        None => s,
+    };
+    if !out.ends_with('.') {
+        out.push('.');
+    }
+    out
 }
 
 /// Whether a GrokAuth entry looks like a Zyth-minted credential.
@@ -436,6 +449,25 @@ mod tests {
             restored_models: true,
         });
         assert!(!msg.contains("sk-"));
-        assert!(msg.contains("Zyth"));
+        assert!(msg.contains("Zyth") || msg.contains("models"));
+        assert!(msg.to_lowercase().contains("model"));
+    }
+
+    #[test]
+    fn format_emphasizes_models_not_full_cli_logout() {
+        let msg = format_logoutzyth_result(&LogoutZythResult {
+            was_logged_in: true,
+            email: Some("a@b.c".into()),
+            cleared_api_key: true,
+            cleared_endpoints: true,
+            api_key_env_still_set: false,
+            scopes_removed: 1,
+            restored_models: false,
+        });
+        let lower = msg.to_lowercase();
+        assert!(lower.contains("model") || lower.contains("gateway"));
+        // Must not sound like full CLI logout / welcome.
+        assert!(!lower.contains("welcome"));
+        assert!(!lower.contains("session ended"));
     }
 }

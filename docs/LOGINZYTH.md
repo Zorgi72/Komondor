@@ -102,6 +102,8 @@ Metadata (context, reasoning) is enriched from known slugs and from any prior ca
 
 ## `/logoutzyth`
 
+Removes **Zyth model access only** — never logs out of the whole CLI or forces the welcome screen.
+
 | Action | Detail |
 |--------|--------|
 | Remove | Zyth `auth.json` scopes only |
@@ -109,6 +111,7 @@ Metadata (context, reasoning) is enriched from known slugs and from any prior ca
 | Endpoints | Delete `zyth_endpoints.toml`; unset matching env |
 | Models | Restore `models_cache.pre-zyth.json` or strip gateway `base_url` entries |
 | SpaceXAI | **Never** deleted (integrity check fails closed) |
+| CLI session | **Always stays open** (toast only; never maps to full `/logout` welcome) |
 
 ## Gateway exchange service
 

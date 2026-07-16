@@ -640,11 +640,11 @@ pub(super) async fn send_logout(tx: &AcpAgentTx) {
     }
 }
 
-/// `/logoutzyth` — clear Zyth credentials only via shell ACP.
+/// `/logoutzyth` — remove Zyth gateway models / credentials only via shell ACP.
 ///
-/// When no other auth remains, mirrors official `/logout` (`LogoutComplete`):
-/// return to the welcome login screen. When SpaceXAI (or another key) remains,
-/// only toast — do not force a login prompt.
+/// **Never** maps to [`TaskResult::LogoutComplete`] (which forces the welcome
+/// login screen and tears down the whole CLI session). Zyth logout is scoped:
+/// drop `[ZYTH]` models + gateway virtual key, stay in the current session.
 pub(super) async fn send_logoutzyth(tx: &AcpAgentTx) -> TaskResult {
     let req = acp::ExtRequest::new(
         "x.ai/auth/logoutzyth",
@@ -660,27 +660,19 @@ pub(super) async fn send_logoutzyth(tx: &AcpAgentTx) -> TaskResult {
                 .as_ref()
                 .and_then(|v| v.get("message"))
                 .and_then(|v| v.as_str())
-                .unwrap_or("Logged out of Zyth")
+                .unwrap_or("Removed Zyth models and gateway access")
                 .to_owned();
             let was_logged_in = meta
                 .as_ref()
                 .and_then(|v| v.get("was_logged_in"))
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
-            let still_authenticated = meta
-                .as_ref()
-                .and_then(|v| v.get("still_authenticated"))
-                .and_then(|v| v.as_bool())
-                .unwrap_or(true);
-            // Official logout always ends on the login screen. For Zyth-only
-            // logout we do the same only when nothing else remains.
-            if was_logged_in && !still_authenticated {
-                TaskResult::LogoutComplete
-            } else {
-                TaskResult::LogoutZythComplete {
-                    was_logged_in,
-                    message,
-                }
+            // Intentionally ignore still_authenticated for UI routing: even if
+            // Zyth was the only gateway credential, we only strip models —
+            // never force a full CLI logout / welcome screen.
+            TaskResult::LogoutZythComplete {
+                was_logged_in,
+                message,
             }
         }
         Err(e) => {
