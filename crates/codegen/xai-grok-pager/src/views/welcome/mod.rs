@@ -436,7 +436,7 @@ pub(super) fn render_version_badge(
     match &mode {
         VersionBadgeMode::Full { .. } => {
             spans.push(Span::styled(
-                "Zyth  ",
+                "ZYTH CLI  ",
                 Style::default()
                     .fg(theme.text_primary)
                     .add_modifier(Modifier::BOLD),
@@ -447,17 +447,15 @@ pub(super) fn render_version_badge(
             ));
         }
         VersionBadgeMode::HeroFooter => {
-            // Quiet footer: no product name / no Beta badge.
-            if !channel.is_empty() {
-                spans.push(Span::styled(
-                    channel.trim(),
-                    Style::default().fg(theme.gray),
-                ));
-            }
+            // Quiet footer: product name only.
+            spans.push(Span::styled(
+                "ZYTH CLI",
+                Style::default().fg(theme.gray),
+            ));
         }
         VersionBadgeMode::HeroInline => {
             spans.push(Span::styled(
-                "Zyth  ",
+                "ZYTH CLI  ",
                 Style::default()
                     .fg(theme.text_primary)
                     .add_modifier(Modifier::BOLD),
@@ -1671,21 +1669,10 @@ fn render_welcome_done(
         let action_line = if w.action.is_some() { 1 } else { 0 };
         msg_lines + action_line + 1 // +1 for buffer spacing
     });
-    let has_update_tip = p.pending_update_version.is_some();
-    let has_resume_tip = !has_update_tip && p.foreign_resume_hint.is_some();
-    let tip_height = if !show_picker {
-        if has_update_tip || has_resume_tip {
-            1u16 // update/resume tips are short, always 1 row
-        } else if let Some(tip_text) = p.tip {
-            let inset = prompt::prompt_inset(welcome_compact);
-            let tip_width = content_area.width.saturating_sub(inset * 2);
-            crate::tips::render::tip_height(tip_width, tip_text)
-        } else {
-            0
-        }
-    } else {
-        0
-    };
+    // Zyth: never show tip / update / resume tip rows above the prompt.
+    let _has_update_tip = p.pending_update_version.is_some();
+    let _has_resume_tip = p.foreign_resume_hint.is_some();
+    let tip_height = 0u16;
     // Zyth: no changelog block on the boot screen (logo + menu only).
     let changelog_height = if false && p.has_access && !show_picker && !p.changelog_bullets.is_empty() {
         2 + p.changelog_bullets.len() as u16

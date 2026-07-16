@@ -151,7 +151,7 @@ pub struct WrapArgs {
     )]
     pub command: Vec<String>,
 }
-/// Targets a running leader process by PID (used by `grok workspace`).
+/// Targets a running leader process by PID (used by `zyth workspace`).
 #[derive(Debug, clap::Args, Clone, Default)]
 pub struct LeaderTargetArgs {
     /// Leader process ID.
@@ -285,13 +285,13 @@ impl AgentArgs {
                 Ok(canonical) if canonical.is_dir() => Some(canonical),
                 Ok(_) => {
                     eprintln!(
-                        "grok: --plugin-dir {}: not a directory; skipping",
+                        "zyth: --plugin-dir {}: not a directory; skipping",
                         p.display()
                     );
                     None
                 }
                 Err(e) => {
-                    eprintln!("grok: --plugin-dir {}: {e}; skipping", p.display());
+                    eprintln!("zyth: --plugin-dir {}: {e}; skipping", p.display());
                     None
                 }
             })
@@ -384,7 +384,7 @@ fn version_with_channel() -> &'static str {
 #[command(
     name = "zyth",
     version = version_with_channel(),
-    about = "Zyth",
+    about = "ZYTH CLI",
     disable_version_flag = true,
     next_display_order = None,
     help_template = "\
@@ -620,7 +620,7 @@ pub struct PagerArgs {
     pub self_verify: bool,
     /// Exit as soon as the first agent turn ends, without waiting for pending
     /// background bash/monitor tasks or background subagents (headless only).
-    /// Default for all `grok -p` runs is to wait (up to `--background-wait-timeout`)
+    /// Default for all `zyth -p` runs is to wait (up to `--background-wait-timeout`)
     /// so eval harnesses see full task completion. Use this for fast scripts that
     /// only need the first turn's text. Does not wait for server-side auto-wake
     /// output or persistent monitors (those hit the timeout).
@@ -686,13 +686,13 @@ pub struct PagerArgs {
     /// into the terminal's native scrollback (use the terminal's own scroll /
     /// selection); a small pinned region holds the prompt + running turn.
     /// Sticky: records `[ui] screen_mode = "minimal"` in ~/.grok/config.toml
-    /// so future plain `grok` invocations open in minimal mode too.
+    /// so future plain `zyth` invocations open in minimal mode too.
     #[arg(long = "minimal")]
     pub minimal: bool,
     /// Open in the standard fullscreen TUI, overriding a sticky minimal
     /// preference. Sticky counterpart of --minimal: records
     /// `[ui] screen_mode = "fullscreen"` in ~/.grok/config.toml so future
-    /// plain `grok` invocations open fullscreen again. Fullscreen-vs-inline
+    /// plain `zyth` invocations open fullscreen again. Fullscreen-vs-inline
     /// still follows the alt-screen policy (--no-alt-screen, [terminal]
     /// alt_screen, terminal auto-detection).
     #[arg(long = "fullscreen", conflicts_with = "minimal")]
@@ -712,7 +712,7 @@ pub struct PagerArgs {
     /// Run standalone even when leader mode is configured.
     #[arg(long, conflicts_with = "leader", hide = true)]
     pub no_leader: bool,
-    /// Initial prompt for the interactive session, e.g. `grok "fix the bug"` or `grok --worktree=feat "create this feature"`.
+    /// Initial prompt for the interactive session, e.g. `zyth "fix the bug"` or `zyth --worktree=feat "create this feature"`.
     #[arg(
         value_name = "PROMPT",
         conflicts_with_all = &["single",
@@ -868,7 +868,7 @@ impl PagerArgs {
     /// The initial interactive prompt from the positional argument, trimmed.
     ///
     /// Returns `None` when no positional prompt was given or it is only
-    /// whitespace. This is the `grok "<prompt>"` launch form; the headless
+    /// whitespace. This is the `zyth "<prompt>"` launch form; the headless
     /// `-p`/`--single` path is handled separately.
     pub fn initial_prompt(&self) -> Option<&str> {
         self.prompt

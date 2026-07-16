@@ -88,8 +88,8 @@ impl TitleManager {
         }
 
         if !has_parts {
+            // Zyth: leave the tab title empty when idle (no "grok" brand).
             self.composed.clear();
-            self.composed.push_str("grok");
         }
 
         let result = if self.composed != self.last_title {
@@ -113,9 +113,9 @@ impl TitleManager {
     }
 
     pub fn reset(&mut self) -> String {
-        let esc = build_title_escape("grok");
+        // Clear title (empty) so "grok" never lingers on the tab/window.
+        let esc = build_title_escape("");
         self.last_title.clear();
-        self.last_title.push_str("grok");
         self.spinner_frame = 0;
         self.tick_count = 0;
         esc
@@ -133,8 +133,8 @@ fn write_item(
 ) -> bool {
     match item {
         TitleItem::Grok => {
-            push_separator(buf, has_parts);
-            buf.push_str("grok");
+            // Zyth: never paint the "grok" brand into the tab title.
+            return false;
         }
         TitleItem::Spinner => {
             if !state.is_busy && state.activity.is_none() {

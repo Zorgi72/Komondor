@@ -99,7 +99,7 @@ pub fn to_theme_kind(
 ) -> ThemeKind {
     match appearance {
         SystemAppearance::Light => light_theme.unwrap_or(ThemeKind::GrokDay),
-        SystemAppearance::Dark => dark_theme.unwrap_or(ThemeKind::GrokNight),
+        SystemAppearance::Dark => dark_theme.unwrap_or(ThemeKind::Zyth),
     }
 }
 

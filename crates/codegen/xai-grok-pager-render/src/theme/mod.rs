@@ -47,82 +47,81 @@ pub enum ThemeKind {
 }
 
 impl ThemeKind {
-    /// All theme kinds (including those that may not work on the current terminal).
-    pub const ALL: &[ThemeKind] = &[
-        ThemeKind::GrokNight,
-        ThemeKind::GrokDay,
-        ThemeKind::TokyoNight,
-        ThemeKind::RosePineMoon,
-        ThemeKind::OscuraMidnight,
-        ThemeKind::Zyth,
-    ];
+    /// Themes exposed in the picker / settings. Zyth ships only two:
+    /// **ZYTH Dark** (OLED monochrome) and **ZYTH Light** (former Grok Day).
+    /// Other enum variants remain for binary compatibility / tests but are
+    /// not selectable.
+    pub const ALL: &[ThemeKind] = &[ThemeKind::Zyth, ThemeKind::GrokDay];
 
     /// Theme kinds available on the current terminal.
     ///
-    /// Filters out themes that require truecolor when the terminal
-    /// does not support it (e.g., macOS Terminal.app is 256-color).
+    /// Both Zyth themes use neutral ramps that quantize cleanly, so the
+    /// full catalog is always available (no truecolor gate).
     pub fn available() -> &'static [ThemeKind] {
-        // Two possible results — pick the right const slice based on
-        // the detected color level. No heap allocation needed.
-        const ALL: &[ThemeKind] = ThemeKind::ALL;
-        // Vercel is a neutral gray ramp (like GrokNight) — ships on
-        // non-truecolor terminals even if fine surface steps collapse.
-        const NO_TRUECOLOR: &[ThemeKind] =
-            &[ThemeKind::GrokNight, ThemeKind::GrokDay, ThemeKind::Zyth];
-
-        if color_support::detect().has_truecolor() {
-            ALL
-        } else {
-            NO_TRUECOLOR
-        }
+        ThemeKind::ALL
     }
 
-    /// Human-readable display name.
+    /// Canonical config name (persisted in `config.toml`).
     pub fn display_name(self) -> &'static str {
         match self {
-            Self::GrokNight => "groknight",
-            Self::TokyoNight => "tokyonight",
-            Self::GrokDay => "grokday",
-            Self::RosePineMoon => "rosepine-moon",
-            Self::OscuraMidnight => "oscura-midnight",
-            Self::Zyth => "zyth",
+            // Legacy variants still have names so from_name/tests work;
+            // they are remapped to Zyth/GrokDay at apply time when needed.
+            Self::GrokNight => "zyth-dark",
+            Self::TokyoNight => "zyth-dark",
+            Self::GrokDay => "zyth-light",
+            Self::RosePineMoon => "zyth-dark",
+            Self::OscuraMidnight => "zyth-dark",
+            Self::Zyth => "zyth-dark",
             Self::Auto => "auto",
         }
     }
 
     /// Whether this theme requires truecolor (24-bit RGB) to look correct.
     ///
-    /// TokyoNight uses blue-tinted backgrounds that lose their character
-    /// when quantized to 256 or 16 colors. GrokNight / Vercel use neutral
-    /// grays that survive quantization cleanly.
+    /// Neither shipping Zyth theme requires truecolor.
     pub fn requires_truecolor(self) -> bool {
         match self {
-            Self::GrokNight => false,
-            Self::TokyoNight => true,
-            Self::GrokDay => false,
-            Self::RosePineMoon => true,
-            Self::OscuraMidnight => true,
-            Self::Zyth => false,
-            // Auto is resolved to a concrete theme before rendering.
-            Self::Auto => false,
+            Self::GrokNight
+            | Self::GrokDay
+            | Self::Zyth
+            | Self::Auto => false,
+            // Unlisted legacy themes — still true if somehow selected.
+            Self::TokyoNight | Self::RosePineMoon | Self::OscuraMidnight => true,
         }
     }
 
     /// Parse a theme name (case-insensitive). All string→ThemeKind
     /// conversions must go through this function.
+    ///
+    /// Only two concrete themes exist: **Zyth** (dark OLED) and **GrokDay**
+    /// (light). Legacy names map onto one of those so old configs keep working.
     pub fn from_name(name: &str) -> Option<Self> {
         let lower = name.to_lowercase();
         match lower.as_str() {
             "auto" | "system" => Some(Self::Auto),
-            "groknight" | "grok-night" | "dark" => Some(Self::GrokNight),
-            "tokyonight" | "tokyo-night" | "tokyo" => Some(Self::TokyoNight),
-            "grokday" | "grok-day" | "light" | "day" => Some(Self::GrokDay),
-            "rosepine" | "rose-pine" | "rosepine-moon" | "rose-pine-moon" => {
-                Some(Self::RosePineMoon)
-            }
-            "oscura" | "oscura-midnight" => Some(Self::OscuraMidnight),
-            "zyth" | "zyth-mono" | "vercel" | "vercel-mono" | "geist" | "mono"
-            | "monochrome" => Some(Self::Zyth),
+            // ZYTH Dark (OLED monochrome)
+            "zyth"
+            | "zyth-dark"
+            | "zyth-mono"
+            | "dark"
+            | "vercel"
+            | "vercel-mono"
+            | "geist"
+            | "mono"
+            | "monochrome"
+            | "groknight"
+            | "grok-night"
+            | "tokyonight"
+            | "tokyo-night"
+            | "tokyo"
+            | "rosepine"
+            | "rose-pine"
+            | "rosepine-moon"
+            | "rose-pine-moon"
+            | "oscura"
+            | "oscura-midnight" => Some(Self::Zyth),
+            // ZYTH Light (former Grok Day)
+            "zyth-light" | "grokday" | "grok-day" | "light" | "day" => Some(Self::GrokDay),
             _ => None,
         }
     }
@@ -149,24 +148,22 @@ pub fn canonical_name(value: &str) -> Option<&'static str> {
     ThemeKind::from_name(value).map(|k| k.display_name())
 }
 
-/// Human-friendly display name for a canonical theme value (e.g.
-/// `"groknight"` → `"Grok Night"`). Falls back to `value` verbatim.
+/// Human-friendly display name for a canonical theme value.
+/// Falls back to `value` verbatim.
 pub fn display_name_for_canonical(value: &str) -> &str {
     match value {
         "auto" => "Auto",
-        "groknight" => "Zyth Dark",
-        "grokday" => "Zyth Light",
-        "tokyonight" => "Tokyo Night",
-        "rosepine-moon" => "Rose Pine Moon",
-        "oscura-midnight" => "Oscura Midnight",
-        "zyth" => "ZYTH",
+        "zyth-dark" | "zyth" | "groknight" | "tokyonight" | "rosepine-moon" | "oscura-midnight" => {
+            "ZYTH Dark"
+        }
+        "zyth-light" | "grokday" => "ZYTH Light",
         other => other,
     }
 }
 
 impl Default for Theme {
     fn default() -> Self {
-        Self::groknight()
+        Self::zyth()
     }
 }
 
@@ -283,15 +280,16 @@ impl Theme {
             return Self::terminal_default().quantized(level);
         }
         let base = match cache::current_kind() {
-            ThemeKind::GrokNight => Self::groknight(),
-            ThemeKind::TokyoNight => Self::tokyonight(),
+            // Only two shipping palettes: Zyth dark + light (GrokDay).
+            // Legacy kinds fall through to Zyth Dark so old disk state is safe.
+            ThemeKind::Zyth
+            | ThemeKind::GrokNight
+            | ThemeKind::TokyoNight
+            | ThemeKind::RosePineMoon
+            | ThemeKind::OscuraMidnight => Self::zyth(),
             ThemeKind::GrokDay => Self::grokday(),
-            ThemeKind::RosePineMoon => Self::rosepine_moon(),
-            ThemeKind::OscuraMidnight => Self::oscura_midnight(),
-            ThemeKind::Zyth => Self::zyth(),
-            // Auto is resolved to a concrete theme before being stored;
-            // if reached, fall back to GrokNight.
-            ThemeKind::Auto => Self::groknight(),
+            // Auto is resolved to a concrete theme before being stored.
+            ThemeKind::Auto => Self::zyth(),
         };
         // Sample polarity pre-quantization — post-quantize `bg_base` may
         // land on a named/indexed entry whose luminance is host-palette-
@@ -355,10 +353,13 @@ impl Theme {
 
     /// Clamp a theme kind to what the terminal supports.
     fn clamp_to_terminal(kind: ThemeKind) -> ThemeKind {
-        if kind.requires_truecolor() && !color_support::detect().has_truecolor() {
+        // Collapse any legacy / out-of-catalog kind onto a shipping theme.
+        match kind {
+            ThemeKind::Zyth | ThemeKind::GrokDay | ThemeKind::Auto => kind,
             ThemeKind::GrokNight
-        } else {
-            kind
+            | ThemeKind::TokyoNight
+            | ThemeKind::RosePineMoon
+            | ThemeKind::OscuraMidnight => ThemeKind::Zyth,
         }
     }
 

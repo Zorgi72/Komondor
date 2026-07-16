@@ -840,35 +840,30 @@ pub(crate) async fn run(
     {
         use xai_grok_shell::util::config::{resolve_announcements, resolve_tips};
 
-        let remote_announcements = remote_settings
+        // Zyth: suppress all remote/managed promo announcements (no Grok news).
+        let _remote_announcements = remote_settings
             .as_ref()
             .and_then(|s| s.announcements.as_deref());
-        let announcements = resolve_announcements(
+        let _ = resolve_announcements(
             requirements.as_ref(),
             user_config.as_ref(),
             managed_config.as_ref(),
-            remote_announcements,
+            None,
         );
-        app.active_announcements = xai_grok_announcements::filter_expired(announcements);
-        if !app.active_announcements.is_empty() {
-            use rand::Rng;
-            let idx = rand::rng().random_range(0..app.active_announcements.len());
-            app.announcement = app.active_announcements.get(idx).cloned();
-        }
+        app.active_announcements = Vec::new();
+        app.announcement = None;
         app.sync_session_announcement_slash_gate();
 
-        let remote_tips = remote_settings.as_ref().and_then(|s| s.tips.as_deref());
-        app.tips = resolve_tips(
+        // Zyth: disable tip-of-the-day completely.
+        let _remote_tips = remote_settings.as_ref().and_then(|s| s.tips.as_deref());
+        let _ = resolve_tips(
             requirements.as_ref(),
             user_config.as_ref(),
             managed_config.as_ref(),
-            remote_tips,
+            None,
         );
-
-        if !app.tips.is_empty() {
-            let grok_home = xai_grok_tools::util::grok_home::grok_home();
-            app.tip = xai_grok_shell::util::tips::pick_and_advance(&app.tips, &grok_home);
-        }
+        app.tips = Vec::new();
+        app.tip = None;
     }
 
     let hints = xai_grok_shell::util::config::resolve_hints(
@@ -1329,7 +1324,7 @@ pub(crate) async fn run(
         app.draw(terminal);
     }
 
-    // Initial prompt from the CLI positional (`grok "fix the bug"`). When
+    // Initial prompt from the CLI positional (`zyth "fix the bug"`). When
     // already authenticated, hand it to the shared dispatcher helper (same
     // `NewSession`/`SendPrompt` path the welcome screen uses). ZDR-blocked
     // accounts cannot start a session, so drop the prompt — this mirrors the
@@ -1347,7 +1342,7 @@ pub(crate) async fn run(
         }
     }
 
-    // `grok dashboard` startup: open the dashboard view immediately. The
+    // `zyth dashboard` startup: open the dashboard view immediately. The
     // CLI subcommand wrote a `GROK_OPEN_DASHBOARD_AT_STARTUP=1` env var
     // so we don't have to thread a flag through every arg struct.
     if std::env::var("GROK_OPEN_DASHBOARD_AT_STARTUP").as_deref() == Ok("1") {

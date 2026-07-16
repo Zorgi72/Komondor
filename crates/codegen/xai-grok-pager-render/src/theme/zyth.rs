@@ -98,11 +98,11 @@ impl Theme {
 
             accent_remember: SUCCESS,
 
-            // Chrome borders — idle soft, focus crisp white edge
+            // Chrome borders — pure white prompt frame (idle + focused)
             selection_border: GRAY6,
             hover_border: GRAY5,
-            prompt_border: GRAY3,
-            prompt_border_active: GRAY8,
+            prompt_border: WHITE,
+            prompt_border_active: WHITE,
 
             accent_model: GRAY10,
 

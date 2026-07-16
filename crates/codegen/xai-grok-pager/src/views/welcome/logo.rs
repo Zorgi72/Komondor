@@ -4,7 +4,7 @@
 //! not covered by the ConHost raster fonts and would render as tofu.
 
 use ratatui::buffer::Buffer;
-use ratatui::layout::{Alignment, Rect};
+use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Paragraph, Widget};
@@ -12,14 +12,15 @@ use ratatui::widgets::{Paragraph, Widget};
 use crate::render::color::blend_color;
 use crate::theme::Theme;
 
-// Zyth mark (ASCII `$` art). Full + compact tiers for different terminal heights.
-const LOGO: &str = include_str!("../../../assets/logo/logo07.txt");
-const LOGO_SMALL: &str = include_str!("../../../assets/logo/logo05.txt");
+// Zyth welcome mark — braille art (from ascii.txt), baked into the binary.
+// Downscaled to ~20×11 cells with aspect ratio preserved. Not loaded from disk.
+const LOGO: &str = "⠀⠀⠀⠀⢠⠶⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⠀\n⠀⠀⠀⠀⣸⠀⠈⠑⢄⠀⠀⠀⠀⠀⢀⡠⠖⢩⡟⠀\n⠀⠀⠀⠀⢸⠀⠀⠒⠒⠓⠒⠢⢤⠖⠉⠀⠀⣼⡇⠀\n⠀⠀⠀⠀⡜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡿⠀⠀\n⠀⠀⣔⣾⣯⣿⣿⣦⠀⢀⣴⣯⣿⣿⣦⣀⣀⣧⠀⠀\n⢠⡴⠊⣿⣿⣿⣿⣿⠋⢻⣿⣿⣿⣿⣿⠁⠀⠉⢣⡀\n⢨⠿⠶⠈⠛⠟⣟⣁⣆⠈⣿⣿⣿⣿⣿⣆⠀⠀⠀⢱\n⠀⣹⡶⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⣠⠟⠋⠁⠀⠀⡸\n⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡔⠁\n⣠⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡎⠀⠀\n⣾⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀\n";
+const LOGO_SMALL: &str = "⠀⠀⠀⠀⢠⠶⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⠀\n⠀⠀⠀⠀⣸⠀⠈⠑⢄⠀⠀⠀⠀⠀⢀⡠⠖⢩⡟⠀\n⠀⠀⠀⠀⢸⠀⠀⠒⠒⠓⠒⠢⢤⠖⠉⠀⠀⣼⡇⠀\n⠀⠀⠀⠀⡜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡿⠀⠀\n⠀⠀⣔⣾⣯⣿⣿⣦⠀⢀⣴⣯⣿⣿⣦⣀⣀⣧⠀⠀\n⢠⡴⠊⣿⣿⣿⣿⣿⠋⢻⣿⣿⣿⣿⣿⠁⠀⠉⢣⡀\n⢨⠿⠶⠈⠛⠟⣟⣁⣆⠈⣿⣿⣿⣿⣿⣆⠀⠀⠀⢱\n⠀⣹⡶⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⣠⠟⠋⠁⠀⠀⡸\n⠀⣼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡔⠁\n⣠⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡎⠀⠀\n⣾⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀\n";
 
 /// Height at or above which the compact logo is shown (below it, no logo).
-const SMALL_LOGO_MIN_HEIGHT: u16 = 40;
+const SMALL_LOGO_MIN_HEIGHT: u16 = 16;
 /// Height at or above which the full logo is shown.
-const FULL_LOGO_MIN_HEIGHT: u16 = 78;
+const FULL_LOGO_MIN_HEIGHT: u16 = 24;
 
 fn pick_logo(window_height: u16) -> Option<&'static str> {
     pick_logo_for(window_height, logo_hidden())
@@ -36,10 +37,9 @@ fn pick_logo_for(window_height: u16, hidden: bool) -> Option<&'static str> {
     }
 }
 
-/// Zyth logo is plain ASCII (`$` / `@`) and renders on all terminals,
-/// including legacy Windows consoles.
+/// Braille art has no ASCII stand-in on legacy Windows consoles (U+2800 tofu).
 fn logo_hidden() -> bool {
-    false
+    crate::glyphs::is_legacy_windows_console()
 }
 
 fn non_empty_lines(logo: &str) -> impl Iterator<Item = &str> {
@@ -110,21 +110,33 @@ fn shine_opacity(diag: f32, secs: f32) -> f32 {
 }
 
 fn render_into(area: Rect, buf: &mut Buffer, theme: &Theme, logo: &str) {
-    let lines: Vec<&str> = non_empty_lines(logo).collect();
-    let rows = lines.len().max(1) as f32;
-    let cols = lines
+    let raw: Vec<&str> = non_empty_lines(logo).collect();
+    // Pad every line to the same width so centering is pixel-perfect and the
+    // mark never looks skewed when shimmer splits lines into multi-spans.
+    let width = raw
         .iter()
         .map(|l| l.chars().count())
         .max()
         .unwrap_or(1)
-        .max(1) as f32;
+        .max(1);
+    let lines: Vec<String> = raw
+        .iter()
+        .map(|l| {
+            let mut s = (*l).to_string();
+            let pad = width.saturating_sub(s.chars().count());
+            if pad > 0 {
+                s.push_str(&" ".repeat(pad));
+            }
+            s
+        })
+        .collect();
+    let rows = lines.len().max(1) as f32;
+    let cols = width as f32;
     let secs = anim_phase_secs();
 
-    // Blend each glyph from the resting gray toward the bright text color by its
-    // shine opacity, so a sheen sweeps across the braille art. Adjacent glyphs
-    // that land on the same blended color share one Span to hold down the
-    // per-frame allocation.
-    let base = theme.gray;
+    // Blend each glyph from the resting gray toward bright white by its shine
+    // opacity. Adjacent same-color glyphs share one Span.
+    let base = theme.gray_bright;
     let hilite = theme.text_primary;
     let logo_lines: Vec<Line> = lines
         .iter()
@@ -134,10 +146,13 @@ fn render_into(area: Rect, buf: &mut Buffer, theme: &Theme, logo: &str) {
             let mut run = String::new();
             let mut run_color: Option<Color> = None;
             for (col, ch) in line.chars().enumerate() {
-                // Sweep along the bottom-left → top-right diagonal: the
-                // coordinate grows as col increases and row decreases.
-                let diag = (col as f32 + (rows - 1.0 - row as f32)) / (cols + rows);
-                let color = blend_color(base, hilite, shine_opacity(diag, secs)).unwrap_or(base);
+                // Spaces stay transparent (use base) so only ink shimmers.
+                let color = if ch == ' ' {
+                    base
+                } else {
+                    let diag = (col as f32 + (rows - 1.0 - row as f32)) / (cols + rows);
+                    blend_color(base, hilite, shine_opacity(diag, secs)).unwrap_or(base)
+                };
                 if run_color != Some(color) {
                     if let Some(prev) = run_color {
                         spans.push(Span::styled(
@@ -152,10 +167,20 @@ fn render_into(area: Rect, buf: &mut Buffer, theme: &Theme, logo: &str) {
             if let Some(prev) = run_color {
                 spans.push(Span::styled(run, Style::default().fg(prev)));
             }
-            Line::from(spans).alignment(Alignment::Center)
+            Line::from(spans)
         })
         .collect();
-    Paragraph::new(logo_lines).render(area, buf);
+    // No wrap — wrapping reflows glyphs and deforms the art.
+    // Center the whole block horizontally in the area by padding left.
+    let art_w = width as u16;
+    let left = area.x + area.width.saturating_sub(art_w) / 2;
+    let draw = Rect {
+        x: left,
+        y: area.y,
+        width: art_w.min(area.width),
+        height: area.height,
+    };
+    Paragraph::new(logo_lines).render(draw, buf);
 }
 
 pub fn logo_line_count(window_height: u16) -> u16 {

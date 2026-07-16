@@ -22,7 +22,7 @@ Memory is experimental and disabled by default.
 ### Per-Session Flag
 
 ```bash
-grok --experimental-memory
+zyth --experimental-memory
 ```
 
 ### Environment Variable
@@ -45,7 +45,7 @@ enabled = true
 To disable memory even when other settings enable it:
 
 ```bash
-grok --no-memory
+zyth --no-memory
 ```
 
 Or:
@@ -324,23 +324,23 @@ lambda = 0.7             # 0.0 = max diversity, 1.0 = pure relevance
 
 ## CLI Commands
 
-The `grok memory` command manages memory from the shell. It has one subcommand, `clear`:
+The `zyth memory` command manages memory from the shell. It has one subcommand, `clear`:
 
 ```bash
 # Clear workspace memory (MEMORY.md, sessions/, and index.sqlite). This is the default scope.
-grok memory clear
+zyth memory clear
 
 # The same scope, stated explicitly
-grok memory clear --workspace
+zyth memory clear --workspace
 
 # Clear the global MEMORY.md
-grok memory clear --global
+zyth memory clear --global
 
 # Clear both workspace and global memory
-grok memory clear --all
+zyth memory clear --all
 
 # Skip the confirmation prompt (-y is the short form)
-grok memory clear --yes
+zyth memory clear --yes
 ```
 
 To edit memory from the shell, open the files in your editor directly -- for example, `$EDITOR ~/.grok/memory/MEMORY.md`.
@@ -450,8 +450,8 @@ enabled = true    # default
 
 ### Memory Not Working
 
-1. Verify memory is enabled: check `grok inspect` output.
-2. Check the flag: `grok --experimental-memory` or `GROK_MEMORY=1`.
+1. Verify memory is enabled: check `zyth inspect` output.
+2. Check the flag: `zyth --experimental-memory` or `GROK_MEMORY=1`.
 3. Check for `--no-memory` or `GROK_MEMORY=0` overriding your config.
 
 ### Memory Not Appearing in Sessions

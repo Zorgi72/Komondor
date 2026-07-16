@@ -1,28 +1,26 @@
-# Zyth (Grok Build fork)
+# ZYTH CLI (Grok Build fork)
 
-Private/custom fork of [xai-org/grok-build](https://github.com/xai-org/grok-build) rebranded as **Zyth**.
+Fork of [xai-org/grok-build](https://github.com/xai-org/grok-build) rebranded as **ZYTH CLI**.
 
 **Deep dive (SSO, models, security, release):** see **[docs/LOGINZYTH.md](docs/LOGINZYTH.md)**.
 
-## What’s different
+## Highlights
 
-### Branding
-- CLI binary / argv name: **`zyth`** (also still installable as `grok`)
-- User-facing “Grok Build” / “Grok Build Beta” strings → **Zyth**
-- Theme display names: **Zyth Dark**, **Zyth Light**, **ZYTH**
-- Welcome badge no longer shows “Grok Build Beta”
-- Welcome changelog panel + Changelog menu row removed (logo + menu only)
+- CLI name: **`zyth`** (launcher + all user-facing command hints)
+- Themes: **ZYTH Dark** (`zyth-dark`) and **ZYTH Light** (`zyth-light`) only
+- Welcome: braille mark baked into source, no tip row, no Grok news/changelog
+- Tab title: no `grok` brand
+- Telemetry: hard-disabled (mode + Mixpanel + `track()` no-op)
 
-### Boot art
-- Braille xAI logo replaced with the Zyth `$` ASCII mark from `assets/logo/`
+### ZYTH Dark theme (`theme = "zyth-dark"`)
 
-### ZYTH theme (`theme = "zyth"`)
-- Pure-black OLED canvas, **brighter** near-white body text (`#fafafa`)
-- Pure white (`#ffffff`) accents for focus / headings
-- **Code highlighting** uses a Vercel-accurate `.tmTheme` (`assets/zyth.tmTheme`)
-- Aliases: `zyth`, `vercel`, `geist`, `mono`, `monochrome`
+- Pure-black OLED canvas, near-white body text
+- Pure white prompt borders
+- Vercel-accurate code highlighting (`zyth.tmTheme`)
+- Aliases: `zyth`, `zyth-dark`, `vercel`, `geist`, `mono`
 
 ### Authentication (this fork)
+
 | Command | Purpose |
 |---------|---------|
 | `/login` | SpaceXAI OAuth (`auth.x.ai`) — unchanged upstream path |
@@ -32,47 +30,45 @@ Private/custom fork of [xai-org/grok-build](https://github.com/xai-org/grok-buil
 
 After `/loginzyth`:
 
-1. Browser SSO on Auth0 Universal Login  
-2. PKCE loopback on registered ports `56120–56139`  
-3. Server-side mint of LiteLLM virtual key (SSO, not manual API key UI)  
-4. Inference → `https://ai-gateway.zyth.app/v1`  
-5. **All** live gateway models written to `~/.grok/models_cache.json` (context + thinking levels)
+1. Browser SSO on Auth0 Universal Login
+2. PKCE loopback on registered ports `56120–56139`
+3. Server-side mint of LiteLLM virtual key
+4. Inference → `https://ai-gateway.zyth.app/v1`
+5. Live gateway models written to `~/.grok/models_cache.json`
+
+## Install prebuilt Linux x86_64
+
+```sh
+./release/install-linux.sh
+# or:
+xz -dk release/zyth-linux-x86_64.xz
+# place on PATH as `zyth`
+```
+
+This installs:
+
+- `~/.grok/downloads/zyth-linux-x86_64` — binary
+- `~/.grok/bin/{zyth,grok,agent}` — symlinks
+- `~/.local/bin/zyth` — PATH helper
 
 ## Build
 
 ```sh
-# Release (recommended)
-cargo build -p xai-grok-pager-bin --release
+cargo build -p xai-grok-pager-bin --release --bin zyth
 # → target/release/zyth
-# → target/release/xai-grok-pager
 
 # Package for ./release/install-linux.sh
 xz -f -k -T0 -c target/release/zyth > release/zyth-linux-x86_64.xz
 ```
 
-## Install prebuilt Linux binary
-
-From a clone of this repo:
-
-```sh
-./release/install-linux.sh
-zyth --version
-```
-
-This installs:
-
-- `~/.grok/downloads/zyth-linux-x86_64` — binary  
-- `~/.grok/bin/{zyth,grok,agent}` — symlinks  
-- `~/.local/bin/zyth` — PATH helper  
-
 ## Config
 
 ```toml
 [ui]
-theme = "zyth"
+theme = "zyth-dark"
 ```
 
-Settings, auth, and sessions stay under `~/.grok/` (same layout as upstream).
+Settings/auth still live under `~/.grok/` (upstream layout).
 
 ### Optional env (Zyth SSO)
 
@@ -83,12 +79,6 @@ export ZYTH_AI_GATEWAY_BASE_URL=https://ai-gateway.zyth.app/v1
 export ZYTH_CLI_EXCHANGE_URL=https://ai-gateway.zyth.app/zyth/cli/v1/exchange
 ```
 
-## Tests
+## License
 
-```sh
-cargo test -p xai-grok-shell --test loginzyth_protocol
-```
-
-## Upstream
-
-Based on xAI’s public Apache-2.0 tree. This fork is for personal/local use.
+Apache-2.0 (upstream). Personal/local fork.

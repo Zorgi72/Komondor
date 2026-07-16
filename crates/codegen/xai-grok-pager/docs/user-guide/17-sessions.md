@@ -85,10 +85,10 @@ To switch between, rename, or close the sessions that are currently active (the 
 Resume a specific session by ID:
 
 ```bash
-grok --resume <session-id>
+zyth --resume <session-id>
 ```
 
-Run `grok --resume` without an ID to resume the most recent session for the current directory.
+Run `zyth --resume` without an ID to resume the most recent session for the current directory.
 
 ### From the Welcome Screen
 
@@ -184,13 +184,13 @@ In headless mode, you manage sessions through command-line flags:
 
 ```bash
 # New session each time (default)
-grok -p "Hello"
+zyth -p "Hello"
 
 # Resume an existing session by ID (errors if it does not exist)
-grok -p "Continue where we left off" -r <session-id>
+zyth -p "Continue where we left off" -r <session-id>
 
 # Continue the most recent session in the current directory
-grok -p "What were we doing?" -c
+zyth -p "What were we doing?" -c
 ```
 
 In headless mode, resume an existing session with `-r`/`--resume`, which errors if the session does not exist, or continue the most recent session in the current directory with `-c`/`--continue`. Pass the session ID from JSON output (see below) to `-r`.
@@ -200,7 +200,7 @@ Use `-s`/`--session-id` only to **create** a new session with a **UUID** (errors
 To read the session ID back, request JSON output:
 
 ```bash
-grok -p "Hello" --output-format json | jq -r '.sessionId'
+zyth -p "Hello" --output-format json | jq -r '.sessionId'
 ```
 
 ---
@@ -230,20 +230,20 @@ The agent persists all session updates automatically. Clients can reconnect and 
 
 ## The grok sessions Subcommand
 
-List or search sessions from the command line. `grok sessions` requires a subcommand:
+List or search sessions from the command line. `zyth sessions` requires a subcommand:
 
 ```bash
 # List recent sessions for the current directory
-grok sessions list
+zyth sessions list
 
 # Limit the number of results (default 20)
-grok sessions list --limit 50
+zyth sessions list --limit 50
 
 # Search sessions by keyword (matches titles and prompts)
-grok sessions search "rate limit"
+zyth sessions search "rate limit"
 ```
 
-`grok sessions list` shows sessions for the current working directory, grouped by worktree label. Each row lists the session ID, the creation and update dates, the source status, and the summary. `grok sessions search` combines a local SQLite index with remote results.
+`zyth sessions list` shows sessions for the current working directory, grouped by worktree label. Each row lists the session ID, the creation and update dates, the source status, and the summary. `zyth sessions search` combines a local SQLite index with remote results.
 
 ---
 
@@ -257,7 +257,7 @@ Worktree sessions are managed internally through the `x.ai/git/worktree/*` exten
 - **Apply**: Merge worktree changes back into the main working directory
 - **Remove**: Clean up a worktree when the session is done
 
-Resume a session in a fresh worktree with `grok -w -r <session-id>`.
+Resume a session in a fresh worktree with `zyth -w -r <session-id>`.
 
 ---
 
@@ -271,7 +271,7 @@ Grok stores the conversation as newline-delimited JSON (JSONL). Each line in `up
 - Efficient streaming reads (for session restore)
 - Easy debugging (each line is valid JSON)
 
-The smaller state files -- `summary.json`, `plan.json`, and `signals.json` -- are plain JSON rather than JSONL. JSONL is the source of truth for session content; `grok sessions search` additionally maintains a local SQLite FTS5 index over session titles and prompts for fast keyword search.
+The smaller state files -- `summary.json`, `plan.json`, and `signals.json` -- are plain JSON rather than JSONL. JSONL is the source of truth for session content; `zyth sessions search` additionally maintains a local SQLite FTS5 index over session titles and prompts for fast keyword search.
 
 ### Session Metadata
 

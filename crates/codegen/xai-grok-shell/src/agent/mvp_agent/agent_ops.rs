@@ -1438,10 +1438,10 @@ impl MvpAgent {
             "WORKTREE_CONFIG_SHELL: resolved worktree type at agent startup"
         );
         if relay_sync_enabled {
-            tracing::info!("[grok] Relay sync: ENABLED");
+            tracing::info!("[zyth] Relay sync: ENABLED");
         } else if tui_mode && relay_config_enabled && !has_xai_auth {
             tracing::info!(
-                "[grok] Relay sync: DISABLED (no auth - run 'grok login' first)"
+                "[zyth] Relay sync: DISABLED (no auth - run 'zyth login' first)"
             );
         } else if tui_mode && !relay_config_enabled {
             tracing::debug!(

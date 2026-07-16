@@ -19,7 +19,7 @@ use super::system_appearance;
 /// In-memory theme kind, encoded as a `u8` matching the
 /// `ThemeKind` discriminants. Loaded from disk once at startup via
 /// `load_from_disk()`, then kept in sync by `set()`.
-static CURRENT: AtomicU8 = AtomicU8::new(ThemeKind::GrokNight as u8);
+static CURRENT: AtomicU8 = AtomicU8::new(ThemeKind::Zyth as u8);
 static LOADED: AtomicBool = AtomicBool::new(false);
 #[cfg(test)]
 static TEST_LOCK: Mutex<()> = Mutex::new(());
@@ -36,7 +36,7 @@ static AUTO_MODE: AtomicBool = AtomicBool::new(false);
 static TERMINAL_NATIVE_LOCK: AtomicBool = AtomicBool::new(false);
 
 /// Decode the u8 stored in `CURRENT` back to a `ThemeKind`. Falls
-/// back to `GrokNight` if the byte is somehow out of range (which
+/// back to `Zyth` if the byte is somehow out of range (which
 /// can't happen via `set` — the discriminant is always a valid
 /// variant — but defends against a future variant addition that
 /// forgot to extend this match).
@@ -49,7 +49,7 @@ fn theme_kind_from_u8(byte: u8) -> ThemeKind {
         x if x == ThemeKind::OscuraMidnight as u8 => ThemeKind::OscuraMidnight,
         x if x == ThemeKind::Zyth as u8 => ThemeKind::Zyth,
         x if x == ThemeKind::Auto as u8 => ThemeKind::Auto,
-        _ => ThemeKind::GrokNight,
+        _ => ThemeKind::Zyth,
     }
 }
 
@@ -79,7 +79,7 @@ pub struct AutoThemeConfig {
 pub fn current_kind() -> ThemeKind {
     // Locked: return a constant nominal kind without seeding from disk.
     if terminal_native_locked() {
-        return ThemeKind::GrokNight;
+        return ThemeKind::Zyth;
     }
     if !LOADED.load(Ordering::Acquire) {
         // Two threads racing into the seed path is harmless — the
@@ -186,8 +186,8 @@ fn resolve_from_config(config_theme: Option<ThemeKind>, osc11_fallback: bool) ->
         return kind;
     }
 
-    // Default: GrokNight
-    ThemeKind::GrokNight
+    // Default: Zyth Dark
+    ThemeKind::Zyth
 }
 
 /// Map an optional appearance detection result to a concrete `ThemeKind`.
@@ -195,14 +195,14 @@ fn resolve_from_appearance(appearance: Option<system_appearance::SystemAppearanc
     let config = auto_theme_config();
     appearance
         .map(|a| system_appearance::to_theme_kind(a, config.dark_theme, config.light_theme))
-        .unwrap_or(ThemeKind::GrokNight)
+        .unwrap_or(ThemeKind::Zyth)
 }
 
 /// Resolve "auto" by detecting system appearance and mapping via config.
 ///
 /// Returns the concrete `ThemeKind` based on the current system appearance
-/// and the user's dark/light theme mapping. Falls back to `GrokNight`
-/// when detection fails.
+/// and the user's dark/light theme mapping. Falls back to `Zyth` when
+/// detection fails.
 ///
 /// Uses desktop APIs only (no OSC 11) — safe to call at runtime while
 /// crossterm's `EventStream` is active. Called from the settings modal
@@ -275,7 +275,7 @@ fn load_auto_theme_config() -> AutoThemeConfig {
 pub fn reset_for_test() {
     // Tests are serialized via TEST_LOCK so the AtomicU8/AtomicBool
     // pair is safe to reset without any cross-thread coordination.
-    CURRENT.store(ThemeKind::GrokNight as u8, Ordering::Relaxed);
+    CURRENT.store(ThemeKind::Zyth as u8, Ordering::Relaxed);
     LOADED.store(false, Ordering::Release);
     AUTO_MODE.store(false, Ordering::Relaxed);
     set_terminal_native_lock(false);

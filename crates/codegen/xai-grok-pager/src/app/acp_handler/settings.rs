@@ -419,22 +419,11 @@ pub(super) fn apply_announcements_update(
     user_config: Option<&toml::Value>,
     managed_config: Option<&toml::Value>,
 ) {
-    let merged = xai_grok_shell::util::config::resolve_announcements(
-        requirements,
-        user_config,
-        managed_config,
-        Some(remote),
-    );
-    let announcements = xai_grok_announcements::filter_expired(merged);
+    // Zyth: never show remote/managed promo news on the welcome screen.
+    let _ = (requirements, user_config, managed_config, remote);
+    let announcements: Vec<xai_grok_announcements::RemoteAnnouncement> = Vec::new();
 
-    app.announcement = match app.announcement.as_ref() {
-        Some(current) => announcements
-            .iter()
-            .find(|a| *a == current)
-            .cloned()
-            .or_else(|| pick_random_announcement(&announcements)),
-        None => pick_random_announcement(&announcements),
-    };
+    app.announcement = None;
     app.active_announcements = announcements;
     app.announcements_last_gen = next_gen;
     // Opportunistic per-ID prune on a real update (never per frame) so the hidden set cannot grow unboundedly.

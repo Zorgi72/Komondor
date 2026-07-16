@@ -653,7 +653,7 @@ pub struct AppView {
     /// dashboard); deny wins over all other visibility gates.
     pub tier_restricted_commands: Vec<String>,
     /// Whether the pager is connected via a leader (leader mode). The Agent
-    /// Dashboard entry points (`/dashboard`, `Ctrl+\`, `grok dashboard`, the
+    /// Dashboard entry points (`/dashboard`, `Ctrl+\`, `zyth dashboard`, the
     /// startup hook) are only meaningful when a leader is coordinating a
     /// fleet of sessions, so they are gated on this flag. Set in
     /// `event_loop::run` from `connection.leader_status_rx.is_some()`;
@@ -3807,29 +3807,16 @@ impl AppView {
                         if !self.welcome_prompt.text().is_empty() {
                             self.welcome_tip_typing_dismissed = true;
                         }
-                        let tip = if self.welcome_tip_typing_dismissed {
-                            None
-                        } else {
-                            self.tip.as_deref()
-                        };
+                        // Zyth: never show tip-of-day above the prompt.
+                        let tip: Option<&str> = None;
+                        let _ = self.welcome_tip_typing_dismissed;
+                        let _ = self.tip.as_deref();
                         let model_name_base = self.models.current_model_name().unwrap_or_default();
                         let model_name = match self.models.reasoning_effort {
                             Some(eff) => format!("{model_name_base} ({eff})"),
                             None => model_name_base,
                         };
-                        let hero_cta = crate::views::announcements::promo_cta(
-                            &self.active_announcements,
-                            &self.hidden_announcement_ids,
-                        );
-                        let hero_announcement = hero_cta
-                            .map(|(owner, _, _)| owner)
-                            .or_else(|| {
-                                crate::views::announcements::first_session_announcement(
-                                    &self.active_announcements,
-                                    &self.hidden_announcement_ids,
-                                )
-                            })
-                            .or(self.announcement.as_ref());
+                        // Zyth: no promo CTA / remote news on the welcome screen.
                         let welcome_params = crate::views::welcome::WelcomeRenderParams {
                             prompt_focus: if self.welcome_prompt_focused {
                                 WelcomePromptFocus::Focused
@@ -3843,7 +3830,7 @@ impl AppView {
                             auth_code_input: &self.auth_code_input,
                             clipboard_copied: self.auth_clipboard_copied,
                             show_raw_url: self.auth_show_raw_url,
-                            announcement: hero_announcement,
+                            announcement: None,
                             tip,
                             model_name: &model_name,
                             flags: &flags_vec,
@@ -3882,7 +3869,7 @@ impl AppView {
                             changelog_bullets: &self.changelog_bullets,
                             changelog_has_full_notes: self.changelog_markdown.is_some(),
                             welcome_announcement_expanded: self.welcome_announcement.expanded,
-                            upgrade_cta: hero_cta.map(|(_owner, label, _)| label),
+                            upgrade_cta: None,
                         };
                         let result = crate::views::welcome::render_welcome(
                             view_area,

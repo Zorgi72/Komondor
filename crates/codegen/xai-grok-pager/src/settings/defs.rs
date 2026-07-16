@@ -38,6 +38,7 @@ pub(crate) const MAX_THOUGHTS_WIDTH_KEY: &str = "max_thoughts_width";
 // ---------------------------------------------------------------------------
 
 /// Full theme catalog including the "auto" meta-variant. Used by `theme` only.
+/// Zyth ships exactly two concrete themes (plus auto).
 const THEME_CHOICES: &[EnumChoice] = &[
     EnumChoice {
         canonical: "auto",
@@ -45,35 +46,14 @@ const THEME_CHOICES: &[EnumChoice] = &[
         description: "Follow system dark/light appearance.",
     },
     EnumChoice {
-        canonical: "groknight",
-        display: "Zyth Dark",
-        description: "Neutral dark (Zyth).",
+        canonical: "zyth-dark",
+        display: "ZYTH Dark",
+        description: "Pure-black OLED monochrome (Vercel).",
     },
     EnumChoice {
-        canonical: "grokday",
-        display: "Zyth Light",
-        description: "Light theme (Zyth).",
-    },
-    EnumChoice {
-        canonical: "tokyonight",
-        display: "Tokyo Night",
-        description: "Dark + blue-tinted; needs truecolor.",
-    },
-    // ASCII "Rose Pine Moon" (not "Rosé") for cross-terminal compatibility.
-    EnumChoice {
-        canonical: "rosepine-moon",
-        display: "Rose Pine Moon",
-        description: "Muted dark with mauve accents; needs truecolor.",
-    },
-    EnumChoice {
-        canonical: "oscura-midnight",
-        display: "Oscura Midnight",
-        description: "Deep dark with warm accents; needs truecolor.",
-    },
-    EnumChoice {
-        canonical: "zyth",
-        display: "ZYTH",
-        description: "Bright monochrome + Vercel code colors.",
+        canonical: "zyth-light",
+        display: "ZYTH Light",
+        description: "Bright light theme.",
     },
 ];
 
@@ -463,38 +443,17 @@ const VOICE_STT_LANGUAGE_CHOICES: &[EnumChoice] = &[
 ];
 
 /// Concrete-only theme catalog (excludes "auto"). Used by both
-/// `auto_dark_theme` and `auto_light_theme`. No dark/light filtering —
-/// the user can pair any theme with any system-appearance bucket.
+/// `auto_dark_theme` and `auto_light_theme`.
 const CONCRETE_THEME_CHOICES: &[EnumChoice] = &[
     EnumChoice {
-        canonical: "groknight",
-        display: "Zyth Dark",
-        description: "Neutral dark (Zyth).",
+        canonical: "zyth-dark",
+        display: "ZYTH Dark",
+        description: "Pure-black OLED monochrome (Vercel).",
     },
     EnumChoice {
-        canonical: "grokday",
-        display: "Zyth Light",
-        description: "Light theme (Zyth).",
-    },
-    EnumChoice {
-        canonical: "tokyonight",
-        display: "Tokyo Night",
-        description: "Dark + blue-tinted; needs truecolor.",
-    },
-    EnumChoice {
-        canonical: "rosepine-moon",
-        display: "Rose Pine Moon",
-        description: "Muted dark with mauve accents; needs truecolor.",
-    },
-    EnumChoice {
-        canonical: "oscura-midnight",
-        display: "Oscura Midnight",
-        description: "Deep dark with warm accents; needs truecolor.",
-    },
-    EnumChoice {
-        canonical: "zyth",
-        display: "ZYTH",
-        description: "Bright monochrome + Vercel code colors.",
+        canonical: "zyth-light",
+        display: "ZYTH Light",
+        description: "Bright light theme.",
     },
 ];
 
@@ -620,8 +579,8 @@ pub fn default_settings() -> Vec<SettingMeta> {
                 "light",
             ],
             kind: SettingKind::Enum {
-                // `Option<String>` — `None` resolved to "groknight".
-                default: "groknight",
+                // `Option<String>` — `None` resolved to "zyth-dark".
+                default: "zyth-dark",
                 choices: THEME_CHOICES,
                 supports_preview: true,
             },
@@ -636,8 +595,8 @@ pub fn default_settings() -> Vec<SettingMeta> {
             description: "Theme to use when the system is in dark mode (only with theme=auto).",
             keywords: &["auto", "dark", "theme", "system", "appearance", "night"],
             kind: SettingKind::Enum {
-                // `Option<String>` — `None` falls back to "groknight".
-                default: "groknight",
+                // `Option<String>` — `None` falls back to "zyth-dark".
+                default: "zyth-dark",
                 choices: CONCRETE_THEME_CHOICES,
                 supports_preview: true,
             },
@@ -652,8 +611,8 @@ pub fn default_settings() -> Vec<SettingMeta> {
             description: "Theme to use when the system is in light mode (only with theme=auto).",
             keywords: &["auto", "light", "theme", "system", "appearance", "day"],
             kind: SettingKind::Enum {
-                // `Option<String>` — `None` falls back to "grokday".
-                default: "grokday",
+                // `Option<String>` — `None` falls back to "zyth-light".
+                default: "zyth-light",
                 choices: CONCRETE_THEME_CHOICES,
                 supports_preview: true,
             },
