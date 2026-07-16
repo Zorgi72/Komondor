@@ -4,29 +4,55 @@ use super::*;
 
 // ── Credit-limit upsell / max-tier tests ───────────────────────────
 
-/// Open the non-max-tier Q&A upsell modal. Panics if the modal was not created.
+/// Open the non-max-tier credit-limit path (fork: non-blocking system message).
 fn open_upsell_qa(app: &mut AppView, mode: CreditLimitUpsellMode) {
     let agent = app.agents.get_mut(&AgentId(0)).unwrap();
     open_credit_limit_upsell(agent, mode, false);
 }
 
-/// Open the max-tier inline scrollback card upsell.
+/// Open the max-tier credit-limit path (fork: same non-blocking message).
 fn open_upsell_max_card(app: &mut AppView, mode: CreditLimitUpsellMode) {
     let agent = app.agents.get_mut(&AgentId(0)).unwrap();
     open_credit_limit_upsell(agent, mode, true);
 }
 
-/// Return the `QuestionViewState` from agent 0. Panics if absent.
+/// Fork: upsell never opens a question modal.
+fn assert_no_upsell_modal(app: &AppView) {
+    assert!(
+        app.agents
+            .get(&AgentId(0))
+            .unwrap()
+            .question_view
+            .is_none(),
+        "fork: credit/free-usage upsell must not open a stop modal"
+    );
+}
+
+/// Assert the last scrollback entry is a system message (non-blocking upsell).
+fn assert_system_upsell_message(app: &AppView) {
+    let agent = app.agents.get(&AgentId(0)).unwrap();
+    let last = agent
+        .scrollback
+        .entry(agent.scrollback.len().saturating_sub(1))
+        .expect("expected scrollback entry after upsell");
+    assert!(
+        matches!(last.block, crate::scrollback::block::RenderBlock::System(_)),
+        "fork: upsell must be a system message, got {:?}",
+        last.block
+    );
+}
+
+
+/// Legacy helper (modal removed). Present so ignore-marked tests still compile.
 fn agent_qv(app: &AppView) -> &crate::views::question_view::QuestionViewState {
     app.agents
         .get(&AgentId(0))
         .unwrap()
         .question_view
         .as_ref()
-        .unwrap()
+        .expect("fork: modal upsells removed — this test should be #[ignore]")
 }
 
-/// Extract the last-pushed `CreditLimitBlock` from agent 0 scrollback.
 fn last_credit_limit_block(
     app: &AppView,
     idx: usize,
@@ -37,9 +63,10 @@ fn last_credit_limit_block(
     {
         blk
     } else {
-        panic!("expected CreditLimit block at index {idx}");
+        panic!("fork: credit-limit card upsell removed — test should be #[ignore]")
     }
 }
+
 
 /// Dispatch a `BillingFetched` task result with sensible defaults.
 fn dispatch_billing(
@@ -134,6 +161,7 @@ fn is_max_tier_rejects_partial_matches() {
     assert!(!is_max_tier(Some("")));
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_shows_qa_with_two_options() {
     let mut app = test_app_with_agent();
@@ -149,6 +177,7 @@ fn upsell_non_max_shows_qa_with_two_options() {
     assert_eq!(q.options[1].id.as_deref(), Some(UPSELL_URL_PAYG));
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_payg_on_shows_increase_label() {
     let mut app = test_app_with_agent();
@@ -161,6 +190,7 @@ fn upsell_non_max_payg_on_shows_increase_label() {
     assert_eq!(q.options[1].label, "Increase limit");
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_qa_heading_is_credit_limit_when_payg_off() {
     let mut app = test_app_with_agent();
@@ -175,6 +205,7 @@ fn upsell_non_max_qa_heading_is_credit_limit_when_payg_off() {
     );
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_qa_heading_is_spending_cap_when_payg_on() {
     let mut app = test_app_with_agent();
@@ -189,6 +220,7 @@ fn upsell_non_max_qa_heading_is_spending_cap_when_payg_on() {
     );
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_upgrade_url_is_supergrok() {
     let mut app = test_app_with_agent();
@@ -204,6 +236,7 @@ fn upsell_non_max_upgrade_url_is_supergrok() {
     assert!(url.contains("referrer=grok-build"), "got: {url}");
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_payg_url_is_usage() {
     let mut app = test_app_with_agent();
@@ -218,6 +251,7 @@ fn upsell_non_max_payg_url_is_usage() {
     assert!(url.contains("_s=usage"), "got: {url}");
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_payg_on_description_mentions_spending_cap() {
     let mut app = test_app_with_agent();
@@ -231,6 +265,7 @@ fn upsell_non_max_payg_on_description_mentions_spending_cap() {
     );
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_payg_off_description_mentions_on_demand() {
     let mut app = test_app_with_agent();
@@ -244,6 +279,7 @@ fn upsell_non_max_payg_off_description_mentions_on_demand() {
     );
 }
 
+#[ignore = "fork: paywall modals removed — covered by open-access unit tests"]
 #[test]
 fn upsell_non_max_unified_shows_buy_credits() {
     let mut app = test_app_with_agent();
@@ -261,6 +297,7 @@ fn upsell_non_max_unified_shows_buy_credits() {
     );
 }
 
+#[ignore = "fork: paywall modals removed — covered by open-access unit tests"]
 #[test]
 fn upsell_max_unified_card_mentions_purchasing() {
     let mut app = test_app_with_agent();
@@ -331,6 +368,7 @@ fn is_credit_limit_error_matches_legacy_403_and_pool_402() {
     ));
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_sets_no_freeform() {
     let mut app = test_app_with_agent();
@@ -344,6 +382,7 @@ fn upsell_non_max_sets_no_freeform() {
     );
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_non_max_qa_has_single_select() {
     let mut app = test_app_with_agent();
@@ -380,7 +419,7 @@ fn upsell_non_max_idempotent_when_question_view_already_open() {
         &mut app,
         CreditLimitUpsellMode::LegacyPayg { enabled: false },
     );
-    assert!(app.agents.get(&AgentId(0)).unwrap().question_view.is_some());
+    assert!(app.agents.get(&AgentId(0)).unwrap().question_view.is_none(), "fork: no credit-limit modal");
 
     // Second call should be a no-op (guard at line 2070).
     let before = agent_scrollback_len(&app);
@@ -395,6 +434,7 @@ fn upsell_non_max_idempotent_when_question_view_already_open() {
     );
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_max_tier_pushes_scrollback_card_payg_off() {
     let mut app = test_app_with_agent();
@@ -417,6 +457,7 @@ fn upsell_max_tier_pushes_scrollback_card_payg_off() {
     assert_eq!(blk.url, UPSELL_URL_PAYG);
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_max_tier_pushes_scrollback_card_payg_on() {
     let mut app = test_app_with_agent();
@@ -449,6 +490,7 @@ fn upsell_max_tier_does_not_open_question_view() {
     );
 }
 
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn upsell_max_tier_scrollback_card_url_is_payg() {
     let mut app = test_app_with_agent();
@@ -807,6 +849,7 @@ fn free_usage_error_detected_by_embedded_code() {
     ));
 }
 
+#[ignore = "fork: paywall modals removed — covered by open-access unit tests"]
 #[test]
 fn free_usage_upsell_shows_two_options_with_exact_labels() {
     let mut app = test_app_with_agent();
@@ -901,12 +944,13 @@ fn free_usage_failure_opens_paywall_modal() {
         &mut app,
     );
     assert!(
-        app.agents[&id].question_view.is_some(),
+        app.agents[&id].question_view.is_none(), // fork: no modal
         "paywall modal must open"
     );
 }
 
 /// Answer translation: both upgrade options open their URL.
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn free_usage_translate_local_submit_maps_options() {
     use crate::app::agent_view::translate_local_submit_for_test;
@@ -934,6 +978,7 @@ fn free_usage_translate_local_submit_maps_options() {
 
 /// Submitting a tier-restricted command opens the two-option SuperGrok
 /// upsell and neither runs the command nor leaks the text to the model.
+#[ignore = "fork: paywall stop-modals removed"]
 #[test]
 fn restricted_command_submit_opens_two_option_upsell() {
     let mut app = test_app_with_agent();
@@ -988,7 +1033,7 @@ fn restricted_command_alias_also_upsells() {
     let effects = dispatch(Action::SendPrompt("/cost".into()), &mut app);
 
     assert!(effects.is_empty());
-    assert!(app.agents[&id].question_view.is_some(), "upsell must open");
+    assert!(app.agents[&id].question_view.is_none(), "fork: free-usage upsell must not open modal");
 }
 
 /// A restricted submit while ANOTHER question modal is already open
@@ -1003,10 +1048,22 @@ fn restricted_command_with_open_modal_keeps_composer_text() {
     {
         let agent = app.agents.get_mut(&id).unwrap();
         agent.set_restricted_commands(&["imagine".to_string()]);
-        // A question modal is already up (credit-limit upsell).
-        open_credit_limit_upsell(agent, CreditLimitUpsellMode::UnifiedCredits, false);
+        // Fork: credit-limit upsell is non-blocking (no modal). Seed a fake
+        // pre-existing modal to prove restricted-command path does not drop text.
+        use crate::views::prompt_widget::StashedPrompt;
+        use crate::views::question_view::QuestionViewState;
+        use xai_grok_tools::implementations::grok_build::ask_user_question::Question;
+        agent.question_view = Some(QuestionViewState::new(
+            "preexisting".into(),
+            vec![Question {
+                question: "keep me".into(),
+                options: vec![],
+                multi_select: Some(false),
+                id: None,
+            }],
+            StashedPrompt::default(),
+        ));
         assert!(agent.question_view.is_some());
-        // The user typed the restricted command into the composer.
         agent.prompt.set_text("/imagine a sunset");
     }
 
@@ -1020,14 +1077,8 @@ fn restricted_command_with_open_modal_keeps_composer_text() {
         "composer text must be preserved for a later resubmit"
     );
     assert!(
-        matches!(
-            agent
-                .question_view
-                .as_ref()
-                .and_then(|qv| qv.local_kind.as_ref()),
-            Some(crate::views::question_view::LocalQuestionKind::CreditLimitUpsell { .. })
-        ),
-        "the pre-existing modal must survive (no second modal)"
+        agent.question_view.is_some(),
+        "the pre-existing modal must survive"
     );
     assert!(
         agent.session.pending_prompts.is_empty(),
@@ -1056,5 +1107,58 @@ fn unknown_non_restricted_command_still_passes_through() {
     assert!(
         app.agents[&id].question_view.is_none(),
         "no upsell for genuinely unknown commands"
+    );
+}
+
+
+// ── Fork open-access invariants (shipped entry points) ─────────────
+
+#[test]
+fn fork_open_credit_limit_upsell_no_modal() {
+    let mut app = test_app_with_agent();
+    open_upsell_qa(&mut app, CreditLimitUpsellMode::UnifiedCredits);
+    assert_no_upsell_modal(&app);
+    assert_system_upsell_message(&app);
+}
+
+#[test]
+fn fork_open_credit_limit_max_tier_no_card() {
+    let mut app = test_app_with_agent();
+    open_upsell_max_card(&mut app, CreditLimitUpsellMode::UnifiedCredits);
+    assert_no_upsell_modal(&app);
+    assert_system_upsell_message(&app);
+    let agent = &app.agents[&AgentId(0)];
+    // No CreditLimit block
+    for i in 0..agent.scrollback.len() {
+        assert!(
+            !matches!(
+                agent.scrollback.entry(i).unwrap().block,
+                crate::scrollback::block::RenderBlock::CreditLimit(_)
+            ),
+            "fork: no credit-limit stop card"
+        );
+    }
+}
+
+#[test]
+fn fork_open_free_usage_upsell_no_modal() {
+    let mut app = test_app_with_agent();
+    let agent = app.agents.get_mut(&AgentId(0)).unwrap();
+    agent.session.free_usage_blocked = true;
+    open_free_usage_upsell(agent, Some("oidc".into()));
+    assert!(agent.question_view.is_none());
+    assert!(!agent.session.free_usage_blocked, "must clear sticky free-usage block");
+    assert_system_upsell_message(&app);
+}
+
+#[test]
+fn fork_free_usage_message_has_no_supergrok_cta() {
+    assert!(
+        !FREE_USAGE_USER_MESSAGE.to_ascii_lowercase().contains("supergrok"),
+        "must not advertise SuperGrok CTA"
+    );
+    assert!(
+        !FREE_USAGE_USER_MESSAGE.contains("grok.com/supergrok"),
+        "must not include upgrade URL"
     );
 }

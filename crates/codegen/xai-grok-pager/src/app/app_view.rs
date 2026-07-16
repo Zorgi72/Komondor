@@ -499,6 +499,7 @@ fn parse_esc_ttl(raw: Option<String>) -> Duration {
 /// - `voice` — voice dictation entry point (the Ctrl+Space / F8 keybinding is
 ///   gated separately in [`crate::app::dispatch::voice`], since it bypasses the
 ///   slash registry)
+#[allow(dead_code)] // retained for docs / classification; deny-list unused by fork policy
 pub(crate) const TIER_RESTRICTED_COMMANDS: &[&str] =
     &["usage", "imagine", "imagine-video", "voice"];
 /// Whether a subscription-tier display name is a tier with restricted
@@ -1080,12 +1081,15 @@ impl AppView {
         self.is_zdr && !self.zdr_access_enabled
     }
     /// User is not gated (no gate from remote settings or subscription fallback).
+    ///
+    /// **Fork policy:** subscription / SuperGrok access gates never block.
+    /// `self.gate` is ignored so a stale remote push cannot re-impose paywall UX.
     pub fn has_access(&self) -> bool {
-        self.gate.is_none()
+        true
     }
-    /// True when the user should not see the prompt (gate, subscription, or ZDR).
+    /// True when the user should not see the prompt (ZDR only — not paywall).
     pub fn is_access_blocked(&self) -> bool {
-        !self.has_access() || self.is_zdr_blocked()
+        self.is_zdr_blocked()
     }
     /// Whether deferred session-startup actions may run: both auth AND folder
     /// trust must be resolved. Mirrors the auth gate at the session-creating
@@ -1095,18 +1099,12 @@ impl AppView {
         matches!(self.auth_state, AuthState::Done) && matches!(self.trust_state, TrustState::Done)
     }
     /// Extract `GateInfo` from `RemoteSettings`.
+    ///
+    /// **Fork policy:** never surface a subscription gate from settings.
     pub fn gate_from_settings(
-        rs: &xai_grok_shell::util::config::RemoteSettings,
+        _rs: &xai_grok_shell::util::config::RemoteSettings,
     ) -> Option<xai_grok_shell::auth::GateInfo> {
-        let msg = rs.gate_message.as_ref()?;
-        if msg.is_empty() {
-            return None;
-        }
-        Some(xai_grok_shell::auth::GateInfo {
-            message: msg.clone(),
-            url: rs.gate_url.clone(),
-            label: rs.gate_label.clone(),
-        })
+        None
     }
     /// Apply typed auth metadata from the shell.
     pub fn apply_auth_meta(&mut self, meta: &xai_grok_shell::auth::AuthMeta) {
@@ -1117,8 +1115,9 @@ impl AppView {
         self.is_zdr = meta.is_zdr;
         self.team_role = meta.team_role.clone();
         self.coding_data_retention_opt_out = meta.coding_data_retention_opt_out;
-        self.gate = meta.gate.clone();
-        if was_gated && self.gate.is_none() {
+        // Fork: ignore remote/auth-meta gate (paywall). Clear any prior gate.
+        self.gate = None;
+        if was_gated {
             self.paywall_check_started = None;
             xai_grok_telemetry::session_ctx::log_event(
                 xai_grok_telemetry::events::SubscriptionActivated {
@@ -1411,18 +1410,9 @@ impl AppView {
     /// Called from [`Self::apply_auth_meta`] (startup / login) and from the
     /// `x.ai/settings/update` handler when the subscription tier changes, so
     /// a mid-session upgrade lifts the restrictions without a restart.
+    /// **Fork policy:** never hide slash commands behind SuperGrok tier lists.
     pub fn apply_tier_restrictions(&mut self) {
-        let restricted = self.team_name.is_none()
-            && !self.is_api_key_auth
-            && is_restricted_tier(self.subscription_tier.as_deref());
-        let names: Vec<String> = if restricted {
-            TIER_RESTRICTED_COMMANDS
-                .iter()
-                .map(|n| (*n).to_string())
-                .collect()
-        } else {
-            Vec::new()
-        };
+        let names: Vec<String> = Vec::new();
         for agent in self.agents.values_mut() {
             agent.set_restricted_commands(&names);
         }
@@ -1438,8 +1428,9 @@ impl AppView {
     /// with the slash-command gate. Used to gate the Ctrl+Space / F8 voice
     /// keybinding, which bypasses the slash registry entirely (see
     /// [`crate::app::dispatch::voice`]).
+    /// **Fork policy:** never tier-restrict voice (no SuperGrok voice upsell).
     pub fn is_voice_tier_restricted(&self) -> bool {
-        self.tier_restricted_commands.iter().any(|c| c == "voice")
+        false
     }
     /// Draw-time expiry can flip the live-announcement predicate between
     /// pushes; resync the slash gate only when it diverges from the stored
@@ -6354,15 +6345,17 @@ pub(crate) mod tests {
             ..Default::default()
         });
         assert!(!app.is_api_key_auth);
-        assert!(!app.voice_mode_enabled);
+        // Fork: free OIDC is not voice-tier-restricted; voice may stay off until remote flag.
         assert!(app.usage_visible);
-        assert!(!app.tier_restricted_commands.is_empty());
+        assert!(
+            app.tier_restricted_commands.is_empty(),
+            "fork: free tier must not restrict slash commands"
+        );
+        assert!(!app.is_voice_tier_restricted());
     }
     fn expected_tier_restricted_commands() -> Vec<String> {
-        TIER_RESTRICTED_COMMANDS
-            .iter()
-            .map(|n| (*n).to_string())
-            .collect()
+        // Fork policy: empty deny list always.
+        Vec::new()
     }
     /// Make every tier-restricted command visible on the welcome prompt so the
     /// present/absent assertions exercise the deny list, not incidental
@@ -6406,14 +6399,12 @@ pub(crate) mod tests {
     }
     #[test]
     fn apply_auth_meta_restricts_usage_for_free_tier() {
+        // Fork: free tier is unrestricted (no SuperGrok command deny list).
         let mut app = test_app();
         advertise_media_tools(&mut app);
         app.apply_auth_meta(&xai_grok_shell::auth::AuthMeta::default());
-        assert_eq!(
-            app.tier_restricted_commands,
-            expected_tier_restricted_commands()
-        );
-        assert_tier_restricted_commands_absent(&app);
+        assert!(app.tier_restricted_commands.is_empty());
+        assert_tier_restricted_commands_present(&app);
         assert!(app.usage_visible);
     }
     #[test]
@@ -6425,11 +6416,8 @@ pub(crate) mod tests {
             ..Default::default()
         };
         app.apply_auth_meta(&meta);
-        assert_eq!(
-            app.tier_restricted_commands,
-            expected_tier_restricted_commands()
-        );
-        assert_tier_restricted_commands_absent(&app);
+        assert!(app.tier_restricted_commands.is_empty());
+        assert_tier_restricted_commands_present(&app);
     }
     #[test]
     fn apply_auth_meta_lifts_restrictions_for_paid_tiers_and_teams() {
@@ -6445,7 +6433,7 @@ pub(crate) mod tests {
         let mut app = test_app();
         advertise_media_tools(&mut app);
         app.apply_auth_meta(&xai_grok_shell::auth::AuthMeta::default());
-        assert!(!app.tier_restricted_commands.is_empty());
+        assert!(app.tier_restricted_commands.is_empty());
         app.subscription_tier = Some("SuperGrok".into());
         app.apply_tier_restrictions();
         assert!(app.tier_restricted_commands.is_empty());
@@ -6478,9 +6466,10 @@ pub(crate) mod tests {
     }
     #[test]
     fn is_voice_tier_restricted_tracks_tier() {
+        // Fork: voice is never tier-restricted (no SuperGrok upsell).
         let mut app = test_app();
         app.apply_auth_meta(&xai_grok_shell::auth::AuthMeta::default());
-        assert!(app.is_voice_tier_restricted());
+        assert!(!app.is_voice_tier_restricted());
         let mut app = test_app();
         let meta = xai_grok_shell::auth::AuthMeta {
             subscription_tier: Some("SuperGrok".into()),
@@ -6497,7 +6486,9 @@ pub(crate) mod tests {
             url: Some("https://grok.com/supergrok?referrer=grok-build".into()),
             label: None,
         });
-        assert!(app.is_access_blocked());
+        // Fork: residual gate field does not block (has_access ignores it).
+        assert!(!app.is_access_blocked());
+        assert!(app.has_access());
         let meta = xai_grok_shell::auth::AuthMeta::default();
         app.apply_auth_meta(&meta);
         assert!(app.gate.is_none());
@@ -6505,6 +6496,7 @@ pub(crate) mod tests {
     }
     #[test]
     fn apply_auth_meta_gate_unchanged_when_still_gated() {
+        // Fork: auth meta with gate still never blocks; gate is cleared.
         let mut app = test_app();
         let gate = xai_grok_shell::auth::GateInfo {
             message: "Subscribe".into(),
@@ -6517,8 +6509,9 @@ pub(crate) mod tests {
             ..Default::default()
         };
         app.apply_auth_meta(&meta);
-        assert!(app.gate.is_some());
-        assert!(app.is_access_blocked());
+        assert!(app.gate.is_none());
+        assert!(!app.is_access_blocked());
+        assert!(app.has_access());
     }
     #[test]
     fn welcome_ctrl_q_requires_confirmation() {

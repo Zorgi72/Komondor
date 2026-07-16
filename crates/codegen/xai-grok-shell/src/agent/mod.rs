@@ -23,7 +23,7 @@ pub(crate) mod subagent;
 pub(crate) mod subscription_check;
 pub(crate) mod update_chunk_merge;
 
-pub use mvp_agent::MvpAgent;
+pub use mvp_agent::{MvpAgent, settings_allow_access};
 pub use relay::{RelayConfig, RelayHandle, spawn_relay_connection};
 pub use server::{ServerConfig, run_agent_server};
 

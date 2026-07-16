@@ -354,10 +354,10 @@ fn trace_turn_to_i32_saturates_at_max() {
     let result = i32::try_from(boundary).unwrap_or(i32::MAX);
     assert_eq!(result, i32::MAX);
 }
-/// When remote settings are absent (`None`), default to blocked.
+/// Fork policy: remote settings cannot block access (always allow).
 #[test]
-fn settings_allow_access_none_settings_is_blocked() {
-    assert!(!settings_allow_access(None));
+fn settings_allow_access_none_settings_is_allowed() {
+    assert!(settings_allow_access(None));
 }
 /// When `allow_access` is `Some(true)`, user is allowed.
 #[test]
@@ -368,27 +368,23 @@ fn settings_allow_access_true_is_allowed() {
     };
     assert!(settings_allow_access(Some(&rs)));
 }
-/// When `allow_access` is `Some(false)` (remote settings default / rule
-/// disabled), user stays blocked — even if they hold a qualifying
-/// subscription. This is the regression guard for the bug where
-/// `retry_subscription_check` unconditionally lifted the gate.
+/// Fork: even explicit `allow_access: false` must not block the CLI.
 #[test]
-fn settings_allow_access_false_is_blocked() {
+fn settings_allow_access_false_is_still_allowed() {
     let rs = crate::util::config::RemoteSettings {
         allow_access: Some(false),
         ..Default::default()
     };
-    assert!(!settings_allow_access(Some(&rs)));
+    assert!(settings_allow_access(Some(&rs)));
 }
-/// When `/settings` returned successfully but the field is absent
-/// (`None`), default to blocked (conservative).
+/// Fork: missing field still allows (no fail-closed paywall).
 #[test]
-fn settings_allow_access_field_absent_is_blocked() {
+fn settings_allow_access_field_absent_is_allowed() {
     let rs = crate::util::config::RemoteSettings {
         allow_access: None,
         ..Default::default()
     };
-    assert!(!settings_allow_access(Some(&rs)));
+    assert!(settings_allow_access(Some(&rs)));
 }
 /// After allocating a turn number, `session_turn_numbers` holds the next
 /// value (current + 1). This is the value that must be persisted via

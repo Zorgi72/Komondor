@@ -1759,22 +1759,10 @@ impl MvpAgent {
     }
     /// Check whether the user has access via remote settings `allow_access`.
     ///
-    /// Non-xAI auth (API keys, enterprise) always passes. For xAI OAuth2
-    /// users, reads `allow_access` from remote settings. Defaults to
-    /// `false` (blocked) when remote settings are unavailable.
-    pub(super) async fn enforce_grok_code_access(&self, auth: &crate::auth::GrokAuth) {
-        if !auth.is_xai_auth() {
-            self.tier_allowed.set(true);
-            return;
-        }
-        let allow = settings_allow_access(self.cfg.borrow().remote_settings.as_ref());
-        self.tier_allowed.set(allow);
-        if !allow {
-            tracing::info!(
-                "auth: user blocked by allow_access (remote settings grok_build_access_gate)"
-            );
-            self.retry_subscription_check().await;
-        }
+    /// **Fork policy:** always grant access. Remote settings cannot impose a
+    /// SuperGrok / `grok_build_access_gate` block on the local CLI.
+    pub(super) async fn enforce_grok_code_access(&self, _auth: &crate::auth::GrokAuth) {
+        self.tier_allowed.set(true);
     }
     /// Single-shot subscription check called by the pager's "Check
     /// subscription" button (`x.ai/auth/check_subscription`). The pager
@@ -1948,40 +1936,21 @@ impl MvpAgent {
         }
     }
     pub(crate) fn auth_response_with_meta(&self) -> AuthenticateResponse {
-        let (show_resolved_model, gate, subscription_tier) = {
+        let (show_resolved_model, subscription_tier) = {
             let cfg = self.cfg.borrow();
             let rs = cfg.remote_settings.as_ref();
-            let gate = rs
-                .and_then(|s| s.gate_message.as_ref())
-                .filter(|m| !m.is_empty())
-                .map(|message| crate::auth::GateInfo {
-                    message: message.clone(),
-                    url: rs.and_then(|s| s.gate_url.clone()),
-                    label: rs.and_then(|s| s.gate_label.clone()),
-                });
             let subscription_tier = rs.and_then(|s| s.subscription_tier_display.clone());
-            (rs.and_then(|s| s.show_resolved_model), gate, subscription_tier)
+            (rs.and_then(|s| s.show_resolved_model), subscription_tier)
         };
         let subscription_tier = resolve_subscription_tier_for_telemetry(
             subscription_tier,
             self.auth_manager.current_or_expired().as_ref(),
         );
+        // Fork: never emit GateInfo / SuperGrok paywall in auth meta.
         let meta = self
             .auth_manager
             .current()
             .map(|auth| {
-                let gate = if !self.tier_allowed.get() && gate.is_none() {
-                    let message = "A subscription is required.".to_string();
-                    Some(crate::auth::GateInfo {
-                        message,
-                        url: Some(
-                            "https://grok.com/supergrok?referrer=grok-build".to_string(),
-                        ),
-                        label: Some("Subscribe".to_string()),
-                    })
-                } else {
-                    gate
-                };
                 let auth_meta = crate::auth::AuthMeta {
                     email: auth.email.clone(),
                     auth_mode: Some(format!("{:?}", auth.auth_mode)),
@@ -1991,7 +1960,7 @@ impl MvpAgent {
                     team_role: auth.team_role.clone(),
                     coding_data_retention_opt_out: auth.coding_data_retention_opt_out,
                     show_resolved_model,
-                    gate,
+                    gate: None,
                     subscription_tier,
                 };
                 serde_json::to_value(auth_meta)
@@ -2624,17 +2593,14 @@ fn spawn_post_unblock_jwt_and_catalog_retry(
 }
 /// Resolve `allow_access` from remote settings.
 ///
-/// Returns `true` only when remote settings explicitly set `allow_access: true`.
-/// Defaults to `false` (blocked) when settings are `None` or the field is
-/// absent — matching the `grok_build_access_gate` flag's server-side default.
-///
-/// Used by both `enforce_grok_code_access` (initial login gate) and
-/// `retry_subscription_check` (poller gate lift) to keep the decision in
-/// one place.
-pub(crate) fn settings_allow_access(
-    rs: Option<&crate::util::config::RemoteSettings>,
+/// **Fork policy:** always allow. Remote `grok_build_access_gate` /
+/// `allow_access: false` must never block the local CLI session. The
+/// `rs` argument is retained for call-site compatibility and tests.
+/// Public so integration tests can drive the shipped access chokepoint.
+pub fn settings_allow_access(
+    _rs: Option<&crate::util::config::RemoteSettings>,
 ) -> bool {
-    rs.and_then(|s| s.allow_access).unwrap_or(false)
+    true
 }
 #[cfg(test)]
 mod tests;

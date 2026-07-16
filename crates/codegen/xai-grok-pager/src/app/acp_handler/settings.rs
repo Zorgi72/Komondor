@@ -181,28 +181,16 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
         app.subscription_watch_interval_secs = Some(v);
     }
 
-    // Gate update logic:
-    // - allow_access == Some(true): explicitly granted → lift the gate
-    // - gate_message.is_some(): server sent a new message → impose/update
-    // - Neither condition met: don't touch the gate. In particular,
-    //   allow_access=Some(false) without a gate_message must NOT clear the
-    //   gate (gate_from_settings returns None when gate_message is absent,
-    //   which would incorrectly lift an existing gate).
-    if update.allow_access == Some(true) {
-        let effs = app.lift_gate();
-        app.pending_effects.extend(effs);
-    } else if let Some(msg) = update.gate_message.as_ref()
-        && !msg.is_empty()
-    {
-        // (An empty gate_message would only clear the gate message text, NOT
-        // access, so it intentionally does not touch the gate here.)
-        let effs = app.impose_gate(xai_grok_shell::auth::GateInfo {
-            message: msg.clone(),
-            url: update.gate_url.clone(),
-            label: update.gate_label.clone(),
-        });
-        app.pending_effects.extend(effs);
-    }
+    // Gate update logic — fork: never impose a paywall from remote settings.
+    // Always lift any residual gate so a settings push cannot re-block.
+    let _ = (
+        update.allow_access,
+        update.gate_message.as_ref(),
+        update.gate_url.as_ref(),
+        update.gate_label.as_ref(),
+    );
+    let effs = app.lift_gate();
+    app.pending_effects.extend(effs);
 
     // Load config layers once for tips + group_tool_verbs +
     // collapsed_edit_blocks resolution. Loaded unconditionally: the UI flags

@@ -1556,7 +1556,7 @@ fn gate_refreshed_emits_check_subscription_on_gate_lift() {
         url: Some("https://grok.com/supergrok".into()),
         label: Some("Subscribe".into()),
     });
-    assert!(!app.has_access());
+    assert!(app.has_access(), "fork: access always open");
 
     // Server-side settings now show no gate (user purchased subscription).
     let settings = xai_grok_shell::util::config::RemoteSettings::default();
@@ -1602,7 +1602,7 @@ fn gate_refreshed_no_effect_when_still_gated() {
         &mut app,
     );
 
-    assert!(!app.has_access(), "gate should remain");
+    assert!(app.has_access(), "fork: access always open — gate must not remain");
     assert!(effects.is_empty(), "no effects when still gated");
 }
 
@@ -1713,7 +1713,7 @@ fn verify_check_with_gated_meta_shows_gate() {
         &mut app,
     );
 
-    assert!(!app.has_access(), "verified gate must show");
+    assert!(app.has_access(), "fork: verified gate must NOT show");
     assert!(app.pending_gate_verification.is_none());
 }
 
@@ -1732,7 +1732,7 @@ fn verify_check_failure_promotes_pending_gate() {
         &mut app,
     );
 
-    assert!(!app.has_access(), "check failed — deferred gate must show");
+    assert!(app.has_access(), "fork: check failure must not show gate");
     assert!(app.pending_gate_verification.is_none());
     assert!(
         effects
@@ -1827,7 +1827,7 @@ fn gate_verify_timeout_promotes_pending_gate() {
         &mut app,
     );
 
-    assert!(!app.has_access(), "timeout — deferred gate must show");
+    assert!(app.has_access(), "fork: timeout must not show gate");
     assert!(app.pending_gate_verification.is_none());
     assert!(
         app.paywall_check_started.is_some(),
@@ -1925,7 +1925,7 @@ fn verified_gate_via_check_complete_starts_paywall_chain() {
         &mut app,
     );
 
-    assert!(!app.has_access());
+    assert!(app.has_access(), "fork: access always open");
     assert!(
         app.paywall_check_started.is_some(),
         "verified gate must arm the paywall auto-check chain"

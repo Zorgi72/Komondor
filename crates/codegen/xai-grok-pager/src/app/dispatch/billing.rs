@@ -110,170 +110,57 @@ pub(crate) fn acp_error_is_free_usage_exhausted(err: &agent_client_protocol::Err
 }
 
 /// User-facing message for free-usage exhaustion. Shown by headless mode and
-/// `format_acp_error` in place of auth-aware rate-limit copy. Deliberately
-/// promises no reset duration — the quota window is backend-config-driven.
-pub(crate) const FREE_USAGE_USER_MESSAGE: &str = "You\u{2019}ve reached your free Grok Build usage limit for now. Get SuperGrok for much higher limits, or try again later: https://grok.com/supergrok?referrer=grok-build";
+/// `format_acp_error` in place of auth-aware rate-limit copy.
+///
+/// **Fork:** no SuperGrok upgrade CTA — plain non-blocking error text only.
+pub(crate) const FREE_USAGE_USER_MESSAGE: &str =
+    "Usage limit reached for this account. Try again later, or use another auth/provider.";
 
 /// Open the credit-limit upsell on the given agent.
 ///
-/// **`max_tier = false`** (default): shows the Q&A question modal with
-/// two options ("Upgrade tier" + buy-credits or PAYG). Each option's `id`
-/// carries the target URL so the submit handler is position-independent.
-///
-/// **`max_tier = true`** (positively identified as SuperGrok Heavy):
-/// pushes an inline scrollback card (`CreditLimitBlock`) with a single
-/// continue action. No Q&A modal — the user can't upgrade further.
+/// **Fork policy:** do **not** open a stop-screen modal/card. Push a plain
+/// system message so the session stays usable (server may still 402/429).
 pub(super) fn open_credit_limit_upsell(
     agent: &mut AgentView,
     mode: CreditLimitUpsellMode,
     max_tier: bool,
 ) {
-    use crate::scrollback::blocks::CreditLimitCardAction;
-
-    let (
-        heading,
-        upgrade_tier_desc,
-        secondary_label,
-        secondary_desc,
-        card_action,
-        second_choice,
-        payg_telemetry,
-    ): (
-        &str,
-        &str,
-        &str,
-        &str,
-        CreditLimitCardAction,
-        xai_grok_telemetry::events::CreditLimitChoice,
-        bool,
-    ) = match mode {
-        CreditLimitUpsellMode::UnifiedCredits => (
-            "You hit your weekly limit.",
-            "Upgrade to a higher tier for more usage",
-            "Buy more credits",
-            "Purchase credits to keep using Grok Build",
-            CreditLimitCardAction::PurchaseCredits,
-            xai_grok_telemetry::events::CreditLimitChoice::PurchaseCredits,
-            false,
-        ),
-        CreditLimitUpsellMode::LegacyPayg { enabled: true } => (
-            "You\u{2019}ve hit your spending cap.",
-            "Upgrade to a higher tier for more credits",
-            "Increase limit",
-            "Raise your pay-as-you-go spending cap",
-            CreditLimitCardAction::IncreasePaygLimit,
-            xai_grok_telemetry::events::CreditLimitChoice::PayAsYouGo,
-            true,
-        ),
-        CreditLimitUpsellMode::LegacyPayg { enabled: false } => (
-            "You\u{2019}ve hit the credit limit for your plan.",
-            "Upgrade to a higher tier for more credits",
-            "Pay as you go",
-            "Enable pay-as-you-go credits for on-demand usage",
-            CreditLimitCardAction::EnablePayg,
-            xai_grok_telemetry::events::CreditLimitChoice::PayAsYouGo,
-            false,
-        ),
-    };
-    let unified_billing = matches!(mode, CreditLimitUpsellMode::UnifiedCredits);
-
-    // ── Max tier: inline scrollback card ─────────────────────────
-    if max_tier {
-        use crate::scrollback::block::RenderBlock;
-        log_event(xai_grok_telemetry::events::CreditLimitUpsellShown {
-            surface: xai_grok_telemetry::events::CreditLimitUpsellSurface::InlineCard,
-            max_tier: true,
-            pay_as_you_go: payg_telemetry,
-            unified_billing,
-        });
-        agent.scrollback.push_block(RenderBlock::credit_limit_card(
-            heading,
-            card_action,
-            UPSELL_URL_PAYG,
-        ));
-        return;
-    }
-
-    log_event(xai_grok_telemetry::events::CreditLimitUpsellShown {
-        surface: xai_grok_telemetry::events::CreditLimitUpsellSurface::QuestionModal,
-        max_tier: false,
-        pay_as_you_go: payg_telemetry,
-        unified_billing,
-    });
-
-    // ── Default: Q&A question modal with two options ────────────────
-    use crate::views::question_view::{LocalQuestionKind, QuestionViewState};
-    use xai_grok_tools::implementations::grok_build::ask_user_question::{
-        Question, QuestionOption,
-    };
-
-    if agent.question_view.is_some() {
-        return;
-    }
-
-    let question = Question {
-        question: heading.into(),
-        options: vec![
-            QuestionOption {
-                label: "Upgrade tier".into(),
-                description: upgrade_tier_desc.into(),
-                preview: None,
-                id: Some(UPSELL_URL_UPGRADE.into()),
-            },
-            QuestionOption {
-                label: secondary_label.into(),
-                description: secondary_desc.into(),
-                preview: None,
-                id: Some(UPSELL_URL_PAYG.into()),
-            },
-        ],
-        multi_select: Some(false),
-        id: None,
-    };
-
-    let stashed = agent.prompt.stash();
-    let state = QuestionViewState::new(
-        format!("credit-limit-upsell-{}", uuid::Uuid::new_v4()),
-        vec![question],
-        stashed,
-    )
-    .with_local_kind(LocalQuestionKind::CreditLimitUpsell {
-        choices: vec![
-            xai_grok_telemetry::events::CreditLimitChoice::UpgradeTier,
-            second_choice,
-        ],
-    })
-    .with_no_freeform();
-    agent.question_view = Some(state);
-    agent.prompt.set_text("");
+    let _ = (mode, max_tier);
+    use crate::scrollback::block::RenderBlock;
+    agent.scrollback.push_block(RenderBlock::system(
+        "Usage or credit limit from the provider. Continuing without upgrade prompts."
+            .to_string(),
+    ));
 }
 
-/// Open the free-usage paywall on the given agent: a Q&A modal in the
-/// [`open_credit_limit_upsell`] style with two upgrade options. Each
-/// option's `id` carries its target URL so the submit handler is
-/// position-independent.
-///
-/// Driver-only by construction (called from the PromptResponse handler,
-/// which viewers never receive). `auth_method` feeds the
-/// `SuperGrokUpsellShown` funnel event.
+/// Free-usage exhaustion — **fork:** non-blocking system message only (no modal).
 pub(super) fn open_free_usage_upsell(agent: &mut AgentView, auth_method: Option<String>) {
-    open_supergrok_upsell(agent, UpsellReason::FreeUsageLimit, auth_method);
+    let _ = auth_method;
+    use crate::scrollback::block::RenderBlock;
+    agent
+        .scrollback
+        .push_block(RenderBlock::system(FREE_USAGE_USER_MESSAGE.to_string()));
+    // Clear sticky free-usage block so further prompts are not hard-stopped.
+    agent.session.free_usage_blocked = false;
 }
 
-/// Open the SuperGrok upsell for a tier-restricted slash command
-/// (`/usage`, `/imagine`, …). Returns whether the modal opened (`false`
-/// when another question modal is already up) so the caller can decide
-/// whether to consume the input that triggered it.
+/// Restricted-command SuperGrok upsell — **fork:** never open a stop modal.
 pub(super) fn open_restricted_command_upsell(
     agent: &mut AgentView,
     auth_method: Option<String>,
 ) -> bool {
-    open_supergrok_upsell(agent, UpsellReason::RestrictedCommand, auth_method)
+    let _ = auth_method;
+    use crate::scrollback::block::RenderBlock;
+    agent.scrollback.push_block(RenderBlock::system(
+        "Command is available (tier restrictions disabled in this fork).".to_string(),
+    ));
+    false
 }
 
 /// Which situation opened the SuperGrok upsell modal. Controls the heading
 /// and the telemetry source.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)] // classification retained; modal builder is no-op under fork policy
 pub(super) enum UpsellReason {
     /// Free-usage quota exhausted (429 paywall).
     FreeUsageLimit,
@@ -281,78 +168,15 @@ pub(super) enum UpsellReason {
     RestrictedCommand,
 }
 
-/// Shared builder behind [`open_free_usage_upsell`] /
-/// [`open_restricted_command_upsell`]: a Q&A modal in the
-/// [`open_credit_limit_upsell`] style. Upgrade options carry their target
-/// URL in the option `id` (position-independent submit handling).
+/// SuperGrok upsell builder — **fork:** never opens a modal (kept for
+/// type/reference; all call sites use the no-op entry points above).
+#[allow(dead_code)]
 fn open_supergrok_upsell(
-    agent: &mut AgentView,
-    reason: UpsellReason,
-    auth_method: Option<String>,
+    _agent: &mut AgentView,
+    _reason: UpsellReason,
+    _auth_method: Option<String>,
 ) -> bool {
-    use crate::views::question_view::{LocalQuestionKind, QuestionViewState};
-    use xai_grok_tools::implementations::grok_build::ask_user_question::{
-        Question, QuestionOption,
-    };
-
-    // Never displace an already-open question modal. Callers that consume
-    // input on open must check this `false` and keep the input instead.
-    if agent.question_view.is_some() {
-        return false;
-    }
-
-    let (heading, source, modal_id_prefix) = match reason {
-        UpsellReason::FreeUsageLimit => (
-            "You hit your free usage limit.",
-            SuperGrokUpsell::FreeUsagePaywall,
-            "free-usage-upsell",
-        ),
-        UpsellReason::RestrictedCommand => (
-            "Unlock all features with SuperGrok.",
-            SuperGrokUpsell::RestrictedCommand,
-            "restricted-command-upsell",
-        ),
-    };
-
-    log_event(xai_grok_telemetry::events::SuperGrokUpsellShown {
-        source,
-        auth_method,
-    });
-
-    let options = vec![
-        QuestionOption {
-            label: "Upgrade to SuperGrok".into(),
-            description: "For everyday coding and productivity tasks".into(),
-            preview: None,
-            id: Some(UPSELL_URL_UPGRADE.into()),
-        },
-        QuestionOption {
-            label: "Upgrade to SuperGrok Heavy".into(),
-            description: "Get the most out of Grok Build. Highest usage limits.".into(),
-            preview: None,
-            // No Heavy-specific URL exists; the /supergrok page lists
-            // both plans, so both upgrade options land there.
-            id: Some(UPSELL_URL_UPGRADE.into()),
-        },
-    ];
-    let question = Question {
-        question: heading.into(),
-        options,
-        multi_select: Some(false),
-        id: None,
-    };
-
-    let stashed = agent.prompt.stash();
-    let state = QuestionViewState::new(
-        format!("{modal_id_prefix}-{}", uuid::Uuid::new_v4()),
-        vec![question],
-        stashed,
-    )
-    .with_local_kind(LocalQuestionKind::FreeUsageUpsell { source })
-    .with_no_freeform();
-    agent.question_view = Some(state);
-    agent.prompt.set_text("");
-    true
+    false
 }
 
 /// Apply an [`AutoTopupFetch`] outcome to a cached `auto_topup` slot: `Resolved`

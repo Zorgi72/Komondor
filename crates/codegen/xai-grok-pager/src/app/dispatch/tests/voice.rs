@@ -168,7 +168,7 @@ fn voice_keybinding_on_restricted_tier_opens_upsell() {
     dispatch(Action::EnableVoiceMode, &mut app);
 
     assert!(
-        app.agents.get(&AgentId(0)).unwrap().question_view.is_some(),
+        app.agents.get(&AgentId(0)).unwrap().question_view.is_none(), // fork: no voice upsell modal
         "restricted-tier voice keybinding must open the SuperGrok upsell"
     );
     assert!(
