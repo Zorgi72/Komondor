@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 use std::time::{Duration as StdDuration, Instant};
 #[derive(Debug, Clone, thiserror::Error)]
-pub(super) enum OidcError {
+pub(crate) enum OidcError {
     #[error("OIDC not configured")]
     NotConfigured,
     #[error("failed to bind OIDC loopback server: {0}")]
@@ -203,25 +203,25 @@ pub(crate) fn enforce_login_principal(
     }))
 }
 #[derive(Debug)]
-pub(super) struct OidcUserInfo {
-    pub(super) user_id: String,
-    pub(super) email: Option<String>,
-    pub(super) first_name: Option<String>,
-    pub(super) last_name: Option<String>,
-    pub(super) profile_image_asset_id: Option<String>,
-    pub(super) principal_type: Option<String>,
-    pub(super) principal_id: Option<String>,
-    pub(super) team_id: Option<String>,
-    pub(super) team_name: Option<String>,
-    pub(super) team_role: Option<String>,
-    pub(super) organization_id: Option<String>,
-    pub(super) organization_name: Option<String>,
-    pub(super) organization_role: Option<String>,
-    pub(super) user_blocked_reason: Option<String>,
-    pub(super) team_blocked_reasons: Vec<String>,
-    pub(super) coding_data_retention_opt_out: bool,
+pub(crate) struct OidcUserInfo {
+    pub(crate) user_id: String,
+    pub(crate) email: Option<String>,
+    pub(crate) first_name: Option<String>,
+    pub(crate) last_name: Option<String>,
+    pub(crate) profile_image_asset_id: Option<String>,
+    pub(crate) principal_type: Option<String>,
+    pub(crate) principal_id: Option<String>,
+    pub(crate) team_id: Option<String>,
+    pub(crate) team_name: Option<String>,
+    pub(crate) team_role: Option<String>,
+    pub(crate) organization_id: Option<String>,
+    pub(crate) organization_name: Option<String>,
+    pub(crate) organization_role: Option<String>,
+    pub(crate) user_blocked_reason: Option<String>,
+    pub(crate) team_blocked_reasons: Vec<String>,
+    pub(crate) coding_data_retention_opt_out: bool,
 }
-pub(super) fn build_grok_auth(
+pub(crate) fn build_grok_auth(
     tokens: TokenResponse,
     user_info: OidcUserInfo,
     issuer: &str,
@@ -256,13 +256,13 @@ pub(super) fn build_grok_auth(
     }
 }
 #[derive(Debug, Clone, Deserialize)]
-pub(super) struct Discovery {
-    pub(super) authorization_endpoint: String,
-    pub(super) token_endpoint: String,
+pub(crate) struct Discovery {
+    pub(crate) authorization_endpoint: String,
+    pub(crate) token_endpoint: String,
     #[serde(default)]
-    pub(super) jwks_uri: Option<String>,
+    pub(crate) jwks_uri: Option<String>,
     #[serde(default)]
-    pub(super) id_token_signing_alg_values_supported: Option<Vec<String>>,
+    pub(crate) id_token_signing_alg_values_supported: Option<Vec<String>>,
 }
 /// RFC 8414 says discovery clients SHOULD cache. 1h is short enough
 /// that an endpoint move propagates within an agent session, long
@@ -274,7 +274,7 @@ const DISCOVERY_CACHE_TTL: StdDuration = StdDuration::from_secs(3600);
 /// pointed at the same IdP share one entry.
 static DISCOVERY_CACHE: LazyLock<RwLock<HashMap<String, (Discovery, Instant)>>> =
     LazyLock::new(|| RwLock::new(HashMap::new()));
-pub(super) async fn discover(issuer: &str) -> anyhow::Result<Discovery> {
+pub(crate) async fn discover(issuer: &str) -> anyhow::Result<Discovery> {
     let issuer_key = issuer.trim_end_matches('/').to_owned();
     if let Some((doc, at)) = DISCOVERY_CACHE.read().get(&issuer_key)
         && at.elapsed() < DISCOVERY_CACHE_TTL
@@ -330,11 +330,11 @@ async fn discover_once(issuer_key: &str) -> anyhow::Result<Discovery> {
 pub(super) fn clear_discovery_cache() {
     DISCOVERY_CACHE.write().clear();
 }
-pub(super) struct Pkce {
-    pub(super) code_verifier: String,
-    pub(super) code_challenge: String,
+pub(crate) struct Pkce {
+    pub(crate) code_verifier: String,
+    pub(crate) code_challenge: String,
 }
-pub(super) fn generate_pkce() -> Pkce {
+pub(crate) fn generate_pkce() -> Pkce {
     let random_bytes: [u8; 32] = rand::random();
     let code_verifier = URL_SAFE_NO_PAD.encode(random_bytes);
     let code_challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(code_verifier.as_bytes()));
@@ -343,7 +343,7 @@ pub(super) fn generate_pkce() -> Pkce {
         code_challenge,
     }
 }
-pub(super) fn build_authorize_url(
+pub(crate) fn build_authorize_url(
     config: &OidcAuthConfig,
     oauth2: Option<&OAuth2ProviderConfig>,
     discovery: &Discovery,
@@ -389,16 +389,16 @@ pub(super) fn build_authorize_url(
     url
 }
 #[derive(Debug, Deserialize)]
-pub(super) struct TokenResponse {
-    pub(super) access_token: String,
+pub(crate) struct TokenResponse {
+    pub(crate) access_token: String,
     #[serde(default)]
-    pub(super) refresh_token: Option<String>,
+    pub(crate) refresh_token: Option<String>,
     #[serde(default)]
-    pub(super) id_token: Option<String>,
+    pub(crate) id_token: Option<String>,
     #[serde(default)]
-    pub(super) expires_in: Option<u64>,
+    pub(crate) expires_in: Option<u64>,
 }
-pub(super) async fn exchange_code(
+pub(crate) async fn exchange_code(
     token_endpoint: &str,
     code: &str,
     redirect_uri: &str,
@@ -541,7 +541,7 @@ pub(super) struct IdTokenClaims {
     #[serde(default)]
     pub(super) sub: Option<String>,
     #[serde(default)]
-    pub(super) email: Option<String>,
+    pub(crate) email: Option<String>,
     #[serde(default)]
     pub(super) iss: Option<String>,
     #[serde(default)]
@@ -549,9 +549,9 @@ pub(super) struct IdTokenClaims {
     #[serde(default)]
     pub(super) nonce: Option<String>,
     #[serde(default, alias = "given_name")]
-    pub(super) first_name: Option<String>,
+    pub(crate) first_name: Option<String>,
     #[serde(default, alias = "family_name")]
-    pub(super) last_name: Option<String>,
+    pub(crate) last_name: Option<String>,
     #[serde(default)]
     pub(super) picture: Option<String>,
 }
@@ -564,7 +564,7 @@ pub(super) fn aud_matches(aud: &serde_json::Value, expected: &str) -> bool {
         _ => false,
     }
 }
-pub(super) fn validate_state(expected: &str, received: &str) -> anyhow::Result<()> {
+pub(crate) fn validate_state(expected: &str, received: &str) -> anyhow::Result<()> {
     if received != expected {
         tracing::warn!(
             expected = % expected, received = % received, "OIDC: state mismatch"
@@ -692,7 +692,7 @@ pub(super) async fn validate_and_extract_user_info(
         coding_data_retention_opt_out: false,
     })
 }
-pub(super) async fn extract_user_info(
+pub(crate) async fn extract_user_info(
     id_token: Option<&str>,
     discovery: &Discovery,
     expected_issuer: &str,

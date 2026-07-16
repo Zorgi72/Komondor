@@ -957,6 +957,15 @@ pub(super) fn dispatch_task_result(result: TaskResult, app: &mut AppView) -> Vec
             app.welcome_prompt_focused = false;
             effects
         }
+        TaskResult::LogoutZythComplete {
+            was_logged_in: _,
+            message,
+        } => {
+            // Scoped Zyth logout: keep session if SpaceXAI creds remain.
+            // Surface outcome; do not force welcome / full logout UX.
+            app.show_toast(&message);
+            vec![]
+        }
         TaskResult::DeepSearchResults { results, seq } => {
             handle_deep_search_results(app, results, seq)
         }

@@ -591,10 +591,14 @@ pub enum Action {
     PermissionCancel,
     /// Log out: remove credentials and return to the login screen.
     Logout,
+    /// `/logoutzyth` — clear Zyth credentials only (keep SpaceXAI session).
+    LogoutZyth,
     /// Log out and immediately start a new login flow.
     SwitchAccount,
     /// User pressed login on the welcome screen.
     Login,
+    /// `/loginzyth` — Zyth AuthStack SSO + AI gateway virtual key.
+    LoginZyth,
     /// Cancel an in-progress login that was started from inside a session
     /// (`/login` or a 401 re-auth prompt) and return to the previous view.
     /// Distinct from `Quit`: abandoning a mid-session re-auth must not exit
@@ -1638,6 +1642,12 @@ pub enum Effect {
         agent_id: AgentId,
         session_id: acp::SessionId,
     },
+    /// Run Zyth `/loginzyth` SSO + gateway key exchange.
+    LoginZyth {
+        request_seq: u64,
+    },
+    /// Clear Zyth credentials only (`/logoutzyth`).
+    LogoutZyth,
     /// Send AuthenticateRequest to the agent.
     Authenticate {
         request_seq: u64,
@@ -2539,6 +2549,11 @@ pub enum TaskResult {
     },
     /// Shell acknowledged logout (auth cleared).
     LogoutComplete,
+    /// `/logoutzyth` finished (success or soft failure with message).
+    LogoutZythComplete {
+        was_logged_in: bool,
+        message: String,
+    },
     /// Shell responded to `x.ai/auth/check_subscription`. `verify` echoes
     /// the generation from `Effect::CheckSubscription` for deferred-gate
     /// verifications.

@@ -11,6 +11,7 @@ mod jwt;
 pub(crate) mod manager;
 mod model;
 pub mod oidc;
+pub mod zyth;
 pub(crate) mod recovery;
 pub(crate) mod refresh;
 mod storage;
@@ -40,4 +41,12 @@ pub(crate) use model::{TOKEN_TTL, UserInfo, is_expired, token_suffix};
 pub(crate) use refresh::DiagnosticUploader;
 pub use storage::{
     clear_api_key, read_api_key, read_auth_json, read_token_by_scope, store_api_key,
+};
+
+pub use zyth::{
+    LogoutZythResult, PastedCallback, ZYTH_AI_GATEWAY_BASE_URL, ZYTH_CLI_CLIENT_ID, ZYTH_ISSUER,
+    ZythLoginConfig, ZythLoginError, build_authorize_url_parts, format_loginzyth_error,
+    format_logoutzyth_result, parse_exchange_response, parse_pasted_input, perform_logoutzyth,
+    run_loginzyth_flow, scope_key, user_message, validate_exchange_url, validate_gateway_base_url,
+    validate_gateway_credential, validate_state,
 };

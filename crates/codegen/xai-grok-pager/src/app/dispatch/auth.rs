@@ -20,6 +20,13 @@ pub(super) fn dispatch_logout(_app: &mut AppView) -> Vec<Effect> {
     vec![Effect::Logout]
 }
 
+/// `/logoutzyth` — clear Zyth AuthStack / gateway credentials only.
+/// Does **not** return to the welcome screen if a SpaceXAI session remains;
+/// the shell reports whether anything was cleared via toast.
+pub(super) fn dispatch_logoutzyth(_app: &mut AppView) -> Vec<Effect> {
+    vec![Effect::LogoutZyth]
+}
+
 /// Ensure `login_method_id` is populated from stored auth methods.
 /// On the eager-auth path (cached token), login_method_id is never set
 /// because the user skipped the login screen.
@@ -168,6 +175,31 @@ pub(super) fn strip_trailing_auth_error_blocks(agent: &mut AgentView) {
     for idx in to_remove {
         agent.scrollback.remove_from(idx);
     }
+}
+
+/// Start Zyth AuthStack SSO (`/loginzyth`): browser OIDC + gateway virtual key.
+/// Reuses the welcome auth UI (loopback paste) when mid-session.
+pub(super) fn dispatch_loginzyth(app: &mut AppView) -> Vec<Effect> {
+    if !matches!(app.active_view, ActiveView::Welcome) {
+        app.auth_return_view = Some(app.active_view);
+        show_welcome(app);
+    }
+
+    let request_seq = app.next_auth_request_seq;
+    app.next_auth_request_seq += 1;
+    app.auth_code_input.clear();
+    app.login_label = Some("Zyth".to_string());
+    app.auth_state = AuthState::Authenticating {
+        request_seq,
+        handle: None,
+        auth_url: None,
+        mode: AuthMode::Loopback,
+    };
+
+    vec![
+        Effect::LoginZyth { request_seq },
+        Effect::PollAuthUrl { request_seq },
+    ]
 }
 
 /// Start an interactive login flow. Triggered by pressing 'l' on the

@@ -32,7 +32,9 @@ pub mod imagine;
 pub mod imagine_video;
 pub mod import_claude;
 pub mod login;
+pub mod loginzyth;
 pub mod logout;
+pub mod logoutzyth;
 pub mod loop_cmd;
 pub mod mcps;
 pub mod model;
@@ -127,7 +129,9 @@ pub fn builtin_commands() -> Vec<Arc<dyn SlashCommand>> {
         Arc::new(privacy::PrivacyCommand),
         Arc::new(rewind::RewindCommand),
         Arc::new(login::LoginCommand),
+        Arc::new(loginzyth::LoginZythCommand),
         Arc::new(logout::LogoutCommand),
+        Arc::new(logoutzyth::LogoutZythCommand),
         Arc::new(import_claude::ImportClaudeCommand),
         Arc::new(usage::UsageCommand),
         Arc::new(queue::QueueCommand),
@@ -675,5 +679,26 @@ mod tests {
         assert!(reg.get("voice").is_some());
         reg.set_voice_visible(false);
         assert!(reg.get("voice").is_none());
+    }
+    #[test]
+    fn loginzyth_and_logoutzyth_registered_in_builtin_commands() {
+        let reg = CommandRegistry::new(builtin_commands());
+        let login = reg.get("loginzyth").expect("/loginzyth should be registered");
+        assert_eq!(login.name(), "loginzyth");
+        let logout = reg.get("logoutzyth").expect("/logoutzyth should be registered");
+        assert_eq!(logout.name(), "logoutzyth");
+    }
+    #[test]
+    fn loginzyth_and_logoutzyth_emit_actions() {
+        let models = ModelState::default();
+        let mut ctx = make_ctx(&models);
+        assert!(matches!(
+            loginzyth::LoginZythCommand.run(&mut ctx, ""),
+            CommandResult::Action(Action::LoginZyth)
+        ));
+        assert!(matches!(
+            logoutzyth::LogoutZythCommand.run(&mut ctx, ""),
+            CommandResult::Action(Action::LogoutZyth)
+        ));
     }
 }

@@ -639,6 +639,45 @@ pub(super) async fn send_logout(tx: &AcpAgentTx) {
         tracing::warn!(error = % e, "logout failed");
     }
 }
+
+/// `/logoutzyth` — clear Zyth credentials only via shell ACP.
+pub(super) async fn send_logoutzyth(tx: &AcpAgentTx) -> TaskResult {
+    let req = acp::ExtRequest::new(
+        "x.ai/auth/logoutzyth",
+        serde_json::value::to_raw_value(&serde_json::json!({}))
+            .expect("serialize auth/logoutzyth params")
+            .into(),
+    );
+    match acp_send(req, tx).await {
+        Ok(resp) => {
+            let meta: Option<serde_json::Value> =
+                serde_json::from_str(resp.0.get()).ok();
+            let message = meta
+                .as_ref()
+                .and_then(|v| v.get("message"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Logged out of Zyth")
+                .to_owned();
+            let was_logged_in = meta
+                .as_ref()
+                .and_then(|v| v.get("was_logged_in"))
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            TaskResult::LogoutZythComplete {
+                was_logged_in,
+                message,
+            }
+        }
+        Err(e) => {
+            let error = sanitize_user_error(&e.to_string());
+            tracing::warn!(error = %error, "logoutzyth failed");
+            TaskResult::LogoutZythComplete {
+                was_logged_in: false,
+                message: format!("Zyth logout failed: {error}"),
+            }
+        }
+    }
+}
 pub(super) async fn send_check_subscription(
     tx: &AcpAgentTx,
     verify: Option<u64>,
@@ -706,6 +745,40 @@ pub(super) async fn send_credit_limit_recheck(
         }
     }
 }
+/// Run `/loginzyth` via shell ACP extension (`x.ai/auth/loginzyth`).
+pub(super) async fn send_loginzyth(tx: &AcpAgentTx, request_seq: u64) -> TaskResult {
+    let params = serde_json::json!({});
+    let req = acp::ExtRequest::new(
+        "x.ai/auth/loginzyth",
+        serde_json::value::to_raw_value(&params)
+            .expect("serialize loginzyth params")
+            .into(),
+    );
+    match acp_send(req, tx).await {
+        Ok(resp) => {
+            ulog::info("loginzyth completed", None, None);
+            let meta: Option<serde_json::Value> =
+                serde_json::from_str(resp.0.get()).ok();
+            TaskResult::AuthComplete {
+                request_seq,
+                meta,
+            }
+        }
+        Err(e) => {
+            let error = sanitize_user_error(&e.to_string());
+            ulog::error(
+                "loginzyth failed",
+                None,
+                Some(serde_json::json!({ "error": &error })),
+            );
+            TaskResult::AuthFailed {
+                request_seq,
+                error,
+            }
+        }
+    }
+}
+
 pub(super) async fn send_authenticate(
     tx: &AcpAgentTx,
     request_seq: u64,

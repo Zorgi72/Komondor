@@ -81,6 +81,10 @@ pub(crate) fn execute(
                     TaskResult::LogoutComplete
                 });
         }
+        Effect::LogoutZyth => {
+            let tx = acp_tx.clone();
+            tasks.spawn(async move { send_logoutzyth(&tx).await });
+        }
         Effect::CheckSubscription { verify } => {
             let tx = acp_tx.clone();
             tasks.spawn(async move { send_check_subscription(&tx, verify).await });
@@ -1896,6 +1900,13 @@ pub(crate) fn execute(
                         )
                         .await
                 });
+            meta.auth_abort_handle = Some((request_seq, abort_handle));
+        }
+        Effect::LoginZyth { request_seq } => {
+            let tx = acp_tx.clone();
+            let abort_handle = tasks.spawn(async move {
+                send_loginzyth(&tx, request_seq).await
+            });
             meta.auth_abort_handle = Some((request_seq, abort_handle));
         }
         Effect::PollAuthUrl { request_seq } => {

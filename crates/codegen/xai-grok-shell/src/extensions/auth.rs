@@ -22,7 +22,56 @@ pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
         "x.ai/auth/logout" => handle_logout(agent, args).await,
         "x.ai/auth/info" => handle_info(agent),
         "x.ai/auth/check_subscription" => handle_check_subscription(agent).await,
+        "x.ai/auth/loginzyth" => handle_loginzyth(agent).await,
+        "x.ai/auth/logoutzyth" => handle_logoutzyth(agent).await,
         _ => Err(acp::Error::method_not_found()),
+    }
+}
+
+/// `/loginzyth` — Zyth AuthStack OIDC + AI gateway virtual-key mint.
+async fn handle_loginzyth(agent: &MvpAgent) -> ExtResult {
+    let grok_home = crate::util::grok_home::grok_home();
+    let (url_tx, url_rx) = tokio::sync::oneshot::channel();
+    let (code_tx, code_rx) = tokio::sync::mpsc::channel(1);
+    *agent.auth_code_tx.borrow_mut() = Some(code_tx);
+    *agent.auth_url_rx.borrow_mut() = Some(url_rx);
+
+    let result = crate::auth::run_loginzyth_flow(
+        &grok_home,
+        Some(crate::auth::AuthChannels {
+            url_tx: Some(url_tx),
+            code_rx,
+        }),
+    )
+    .await;
+
+    *agent.auth_code_tx.borrow_mut() = None;
+    *agent.auth_url_rx.borrow_mut() = None;
+
+    match result {
+        Ok(auth) => {
+            {
+                let mut sampling_config = agent.sampling_config.borrow_mut();
+                sampling_config.api_key = Some(auth.key.clone());
+            }
+            // Do not hot_swap over xAI OIDC as the AuthManager active scope;
+            // virtual key is active via XAI_API_KEY + auth.json xai::api_key + zyth scope.
+            agent.models_manager.on_auth_changed().await;
+            tracing::info_span!("auth.lifecycle", action = "loginzyth", success = true)
+                .in_scope(|| {});
+            to_raw_response(&serde_json::json!({
+                "ok": true,
+                "provider": "zyth",
+                "user_id": auth.user_id,
+                "email": auth.email,
+                "gateway": crate::auth::zyth::ZYTH_AI_GATEWAY_BASE_URL,
+            }))
+        }
+        Err(e) => {
+            let msg = crate::auth::format_loginzyth_error(&e);
+            tracing::warn!(error = %msg, "loginzyth failed");
+            Err(acp::Error::auth_required().data(msg))
+        }
     }
 }
 
@@ -113,6 +162,59 @@ async fn handle_get_url(agent: &MvpAgent) -> ExtResult {
         // `external_provider` kept for older clients; `mode` is authoritative.
         "external_provider": mode.is_some_and(|m| m.is_external_provider()),
         "mode": mode.map(|m| m.as_wire_str()),
+    }))
+}
+
+/// `/logoutzyth` — remove Zyth scopes + matching virtual key; keep SpaceXAI.
+async fn handle_logoutzyth(agent: &MvpAgent) -> ExtResult {
+    let grok_home = crate::util::grok_home::grok_home();
+    // Snapshot in-memory key before disk logout so we can drop it even if the
+    // disk `xai::api_key` was rotated independently of the Zyth scope.
+    let prior_sampling_key = agent.sampling_config.borrow().api_key.clone();
+
+    let result = crate::auth::perform_logoutzyth(&grok_home).map_err(|e| {
+        acp::Error::internal_error().data(format!("failed to logoutzyth: {e}"))
+    })?;
+
+    // Re-sync sampling API key after logout. Always refresh when we cleared
+    // the disk key **or** when the in-memory key looked like the Zyth session
+    // (env was match-cleared by deactivate_zyth_runtime).
+    if result.cleared_api_key || result.was_logged_in {
+        let mut sampling_config = agent.sampling_config.borrow_mut();
+        let disk_or_env = crate::auth::read_api_key(&grok_home).or_else(|| {
+            crate::agent::auth_method::read_xai_api_key_env().ok()
+        });
+        // If prior in-memory key equals nothing left on disk/env, drop it.
+        if result.cleared_api_key
+            || prior_sampling_key
+                .as_ref()
+                .is_some_and(|k| disk_or_env.as_ref() != Some(k))
+        {
+            sampling_config.api_key = disk_or_env;
+        }
+    }
+
+    tracing::info_span!(
+        "auth.lifecycle",
+        action = "logoutzyth",
+        success = true,
+        was_logged_in = result.was_logged_in,
+        scopes_removed = result.scopes_removed,
+    )
+    .in_scope(|| {});
+
+    agent.models_manager.on_auth_changed().await;
+
+    let message = crate::auth::format_logoutzyth_result(&result);
+    to_raw_response(&serde_json::json!({
+        "ok": true,
+        "was_logged_in": result.was_logged_in,
+        "email": result.email,
+        "cleared_api_key": result.cleared_api_key,
+        "cleared_endpoints": result.cleared_endpoints,
+        "scopes_removed": result.scopes_removed,
+        "api_key_env_still_set": result.api_key_env_still_set,
+        "message": message,
     }))
 }
 

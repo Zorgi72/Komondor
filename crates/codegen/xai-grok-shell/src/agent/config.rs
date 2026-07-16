@@ -269,6 +269,49 @@ fn parse_otlp_header_list(raw: &str) -> Vec<(String, String)> {
         })
         .collect()
 }
+/// Apply `~/.grok/zyth_endpoints.toml` written by `/loginzyth` (no secrets).
+/// Only fills blanks / overrides inference base so Zyth gateway stays active
+/// across restarts without clobbering an explicit env override.
+fn apply_zyth_endpoints_overlay(endpoints: &mut EndpointsConfig) {
+    let path = crate::util::grok_home::grok_home().join("zyth_endpoints.toml");
+    let Ok(raw) = std::fs::read_to_string(&path) else {
+        return;
+    };
+    let Ok(value) = raw.parse::<toml::Value>() else {
+        tracing::warn!(
+            path = %path.display(),
+            "endpoints: ignoring unreadable zyth_endpoints.toml"
+        );
+        return;
+    };
+    let Some(table) = value.get("endpoints") else {
+        return;
+    };
+    if let Some(url) = table
+        .get("xai_api_base_url")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        // Env GROK_XAI_API_BASE_URL already applied in Default; only overlay
+        // when still at the public default (user has not pinned another host).
+        if endpoints.xai_api_base_url == XAI_API_BASE_URL_DEFAULT
+            || std::env::var("GROK_XAI_API_BASE_URL").is_err()
+        {
+            endpoints.xai_api_base_url = url.to_owned();
+        }
+    }
+    if endpoints.models_base_url.is_none()
+        && let Some(url) = table
+            .get("models_base_url")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+    {
+        endpoints.models_base_url = Some(url.to_owned());
+    }
+}
+
 impl EndpointsConfig {
     pub fn has_custom_endpoint(&self) -> bool {
         self.models_base_url.is_some() || self.models_list_url.is_some()
@@ -278,10 +321,12 @@ impl EndpointsConfig {
     /// layers — never derives one endpoint from another. Falls back to
     /// `default()` on load failure.
     pub fn from_effective_config() -> Self {
-        match crate::config::load_effective_config() {
+        let mut endpoints = match crate::config::load_effective_config() {
             Ok(cfg) => Self::from_config_value(&cfg),
             Err(_) => Self::default(),
-        }
+        };
+        apply_zyth_endpoints_overlay(&mut endpoints);
+        endpoints
     }
     /// Layer the `[endpoints]` table from `config` over the env/default base.
     /// No field is derived from another — defaulting is done by the resolvers.
