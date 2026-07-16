@@ -30,6 +30,10 @@ pub struct LogoutZythResult {
     pub scopes_removed: usize,
     /// True if the pre-Zyth model catalog was restored (or gateway models stripped).
     pub restored_models: bool,
+    /// True if at least one gateway virtual key was successfully revoked server-side.
+    pub remote_revoked: bool,
+    /// True if a remote revoke was attempted but failed (local clear still applied).
+    pub remote_revoke_failed: bool,
 }
 
 /// True if this auth.json scope key is a Zyth AuthStack scope.
@@ -117,6 +121,69 @@ fn remove_endpoint_overlay(grok_home: &Path) -> bool {
     }
 }
 
+/// Best-effort server-side revoke of a LiteLLM virtual key via gateway.
+///
+/// Uses the virtual key as Bearer against `/zyth/cli/v1/revoke`. Never panics;
+/// never logs the key. Returns whether the server reported success.
+///
+/// Set `ZYTH_SKIP_REMOTE_REVOKE=1` to skip network (unit tests / air-gapped).
+pub fn try_remote_revoke_virtual_key(api_key: &str) -> bool {
+    let key = api_key.trim();
+    if !(key.starts_with("sk-") || key.starts_with("cpa_")) {
+        return false;
+    }
+    if std::env::var("ZYTH_SKIP_REMOTE_REVOKE")
+        .map(|v| matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
+    {
+        return false;
+    }
+    let cfg = ZythLoginConfig::resolve();
+    let Some(revoke_url) = super::protocol::revoke_url_from_exchange(&cfg.exchange_url) else {
+        return false;
+    };
+    // Fail closed: revoke URL host must pass the same allowlist as exchange.
+    if super::protocol::validate_exchange_url(
+        &revoke_url
+            .replacen("/revoke", "/exchange", 1),
+    )
+    .is_err()
+    {
+        return false;
+    }
+    // Blocking best-effort; keep timeout short so offline logout stays snappy.
+    let client = match reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(3))
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return false,
+    };
+    match client
+        .post(&revoke_url)
+        .header("Authorization", format!("Bearer {key}"))
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .body("{}")
+        .send()
+    {
+        Ok(resp) => {
+            let ok = resp.status().is_success();
+            if !ok {
+                tracing::warn!(
+                    status = resp.status().as_u16(),
+                    "logoutzyth: remote key revoke HTTP failure"
+                );
+            }
+            ok
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "logoutzyth: remote key revoke network error");
+            false
+        }
+    }
+}
+
 /// Core `/logoutzyth` logic — pure disk + env, no AuthManager current-scope assumption.
 ///
 /// Guarantees:
@@ -124,6 +191,7 @@ fn remove_endpoint_overlay(grok_home: &Path) -> bool {
 /// - Never clears `xai::api_key` unless it **equals** a removed Zyth virtual key
 /// - Fail-soft on missing files (idempotent re-logout)
 /// - Does not log secret material
+/// - Best-effort remote revoke of collected Zyth virtual keys before discard
 pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLoginError> {
     let cfg = ZythLoginConfig::resolve();
     let path = grok_home.join("auth.json");
@@ -140,7 +208,7 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
     };
 
     let scopes = zyth_scopes_in_store(&store);
-    // Prefer configured scope first for email / key, then any other zyth scopes.
+    // Prefer configured scope first for email, then any other zyth scopes.
     let primary_scope = {
         let preferred = cfg.auth_scope();
         if scopes.iter().any(|s| s == &preferred) {
@@ -150,17 +218,33 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
         }
     };
 
-    let (email, zyth_key) = if let Some(ref sc) = primary_scope {
-        let auth = store.get(sc);
-        (
-            auth.and_then(|a| a.email.clone()),
-            auth.map(|a| a.key.clone()),
-        )
-    } else {
-        (None, None)
-    };
+    let email = primary_scope
+        .as_ref()
+        .and_then(|sc| store.get(sc))
+        .and_then(|a| a.email.clone());
+
+    // Collect **all** Zyth virtual keys across scopes (client_id rotation edge case).
+    let mut zyth_keys: Vec<String> = scopes
+        .iter()
+        .filter_map(|sc| store.get(sc).map(|a| a.key.clone()))
+        .filter(|k| !k.is_empty())
+        .collect();
+    zyth_keys.sort();
+    zyth_keys.dedup();
 
     let was_logged_in = !scopes.is_empty();
+
+    // Best-effort remote revoke **before** discarding local material.
+    let mut remote_revoked = false;
+    let mut remote_revoke_failed = false;
+    for key in &zyth_keys {
+        if try_remote_revoke_virtual_key(key) {
+            remote_revoked = true;
+        } else {
+            // Only count as failure when we actually had a key worth revoking.
+            remote_revoke_failed = true;
+        }
+    }
 
     xai_grok_telemetry::unified_log::info(
         "auth: logoutzyth",
@@ -171,6 +255,8 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
             // Never log key material — only whether email present.
             "has_email": email.is_some(),
             "issuer": normalize_issuer(&cfg.issuer),
+            "remote_revoked": remote_revoked,
+            "remote_revoke_failed": remote_revoke_failed,
         })),
     );
 
@@ -193,11 +279,10 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
         store.remove(sc);
     }
 
-    // Clear xai::api_key only when it is exactly the Zyth virtual key we stored.
+    // Clear xai::api_key when it equals **any** removed Zyth virtual key.
     let mut cleared_api_key = false;
-    if let Some(ref key) = zyth_key {
-        let api = store.get(API_KEY_SCOPE).map(|a| a.key.as_str());
-        if api == Some(key.as_str()) {
+    if let Some(api) = store.get(API_KEY_SCOPE).map(|a| a.key.clone()) {
+        if zyth_keys.iter().any(|k| k == &api) {
             store.remove(API_KEY_SCOPE);
             cleared_api_key = true;
         }
@@ -239,7 +324,13 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
     }
 
     let cleared_endpoints = remove_endpoint_overlay(grok_home);
-    deactivate_zyth_runtime(zyth_key.as_deref(), &cfg.gateway_base_url);
+    // Deactivate env for every collected Zyth key (not only primary).
+    for key in &zyth_keys {
+        deactivate_zyth_runtime(Some(key.as_str()), &cfg.gateway_base_url);
+    }
+    if zyth_keys.is_empty() {
+        deactivate_zyth_runtime(None, &cfg.gateway_base_url);
+    }
 
     let restored_models = restore_models_after_logoutzyth(grok_home).unwrap_or(false);
 
@@ -253,6 +344,8 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
         api_key_env_still_set,
         scopes_removed: scopes.len(),
         restored_models,
+        remote_revoked,
+        remote_revoke_failed,
     })
 }
 
@@ -260,7 +353,12 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
 ///
 /// Emphasizes model access removal — `/logoutzyth` never logs out of the whole CLI.
 pub fn format_logoutzyth_result(r: &LogoutZythResult) -> String {
-    if !r.was_logged_in && !r.cleared_api_key && !r.cleared_endpoints && !r.restored_models {
+    if !r.was_logged_in
+        && !r.cleared_api_key
+        && !r.cleared_endpoints
+        && !r.restored_models
+        && !r.remote_revoked
+    {
         return "No Zyth models / gateway session to remove.".to_owned();
     }
     let mut parts = Vec::new();
@@ -277,8 +375,14 @@ pub fn format_logoutzyth_result(r: &LogoutZythResult) -> String {
             parts.push("cleared Zyth SSO credentials".to_owned());
         }
     }
-    if r.cleared_api_key {
-        parts.push("revoked gateway API key".to_owned());
+    if r.remote_revoked {
+        parts.push("revoked gateway API key on server".to_owned());
+    } else if r.cleared_api_key {
+        // Honest wording: local clear is not remote revoke.
+        parts.push("cleared local gateway API key".to_owned());
+    }
+    if r.remote_revoke_failed && !r.remote_revoked {
+        parts.push("note: server-side key revoke failed (key may remain valid until expiry)".to_owned());
     }
     if r.cleared_endpoints {
         parts.push("restored default AI endpoints".to_owned());
@@ -300,18 +404,14 @@ pub fn format_logoutzyth_result(r: &LogoutZythResult) -> String {
 }
 
 /// Whether a GrokAuth entry looks like a Zyth-minted credential.
+///
+/// Requires a Zyth issuer host — bare `sk-` + client_id is **not** enough
+/// (would misclassify unrelated BYOK keys).
 pub fn is_zyth_auth_entry(auth: &GrokAuth) -> bool {
-    auth.oidc_issuer
-        .as_deref()
-        .is_some_and(|iss| {
-            let n = normalize_issuer(iss);
-            n.contains("auth.zyth.app") || n.contains("dev-yil7bnsv13ztmhuq.us.auth0.com")
-        })
-        || auth.key.starts_with("sk-")
-            && auth
-                .oidc_client_id
-                .as_deref()
-                .is_some_and(|c| !c.is_empty())
+    auth.oidc_issuer.as_deref().is_some_and(|iss| {
+        let n = normalize_issuer(iss);
+        n.contains("auth.zyth.app") || n.contains("dev-yil7bnsv13ztmhuq.us.auth0.com")
+    })
 }
 
 #[cfg(test)]
@@ -319,6 +419,14 @@ mod tests {
     use super::*;
     use crate::auth::model::{AuthMode, GrokAuth};
     use chrono::Utc;
+
+    fn skip_remote_revoke() {
+        // Unit tests must not block on production gateway network.
+        // SAFETY: test-only process env.
+        unsafe {
+            std::env::set_var("ZYTH_SKIP_REMOTE_REVOKE", "1");
+        }
+    }
 
     fn sample_zyth() -> GrokAuth {
         GrokAuth {
@@ -362,6 +470,7 @@ mod tests {
 
     #[test]
     fn logout_removes_zyth_keeps_xai() {
+        skip_remote_revoke();
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("auth.json");
         let mut store = AuthStore::new();
@@ -389,6 +498,7 @@ mod tests {
         assert!(r.cleared_endpoints);
         assert_eq!(r.scopes_removed, 1);
         // no models cache in this fixture — restored_models may be false
+        assert!(!r.remote_revoked);
 
         let after = read_auth_json(&path).unwrap();
         assert!(after.contains_key("https://auth.x.ai::xai-client"));
@@ -403,6 +513,7 @@ mod tests {
 
     #[test]
     fn logout_idempotent_when_nothing_to_clear() {
+        skip_remote_revoke();
         let dir = tempfile::tempdir().unwrap();
         let r = perform_logoutzyth(dir.path()).unwrap();
         assert!(!r.was_logged_in);
@@ -413,6 +524,7 @@ mod tests {
 
     #[test]
     fn logout_does_not_clear_unrelated_api_key() {
+        skip_remote_revoke();
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("auth.json");
         let mut store = AuthStore::new();
@@ -447,10 +559,18 @@ mod tests {
             api_key_env_still_set: false,
             scopes_removed: 1,
             restored_models: true,
+            remote_revoked: false,
+            remote_revoke_failed: true,
         });
         assert!(!msg.contains("sk-"));
         assert!(msg.contains("Zyth") || msg.contains("models"));
         assert!(msg.to_lowercase().contains("model"));
+        // Must not claim remote "revoked" when only local clear happened.
+        assert!(!msg.to_lowercase().contains("revoked gateway api key on server"));
+        assert!(
+            msg.to_lowercase().contains("cleared local")
+                || msg.to_lowercase().contains("model")
+        );
     }
 
     #[test]
@@ -463,11 +583,58 @@ mod tests {
             api_key_env_still_set: false,
             scopes_removed: 1,
             restored_models: false,
+            remote_revoked: false,
+            remote_revoke_failed: false,
         });
         let lower = msg.to_lowercase();
         assert!(lower.contains("model") || lower.contains("gateway"));
         // Must not sound like full CLI logout / welcome.
         assert!(!lower.contains("welcome"));
         assert!(!lower.contains("session ended"));
+    }
+
+    #[test]
+    fn logout_clears_api_key_matching_any_zyth_scope() {
+        skip_remote_revoke();
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("auth.json");
+        let mut store = AuthStore::new();
+        let mut z1 = sample_zyth();
+        z1.key = "sk-primary-aaaa".into();
+        let mut z2 = sample_zyth();
+        z2.key = "sk-secondary-bbbb".into();
+        store.insert("https://auth.zyth.app::cli-client".into(), z1);
+        store.insert("https://auth.zyth.app::old-client".into(), z2);
+        store.insert(
+            API_KEY_SCOPE.to_owned(),
+            GrokAuth {
+                key: "sk-secondary-bbbb".into(),
+                auth_mode: AuthMode::ApiKey,
+                ..GrokAuth::default()
+            },
+        );
+        write_auth_json(&path, &store).unwrap();
+
+        // Remote revoke skipped via env — local clear must still work.
+        let r = perform_logoutzyth(dir.path()).unwrap();
+        assert!(r.was_logged_in);
+        assert!(r.cleared_api_key);
+        assert_eq!(r.scopes_removed, 2);
+        // File may be deleted when empty after clearing only Zyth keys.
+        if path.exists() {
+            let after = read_auth_json(&path).unwrap();
+            assert!(!after.contains_key(API_KEY_SCOPE));
+            assert!(!after.keys().any(|k| is_zyth_auth_scope(k)));
+        }
+    }
+
+    #[test]
+    fn is_zyth_auth_entry_requires_issuer() {
+        let mut auth = sample_zyth();
+        assert!(is_zyth_auth_entry(&auth));
+        auth.oidc_issuer = None;
+        assert!(!is_zyth_auth_entry(&auth));
+        auth.oidc_issuer = Some("https://auth.x.ai".into());
+        assert!(!is_zyth_auth_entry(&auth));
     }
 }

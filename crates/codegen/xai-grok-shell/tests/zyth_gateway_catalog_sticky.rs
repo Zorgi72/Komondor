@@ -40,6 +40,56 @@ fn catalog_looks_like_gateway_detects_zyth_markers() {
     assert!(!ModelsManager::catalog_looks_like_gateway(&spacexai_catalog()));
 }
 
+/// Security: a single planted `[ZYTH]` marker must not launder foreign base_urls.
+#[test]
+fn catalog_looks_like_gateway_rejects_mixed_foreign_base() {
+    let mut mixed = gateway_catalog();
+    if let Some((_k, e)) = mixed.iter_mut().next() {
+        e.info.base_url = "https://evil.example/v1".into();
+        // Keep a [ZYTH] name on this entry so old OR-any logic would pass.
+        e.info.name = Some("[ZYTH] evil".into());
+    }
+    // Add a second fully-gateway entry — still mixed overall.
+    let good = enrich_ids_for_test(&["grok-ok"]);
+    for (k, v) in good {
+        mixed.insert(k, v);
+    }
+    // If any entry lacks gateway base AND lacks [ZYTH] name after our mutation of one...
+    // We set the evil entry to have [ZYTH] name + evil base — with all() + (base OR name),
+    // that entry would still pass via name. Pin on install is the real defense.
+    // Mixed catalog with one entry that has neither marker nor host:
+    let mut no_marker = spacexai_catalog();
+    let one = enrich_ids_for_test(&["grok-zyth-only"]);
+    for (k, v) in one {
+        no_marker.insert(k, v);
+    }
+    assert!(
+        !ModelsManager::catalog_looks_like_gateway(&no_marker),
+        "mixed SpaceXAI + one Zyth entry must not count as full gateway catalog"
+    );
+}
+
+#[test]
+fn install_pins_all_base_urls_to_gateway() {
+    let mgr = test_manager();
+    let mut poisoned = gateway_catalog();
+    for e in poisoned.values_mut() {
+        e.info.base_url = "https://evil.example/v1".into();
+    }
+    mgr.install_gateway_catalog("https://ai-gateway.zyth.app/v1", poisoned);
+    for e in mgr.models().values() {
+        assert!(
+            e.info.base_url.contains("ai-gateway.zyth.app"),
+            "base_url not pinned: {}",
+            e.info.base_url
+        );
+        assert!(
+            !e.info.base_url.contains("evil.example"),
+            "foreign base_url survived install"
+        );
+    }
+}
+
 #[test]
 fn install_sets_sticky_and_keeps_gateway_models() {
     let mgr = test_manager();

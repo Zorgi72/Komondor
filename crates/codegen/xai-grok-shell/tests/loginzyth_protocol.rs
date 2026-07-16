@@ -1,9 +1,11 @@
 //! Gating tests for `/loginzyth` pure protocol helpers (shipped code paths).
+//! Security properties: CSRF state, exchange allowlist, credential shape, logout isolation.
 
 use xai_grok_shell::auth::{
     ZYTH_AI_GATEWAY_BASE_URL, ZYTH_CLI_CLIENT_ID, ZYTH_ISSUER, ZythLoginConfig, ZythLoginError,
     build_authorize_url_parts, parse_exchange_response, parse_pasted_input, perform_logoutzyth,
-    scope_key, user_message, validate_exchange_url, validate_gateway_credential, validate_state,
+    revoke_url_from_exchange, scope_key, user_message, validate_exchange_url,
+    validate_gateway_credential, validate_state,
 };
 
 #[test]
@@ -57,14 +59,19 @@ fn gateway_credential_rules() {
     assert!(
         validate_gateway_credential("eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ4In0.sig").is_err()
     );
+    // Security: bare `sk` without hyphen is not a virtual key.
+    assert!(validate_gateway_credential("sknotdashed").is_err());
+    assert!(validate_gateway_credential("sk-x").is_err());
 }
 
 #[test]
 fn exchange_response_parse() {
-    let body = r#"{"api_key":"sk-ok","base_url":"https://ai-gateway.zyth.app/v1"}"#;
+    let body = r#"{"api_key":"sk-ok-long-enough","base_url":"https://ai-gateway.zyth.app/v1"}"#;
     let r = parse_exchange_response(body).unwrap();
-    assert_eq!(r.api_key, "sk-ok");
+    assert_eq!(r.api_key, "sk-ok-long-enough");
     assert!(parse_exchange_response(r#"{"api_key":"not-a-key"}"#).is_err());
+    // Too short sk- rejected by min length.
+    assert!(parse_exchange_response(r#"{"api_key":"sk-x"}"#).is_err());
 }
 
 #[test]
@@ -96,10 +103,52 @@ fn exchange_url_allowlist_shipped() {
     validate_exchange_url("https://ai-gateway.zyth.app/zyth/cli/v1/exchange").unwrap();
     assert!(validate_exchange_url("https://evil.example/exchange").is_err());
     assert!(validate_exchange_url("http://ai-gateway.zyth.app/exchange").is_err());
+    assert!(validate_exchange_url("https://ai-gateway.zyth.app.evil.com/x").is_err());
+    assert!(validate_exchange_url("https://user:pass@ai-gateway.zyth.app/x").is_err());
+}
+
+#[test]
+fn revoke_url_derives_from_exchange() {
+    assert_eq!(
+        revoke_url_from_exchange("https://ai-gateway.zyth.app/zyth/cli/v1/exchange").as_deref(),
+        Some("https://ai-gateway.zyth.app/zyth/cli/v1/revoke")
+    );
+    // Revoke host still subject to allowlist via validate on exchange sibling.
+    let rev = revoke_url_from_exchange("https://ai-gateway.zyth.app/zyth/cli/v1/exchange").unwrap();
+    let sibling = rev.replacen("/revoke", "/exchange", 1);
+    validate_exchange_url(&sibling).unwrap();
+}
+
+#[test]
+fn state_rejects_empty_and_length_mismatch() {
+    assert!(matches!(
+        validate_state("", "x"),
+        Err(ZythLoginError::StateMismatch)
+    ));
+    assert!(matches!(
+        validate_state("abc", "ab"),
+        Err(ZythLoginError::StateMismatch)
+    ));
+    assert!(matches!(
+        validate_state("good", "evil"),
+        Err(ZythLoginError::StateMismatch)
+    ));
+}
+
+#[test]
+fn paste_rejects_non_loopback_callback_host() {
+    let e = parse_pasted_input("https://evil.example/callback?code=c&state=s").unwrap_err();
+    assert!(matches!(e, ZythLoginError::InvalidPastedInput(_)));
+    let e = parse_pasted_input("http://127.0.0.1/callback?code=c").unwrap_err();
+    assert!(matches!(e, ZythLoginError::InvalidPastedInput(_)));
 }
 
 #[test]
 fn logoutzyth_idempotent_empty_home() {
+    // Avoid network to production revoke endpoint in unit tests.
+    unsafe {
+        std::env::set_var("ZYTH_SKIP_REMOTE_REVOKE", "1");
+    }
     let dir = tempfile::tempdir().unwrap();
     let r = perform_logoutzyth(dir.path()).unwrap();
     assert!(!r.was_logged_in);
@@ -146,6 +195,9 @@ fn logoutzyth_preserves_xai_scope() {
     use xai_grok_shell::auth::{AuthMode, GrokAuth, read_auth_json, store_api_key};
     use std::collections::BTreeMap;
 
+    unsafe {
+        std::env::set_var("ZYTH_SKIP_REMOTE_REVOKE", "1");
+    }
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("auth.json");
     let mut store = BTreeMap::new();

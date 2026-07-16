@@ -47,8 +47,9 @@ pub use zyth::{
     LogoutZythResult, PastedCallback, ZYTH_AI_GATEWAY_BASE_URL, ZYTH_CLI_CLIENT_ID, ZYTH_ISSUER,
     ZythLoginConfig, ZythLoginError, build_authorize_url_parts, format_loginzyth_error,
     format_logoutzyth_result, is_zyth_auth_entry, is_zyth_auth_scope, parse_exchange_response,
-    parse_pasted_input, perform_logoutzyth, run_loginzyth_flow, scope_key, user_message,
-    validate_exchange_url, validate_gateway_base_url, validate_gateway_credential, validate_state,
+    parse_pasted_input, perform_logoutzyth, revoke_url_from_exchange, run_loginzyth_flow,
+    scope_key, user_message, validate_exchange_url, validate_gateway_base_url,
+    validate_gateway_credential, validate_state,
 };
 // Used by logoutzyth remaining-auth checks (keep scoped API key constant available).
 pub use model::API_KEY_SCOPE;

@@ -26,6 +26,6 @@ pub use models::{
 };
 pub use protocol::{
     PastedCallback, ZythLoginError, build_authorize_url_parts, parse_exchange_response,
-    parse_pasted_input, user_message, validate_exchange_url, validate_gateway_base_url,
-    validate_gateway_credential, validate_state,
+    parse_pasted_input, revoke_url_from_exchange, user_message, validate_exchange_url,
+    validate_gateway_base_url, validate_gateway_credential, validate_state,
 };

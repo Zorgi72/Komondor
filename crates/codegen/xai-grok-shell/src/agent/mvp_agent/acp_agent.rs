@@ -718,6 +718,14 @@ impl acp::Agent for MvpAgent {
                 );
                 let login_override = auth_meta.login_override();
                 let (auth, _did_auth) = if !auth_meta.headless {
+                    // Reject concurrent auth flows (loginzyth / second login share channels).
+                    if self.auth_code_tx.borrow().is_some()
+                        || self.auth_url_rx.borrow().is_some()
+                    {
+                        return Err(acp::Error::invalid_params().data(
+                            "another authentication flow is already in progress",
+                        ));
+                    }
                     let (url_tx, url_rx) = tokio::sync::oneshot::channel();
                     let (code_tx, code_rx) = tokio::sync::mpsc::channel(1);
                     *self.auth_code_tx.borrow_mut() = Some(code_tx);

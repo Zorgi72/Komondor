@@ -30,6 +30,13 @@ pub async fn handle(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
 
 /// `/loginzyth` — Zyth AuthStack OIDC + AI gateway virtual-key mint.
 async fn handle_loginzyth(agent: &MvpAgent) -> ExtResult {
+    // Reject concurrent loginzyth (and clash with SpaceXAI login sharing channels).
+    if agent.auth_code_tx.borrow().is_some() || agent.auth_url_rx.borrow().is_some() {
+        return Err(acp::Error::invalid_params().data(
+            "another authentication flow is already in progress; cancel it or wait before /loginzyth",
+        ));
+    }
+
     let grok_home = crate::util::grok_home::grok_home();
     let (url_tx, url_rx) = tokio::sync::oneshot::channel();
     let (code_tx, code_rx) = tokio::sync::mpsc::channel(1);

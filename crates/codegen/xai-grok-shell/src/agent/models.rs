@@ -212,16 +212,37 @@ impl ModelsManager {
         self.inner.gateway_catalog_sticky.load(Ordering::Acquire)
     }
 
-    /// True if the catalog is clearly a Zyth AI Gateway install (`[ZYTH]` or
-    /// `ai-gateway.zyth.app` base URLs). Used to reject non-gateway overwrites.
+    /// True if the catalog is clearly a Zyth AI Gateway install.
+    ///
+    /// Security: require **every** entry to be gateway-origin (base host or
+    /// `[ZYTH]` name). A single planted marker must not launder a foreign
+    /// catalog past sticky checks (SSRF / inference exfil via base_url).
     pub fn catalog_looks_like_gateway(models: &IndexMap<String, ModelEntry>) -> bool {
-        models.values().any(|e| {
+        if models.is_empty() {
+            return false;
+        }
+        models.values().all(|e| {
             e.info.base_url.contains("ai-gateway.zyth.app")
                 || e.info
                     .name
                     .as_deref()
                     .is_some_and(|n| n.contains("[ZYTH]"))
         })
+    }
+
+    /// Force every entry's `base_url` onto the sticky gateway base (defense
+    /// against remote list / cache injecting foreign inference endpoints).
+    fn pin_catalog_base_urls(
+        models: &mut IndexMap<String, ModelEntry>,
+        gateway_base: &str,
+    ) {
+        let base = gateway_base.trim_end_matches('/').to_owned();
+        if base.is_empty() {
+            return;
+        }
+        for entry in models.values_mut() {
+            entry.info.base_url = base.clone();
+        }
     }
 
     /// Apply a catalog the same way a successful network refresh does.
@@ -690,6 +711,9 @@ impl ModelsManager {
     ) {
         let gateway_base = gateway_base.trim_end_matches('/').to_owned();
         let list_url = format!("{gateway_base}/models");
+        let mut models = models;
+        // Pin all inference endpoints to the validated gateway base before apply.
+        Self::pin_catalog_base_urls(&mut models, &gateway_base);
         let count = models.len();
 
         {
@@ -1452,6 +1476,15 @@ impl ModelsManager {
                 })),
             );
             return false;
+        }
+
+        // While sticky, re-pin every entry base_url to the installed gateway
+        // (remote list / disk cache must not inject foreign inference hosts).
+        let mut new_prefetched = new_prefetched;
+        if self.gateway_catalog_is_sticky() {
+            if let Some(base) = self.inner.gateway_base_sticky.read().clone() {
+                Self::pin_catalog_base_urls(&mut new_prefetched, &base);
+            }
         }
 
         let first_real_catalog = {

@@ -208,7 +208,12 @@ pub fn validate_gateway_credential(api_key: &str) -> Result<(), ZythLoginError> 
         return Err(ZythLoginError::InvalidGatewayCredential);
     }
     // Edge accepts sk-… virtual keys and cpa_… machine keys.
-    if k.starts_with("sk-") || k.starts_with("sk") || k.starts_with("cpa_") {
+    // Require the `sk-` delimiter (not bare `sk` prefix) to reject junk / JWT-ish strings.
+    if k.starts_with("sk-") || k.starts_with("cpa_") {
+        // Minimum length guard against trivial placeholders.
+        if k.len() < 8 {
+            return Err(ZythLoginError::InvalidGatewayCredential);
+        }
         return Ok(());
     }
     // Reject obvious Auth0 JWT-shaped tokens (three base64 segments) as insufficient.
@@ -216,6 +221,27 @@ pub fn validate_gateway_credential(api_key: &str) -> Result<(), ZythLoginError> 
         return Err(ZythLoginError::InvalidGatewayCredential);
     }
     Err(ZythLoginError::InvalidGatewayCredential)
+}
+
+/// Derive the revoke URL from an exchange URL (`…/exchange` → `…/revoke`).
+pub fn revoke_url_from_exchange(exchange_url: &str) -> Option<String> {
+    let u = exchange_url.trim();
+    if u.is_empty() {
+        return None;
+    }
+    if let Some(base) = u.strip_suffix("/exchange") {
+        return Some(format!("{base}/revoke"));
+    }
+    if u.ends_with("/v1") {
+        return Some(format!("{u}/revoke"));
+    }
+    // Fallback: sibling path under /zyth/cli/v1/
+    if u.contains("/zyth/cli/v1/") {
+        if let Some(idx) = u.find("/zyth/cli/v1/") {
+            return Some(format!("{}{}", &u[..idx], "/zyth/cli/v1/revoke"));
+        }
+    }
+    None
 }
 
 /// Parse exchange HTTP body without logging secrets.
@@ -483,10 +509,24 @@ mod tests {
         validate_gateway_credential("sk-testkey1234567890").unwrap();
         validate_gateway_credential("cpa_machine_key_here").unwrap();
         assert!(validate_gateway_credential("").is_err());
+        // Bare `sk` without hyphen must be rejected (was overly broad).
+        assert!(validate_gateway_credential("sknotdashed").is_err());
+        assert!(validate_gateway_credential("sk").is_err());
+        assert!(validate_gateway_credential("sk-x").is_err()); // too short
         assert!(validate_gateway_credential(
             "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.sig"
         )
         .is_err());
+    }
+
+    #[test]
+    fn revoke_url_from_exchange_path() {
+        assert_eq!(
+            revoke_url_from_exchange("https://ai-gateway.zyth.app/zyth/cli/v1/exchange")
+                .as_deref(),
+            Some("https://ai-gateway.zyth.app/zyth/cli/v1/revoke")
+        );
+        assert!(revoke_url_from_exchange("").is_none());
     }
 
     #[test]
