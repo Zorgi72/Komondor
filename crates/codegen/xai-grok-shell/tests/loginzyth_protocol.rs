@@ -133,6 +133,7 @@ fn model_enrichment_covers_all_gateway_ids_with_thinking() {
     assert!(g.info.reasoning_efforts.len() >= 3);
     assert!(g.info.base_url.contains("ai-gateway.zyth.app"));
     assert!(g.info.supported_in_api);
+    assert_eq!(g.info.name.as_deref(), Some("[ZYTH] Grok 4.5"));
     let r = map.get("grok-4.20-0309-reasoning").unwrap();
     assert!(r.info.supports_reasoning_effort);
     let n = map.get("grok-4.20-0309-non-reasoning").unwrap();

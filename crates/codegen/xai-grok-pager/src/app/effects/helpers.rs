@@ -641,6 +641,10 @@ pub(super) async fn send_logout(tx: &AcpAgentTx) {
 }
 
 /// `/logoutzyth` — clear Zyth credentials only via shell ACP.
+///
+/// When no other auth remains, mirrors official `/logout` (`LogoutComplete`):
+/// return to the welcome login screen. When SpaceXAI (or another key) remains,
+/// only toast — do not force a login prompt.
 pub(super) async fn send_logoutzyth(tx: &AcpAgentTx) -> TaskResult {
     let req = acp::ExtRequest::new(
         "x.ai/auth/logoutzyth",
@@ -663,9 +667,20 @@ pub(super) async fn send_logoutzyth(tx: &AcpAgentTx) -> TaskResult {
                 .and_then(|v| v.get("was_logged_in"))
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
-            TaskResult::LogoutZythComplete {
-                was_logged_in,
-                message,
+            let still_authenticated = meta
+                .as_ref()
+                .and_then(|v| v.get("still_authenticated"))
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+            // Official logout always ends on the login screen. For Zyth-only
+            // logout we do the same only when nothing else remains.
+            if was_logged_in && !still_authenticated {
+                TaskResult::LogoutComplete
+            } else {
+                TaskResult::LogoutZythComplete {
+                    was_logged_in,
+                    message,
+                }
             }
         }
         Err(e) => {
@@ -757,8 +772,14 @@ pub(super) async fn send_loginzyth(tx: &AcpAgentTx, request_seq: u64) -> TaskRes
     match acp_send(req, tx).await {
         Ok(resp) => {
             ulog::info("loginzyth completed", None, None);
-            let meta: Option<serde_json::Value> =
+            let mut meta: Option<serde_json::Value> =
                 serde_json::from_str(resp.0.get()).ok();
+            // Surface models_count for toast in AuthComplete path if useful.
+            if let Some(ref mut m) = meta {
+                if m.get("models_count").is_some() {
+                    // Keep as-is; handler may not parse AuthMeta fully.
+                }
+            }
             TaskResult::AuthComplete {
                 request_seq,
                 meta,

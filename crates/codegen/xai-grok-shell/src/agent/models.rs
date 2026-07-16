@@ -581,6 +581,92 @@ impl ModelsManager {
         self.do_refresh(Some(etag), RefreshStrategy::Online);
     }
 
+    /// Install a fully-built catalog (e.g. Zyth AI Gateway after `/loginzyth`).
+    ///
+    /// Unlike [`Self::on_auth_changed`], this does **not** re-fetch from the
+    /// xAI cli-chat-proxy (which would overwrite gateway models when a SpaceXAI
+    /// OIDC session is still present). It:
+    /// 1. Points `endpoints` at `gateway_base` for inference + model list
+    /// 2. Sets `fetch_auth` to custom-endpoint / API-key style
+    /// 3. Applies `models` as the live prefetched catalog and notifies clients
+    /// 4. Persists matching `models_cache.json` so reloads stay consistent
+    pub fn install_gateway_catalog(
+        &self,
+        gateway_base: &str,
+        models: IndexMap<String, ModelEntry>,
+    ) {
+        let gateway_base = gateway_base.trim_end_matches('/').to_owned();
+        let list_url = format!("{gateway_base}/models");
+        let count = models.len();
+
+        {
+            let mut cfg = self.inner.cfg.write();
+            cfg.endpoints.xai_api_base_url = gateway_base.clone();
+            cfg.endpoints.models_base_url = Some(gateway_base.clone());
+            cfg.endpoints.models_list_url = Some(list_url.clone());
+        }
+        *self.inner.fetch_auth.write() = ModelFetchAuth::CustomEndpoint;
+
+        let cfg = self.inner.cfg.read().clone();
+        let applied = self.apply_refresh_result(&cfg, Some(models.clone()), None);
+        if applied {
+            self.inner.cache.persist(
+                &models,
+                None,
+                CacheAuthMethod::ApiKey,
+                &list_url,
+            );
+            tracing::info!(
+                count,
+                origin = %list_url,
+                "model catalog: installed gateway catalog (loginzyth)"
+            );
+            xai_grok_telemetry::unified_log::info(
+                "model catalog: installed gateway catalog",
+                None,
+                Some(serde_json::json!({
+                    "model_count": count,
+                    "origin": list_url,
+                })),
+            );
+            self.notify_models_updated();
+        }
+    }
+
+    /// Revert gateway endpoints and re-fetch / restore catalog after `/logoutzyth`.
+    pub async fn uninstall_gateway_catalog(&self) {
+        // Drop custom models_base so resolve falls back to proxy / defaults.
+        {
+            let mut cfg = self.inner.cfg.write();
+            if cfg
+                .endpoints
+                .xai_api_base_url
+                .contains("ai-gateway.zyth.app")
+            {
+                cfg.endpoints.xai_api_base_url =
+                    crate::agent::config::XAI_API_BASE_URL_DEFAULT.to_owned();
+            }
+            if cfg
+                .endpoints
+                .models_base_url
+                .as_deref()
+                .is_some_and(|u| u.contains("ai-gateway.zyth.app"))
+            {
+                cfg.endpoints.models_base_url = None;
+            }
+            if cfg
+                .endpoints
+                .models_list_url
+                .as_deref()
+                .is_some_and(|u| u.contains("ai-gateway.zyth.app"))
+            {
+                cfg.endpoints.models_list_url = None;
+            }
+        }
+        // Full auth-driven refresh: picks Session if SpaceXAI still logged in.
+        self.on_auth_changed().await;
+    }
+
     /// Auth identity changed: invalidate disk cache and refresh the catalog.
     ///
     /// Safe on OIDC token recovery after idle: we never drop a successfully-fetched

@@ -49,31 +49,52 @@ async fn handle_loginzyth(agent: &MvpAgent) -> ExtResult {
     *agent.auth_url_rx.borrow_mut() = None;
 
     match result {
-        Ok(auth) => {
+        Ok(outcome) => {
+            let auth = &outcome.auth;
             {
                 let mut sampling_config = agent.sampling_config.borrow_mut();
                 sampling_config.api_key = Some(auth.key.clone());
+                // Point sampling base at the Zyth gateway (not cli-chat-proxy).
+                if let Some(ref models) = outcome.models {
+                    // Prefer first model base_url if present.
+                    if let Some(entry) = models.values().next() {
+                        sampling_config.base_url = entry.info.base_url.clone();
+                    }
+                }
             }
-            // Do not hot_swap over xAI OIDC as the AuthManager active scope;
-            // virtual key is active via XAI_API_KEY + auth.json xai::api_key + zyth scope.
-            agent.models_manager.on_auth_changed().await;
+            // Update agent endpoints so inference + future fetches use gateway.
+            {
+                let mut cfg = agent.cfg.borrow_mut();
+                cfg.endpoints.xai_api_base_url = outcome.gateway_base.clone();
+                cfg.endpoints.models_base_url = Some(outcome.gateway_base.clone());
+                cfg.endpoints.models_list_url =
+                    Some(format!("{}/models", outcome.gateway_base.trim_end_matches('/')));
+            }
+            // Install catalog into ModelsManager WITHOUT on_auth_changed
+            // (that would re-fetch from SpaceXAI cli-chat-proxy and wipe Zyth models).
+            if let Some(models) = outcome.models {
+                agent
+                    .models_manager
+                    .install_gateway_catalog(&outcome.gateway_base, models);
+            }
             tracing::info_span!("auth.lifecycle", action = "loginzyth", success = true)
                 .in_scope(|| {});
-            // Hot-reload model catalog written by loginzyth (gateway inventory).
-            agent.models_manager.on_auth_changed().await;
             to_raw_response(&serde_json::json!({
                 "ok": true,
                 "provider": "zyth",
                 "auth": "sso",
                 "user_id": auth.user_id,
                 "email": auth.email,
-                "gateway": crate::auth::zyth::ZYTH_AI_GATEWAY_BASE_URL,
+                "gateway": outcome.gateway_base,
+                "models_count": outcome.models_count,
             }))
         }
         Err(e) => {
             let msg = crate::auth::format_loginzyth_error(&e);
             tracing::warn!(error = %msg, "loginzyth failed");
-            Err(acp::Error::auth_required().data(msg))
+            // Use internal_error so the TUI shows the message as a failed
+            // login attempt, not a generic "auth required" re-login loop.
+            Err(acp::Error::internal_error().data(msg))
         }
     }
 }
@@ -206,8 +227,14 @@ async fn handle_logoutzyth(agent: &MvpAgent) -> ExtResult {
     )
     .in_scope(|| {});
 
-    // Reload catalog after restore/strip of Zyth models.
-    agent.models_manager.on_auth_changed().await;
+    // Restore endpoints + catalog the same way SpaceXAI logout refreshes models
+    // after identity change — but only after disk restore of pre-Zyth cache.
+    agent.models_manager.uninstall_gateway_catalog().await;
+
+    // Still have SpaceXAI OIDC or another API key?
+    let still_authenticated = agent.auth_manager.current_or_expired().is_some()
+        || crate::auth::read_api_key(&grok_home).is_some()
+        || crate::agent::auth_method::has_xai_api_key_env();
 
     let message = crate::auth::format_logoutzyth_result(&result);
     to_raw_response(&serde_json::json!({
@@ -219,6 +246,7 @@ async fn handle_logoutzyth(agent: &MvpAgent) -> ExtResult {
         "scopes_removed": result.scopes_removed,
         "restored_models": result.restored_models,
         "api_key_env_still_set": result.api_key_env_still_set,
+        "still_authenticated": still_authenticated,
         "message": message,
     }))
 }

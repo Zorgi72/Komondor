@@ -315,6 +315,25 @@ pub(super) fn handle_auth_complete(
         app.welcome_prompt_focused = !app.is_access_blocked();
         app.auth_code_input.clear();
 
+        // `/loginzyth` returns provider/models_count in meta — toast so the
+        // user sees gateway models were installed (picker updates via
+        // x.ai/models/update from ModelsManager::install_gateway_catalog).
+        if let Some(meta_val) = meta.as_ref() {
+            if meta_val.get("provider").and_then(|v| v.as_str()) == Some("zyth") {
+                let n = meta_val
+                    .get("models_count")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(0);
+                if n > 0 {
+                    app.show_toast(&format!(
+                        "Zyth SSO ready — {n} [ZYTH] models loaded from gateway"
+                    ));
+                } else {
+                    app.show_toast("Zyth SSO ready");
+                }
+            }
+        }
+
         // Mid-session re-auth (`/login` or a 401 prompt): restore the
         // view the user was on instead of running the startup
         // load-session flow. The session state lives in `app.agents`,

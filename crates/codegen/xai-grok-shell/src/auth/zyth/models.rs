@@ -58,13 +58,13 @@ struct OpenAiModel {
     id: String,
 }
 
-/// Fetch models from the gateway with the SSO-minted virtual key and write
-/// `~/.grok/models_cache.json` so the TUI loads them all.
-pub async fn sync_zyth_models_from_gateway(
-    grok_home: &Path,
+/// Fetch + enrich gateway models; returns the catalog map for
+/// [`crate::agent::models::ModelsManager::install_gateway_catalog`].
+pub async fn fetch_and_enrich_zyth_models(
     gateway_base: &str,
     bearer: &str,
-) -> Result<ZythModelsSyncResult, ZythLoginError> {
+    prior: &IndexMap<String, ModelEntry>,
+) -> Result<(IndexMap<String, ModelEntry>, ZythModelsSyncResult), ZythLoginError> {
     let base = gateway_base.trim_end_matches('/');
     let list_url = if base.ends_with("/models") {
         base.to_owned()
@@ -76,6 +76,10 @@ pub async fn sync_zyth_models_from_gateway(
         .get(&list_url)
         .header("Authorization", format!("Bearer {bearer}"))
         .header("Accept", "application/json")
+        .header(
+            "User-Agent",
+            format!("zyth-cli/{}", xai_grok_version::VERSION),
+        )
         .timeout(std::time::Duration::from_secs(30))
         .send()
         .await
@@ -102,18 +106,6 @@ pub async fn sync_zyth_models_from_gateway(
         ));
     }
 
-    let cache_path = grok_home.join(MODELS_CACHE_FILE);
-    let backup_path = grok_home.join(PRE_ZYTH_CACHE);
-    if cache_path.exists() && !backup_path.exists() {
-        let _ = std::fs::copy(&cache_path, &backup_path);
-    }
-
-    let prior: IndexMap<String, ModelEntry> = std::fs::read(&cache_path)
-        .ok()
-        .and_then(|b| serde_json::from_slice::<DiskModelsCache>(&b).ok())
-        .map(|c| c.models)
-        .unwrap_or_default();
-
     let mut models = IndexMap::new();
     let mut ids = Vec::new();
     for m in &parsed.data {
@@ -125,30 +117,68 @@ pub async fn sync_zyth_models_from_gateway(
         models.insert(id.to_owned(), enrich_model_entry(id, base, prior.get(id)));
     }
 
+    let result = ZythModelsSyncResult {
+        count: ids.len(),
+        origin: list_url,
+        model_ids: ids,
+    };
+    Ok((models, result))
+}
+
+/// Fetch models from the gateway with the SSO-minted virtual key and write
+/// `~/.grok/models_cache.json` so the TUI loads them all.
+pub async fn sync_zyth_models_from_gateway(
+    grok_home: &Path,
+    gateway_base: &str,
+    bearer: &str,
+) -> Result<(IndexMap<String, ModelEntry>, ZythModelsSyncResult), ZythLoginError> {
+    let cache_path = grok_home.join(MODELS_CACHE_FILE);
+    let backup_path = grok_home.join(PRE_ZYTH_CACHE);
+    // Only backup a non-Zyth catalog so logout can restore SpaceXAI models.
+    if cache_path.exists() && !backup_path.exists() {
+        if let Ok(raw) = std::fs::read(&cache_path) {
+            if let Ok(existing) = serde_json::from_slice::<DiskModelsCache>(&raw) {
+                let is_zyth = existing
+                    .origin
+                    .as_deref()
+                    .is_some_and(|o| o.contains("ai-gateway.zyth.app"));
+                if !is_zyth {
+                    let _ = std::fs::copy(&cache_path, &backup_path);
+                }
+            }
+        }
+    }
+
+    let prior: IndexMap<String, ModelEntry> = std::fs::read(&cache_path)
+        .ok()
+        .and_then(|b| serde_json::from_slice::<DiskModelsCache>(&b).ok())
+        .map(|c| c.models)
+        .unwrap_or_default();
+
+    let (models, result) =
+        fetch_and_enrich_zyth_models(gateway_base, bearer, &prior).await?;
+
+    let base = gateway_base.trim_end_matches('/');
     let cache = DiskModelsCache {
         fetched_at: Utc::now(),
         grok_version: Some(xai_grok_version::VERSION.to_string()),
         // Matches CacheAuthMethod::ApiKey — SSO-minted virtual key Bearer.
         auth_method: Some("api_key".into()),
-        origin: Some(list_url.clone()),
+        origin: Some(result.origin.clone()),
         etag: None,
         models: models.clone(),
     };
 
     write_models_cache_atomic(&cache_path, &cache)?;
-    write_zyth_marker(grok_home, &ids, base)?;
+    write_zyth_marker(grok_home, &result.model_ids, base)?;
 
     tracing::info!(
-        count = ids.len(),
-        origin = %list_url,
+        count = result.count,
+        origin = %result.origin,
         "loginzyth: synced gateway models into models_cache.json"
     );
 
-    Ok(ZythModelsSyncResult {
-        count: ids.len(),
-        origin: list_url,
-        model_ids: ids,
-    })
+    Ok((models, result))
 }
 
 /// Remove Zyth gateway models and restore pre-login catalog if available.
@@ -248,9 +278,13 @@ fn enrich_model_entry(id: &str, gateway_base: &str, prior: Option<&ModelEntry>) 
         .and_then(|i| i.reasoning_effort)
         .or(meta.default_effort);
 
-    let name = prior_info
+    // Always show [ZYTH] prefix in the model selector for gateway SSO models.
+    let bare_name = prior_info
         .and_then(|i| i.name.clone())
-        .or_else(|| Some(meta.display_name.to_owned()));
+        .filter(|n| !n.is_empty())
+        .map(|n| n.trim_start_matches("[ZYTH] ").to_owned())
+        .unwrap_or_else(|| meta.display_name.to_owned());
+    let name = Some(format!("[ZYTH] {bare_name}"));
 
     let description = prior_info
         .and_then(|i| i.description.clone())

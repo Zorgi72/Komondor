@@ -308,16 +308,26 @@ pub fn activate_zyth_runtime(gateway_base: &str, api_key: &str) {
     }
 }
 
+/// Outcome of a successful `/loginzyth` (auth + optional gateway catalog).
+pub struct LoginZythOutcome {
+    pub auth: GrokAuth,
+    pub gateway_base: String,
+    /// Enriched gateway catalog ready for `ModelsManager::install_gateway_catalog`.
+    pub models: Option<indexmap::IndexMap<String, crate::agent::config::ModelEntry>>,
+    pub models_count: usize,
+}
+
 /// Full `/loginzyth` flow.
 ///
 /// 1. OIDC Auth Code + PKCE against AuthStack (`auth.zyth.app`)
 /// 2. Loopback `/callback` race vs paste
 /// 3. Exchange Auth0 id_token for LiteLLM virtual key (gateway)
 /// 4. Persist under distinct scope + activate API-key inference toward gateway
+/// 5. Fetch/enrich all gateway models (`[ZYTH]` prefix)
 pub async fn run_loginzyth_flow(
     grok_home: &Path,
     channels: Option<AuthChannels>,
-) -> anyhow::Result<GrokAuth> {
+) -> anyhow::Result<LoginZythOutcome> {
     let cfg = ZythLoginConfig::resolve();
     validate_exchange_url(&cfg.exchange_url).map_err(anyhow::Error::new)?;
     tracing::info!(
@@ -502,28 +512,26 @@ pub async fn run_loginzyth_flow(
     persist_zyth_endpoint_overlay(grok_home, &gateway_base).map_err(anyhow::Error::new)?;
     activate_zyth_runtime(&gateway_base, &auth.key);
 
-    // Pull full live model inventory from the gateway and install into
-    // models_cache.json (context windows + thinking levels enriched).
-    let models_sync = match sync_zyth_models_from_gateway(grok_home, &gateway_base, &auth.key).await
-    {
-        Ok(r) => {
-            tracing::info!(
-                count = r.count,
-                "loginzyth: model catalog synced from gateway"
-            );
-            Some(r)
-        }
-        Err(e) => {
-            // Login still succeeds; models can be refreshed later.
-            tracing::warn!(error = %e, "loginzyth: model catalog sync failed");
-            None
-        }
-    };
+    let (models, models_count) =
+        match sync_zyth_models_from_gateway(grok_home, &gateway_base, &auth.key).await {
+            Ok((catalog, r)) => {
+                tracing::info!(
+                    count = r.count,
+                    "loginzyth: model catalog synced from gateway"
+                );
+                (Some(catalog), r.count)
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, "loginzyth: model catalog sync failed");
+                (None, 0)
+            }
+        };
 
     tracing::info!(
         user_id = %auth.user_id,
         scope = %scope,
         gateway = %gateway_base,
+        models = models_count,
         "loginzyth: complete — SSO session + gateway credential stored"
     );
 
@@ -534,13 +542,18 @@ pub async fn run_loginzyth_flow(
             auth.email.as_deref().unwrap_or(&auth.user_id)
         );
         eprintln!("AI endpoint: {gateway_base}");
-        if let Some(ref m) = models_sync {
-            eprintln!("Loaded {} models from gateway.", m.count);
+        if models_count > 0 {
+            eprintln!("Loaded {models_count} [ZYTH] models from gateway.");
         }
         eprintln!();
     }
 
-    Ok(auth)
+    Ok(LoginZythOutcome {
+        auth,
+        gateway_base,
+        models,
+        models_count,
+    })
 }
 
 /// Build a GrokComConfig that uses Zyth OIDC as the active scope (for AuthManager).

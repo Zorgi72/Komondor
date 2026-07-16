@@ -13,7 +13,7 @@ pub use config::{
     ZYTH_AI_GATEWAY_BASE_URL, ZYTH_CLI_CLIENT_ID, ZYTH_ISSUER, ZythLoginConfig, scope_key,
 };
 pub use login::{
-    activate_zyth_runtime, format_loginzyth_error, persist_zyth_credentials,
+    LoginZythOutcome, activate_zyth_runtime, format_loginzyth_error, persist_zyth_credentials,
     persist_zyth_endpoint_overlay, run_loginzyth_flow, zyth_grok_com_config,
 };
 pub use logout::{
