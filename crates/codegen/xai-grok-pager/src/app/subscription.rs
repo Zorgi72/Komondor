@@ -17,6 +17,14 @@
 use super::actions::Effect;
 use super::app_view::{AppView, AuthState};
 
+/// Whether [`AppView::impose_gate`] may paint a visible SuperGrok paywall.
+///
+/// **Fork policy:** always `false`. Integration tests call this shipped helper
+/// directly (no AppView construction required).
+pub fn impose_gate_applies_visible_paywall() -> bool {
+    false
+}
+
 /// Default watch cadence. Overridable via the remote settings
 /// `grok_build_settings.subscription_watch_interval_secs` field.
 pub(crate) const SUBSCRIPTION_WATCH_INTERVAL: std::time::Duration =
@@ -139,11 +147,16 @@ impl AppView {
     /// **Fork policy:** never impose a subscription / SuperGrok paywall gate.
     /// Remote settings and auth meta cannot re-block the session.
     #[must_use]
-    pub fn impose_gate(&mut self, _gate: xai_grok_shell::auth::GateInfo) -> Vec<Effect> {
+    pub fn impose_gate(&mut self, gate: xai_grok_shell::auth::GateInfo) -> Vec<Effect> {
+        let _ = gate;
         // Drop any prior gate / pending verification so a stale path cannot
         // leave residual paywall state.
         self.gate = None;
         self.pending_gate_verification = None;
+        if impose_gate_applies_visible_paywall() {
+            // Unreachable under fork policy.
+            return vec![];
+        }
         crate::unified_log::info(
             "subscription.gate.imposed_suppressed",
             None,

@@ -113,7 +113,7 @@ pub(crate) fn acp_error_is_free_usage_exhausted(err: &agent_client_protocol::Err
 /// `format_acp_error` in place of auth-aware rate-limit copy.
 ///
 /// **Fork:** no SuperGrok upgrade CTA — plain non-blocking error text only.
-pub(crate) const FREE_USAGE_USER_MESSAGE: &str =
+pub const FREE_USAGE_USER_MESSAGE: &str =
     "Usage limit reached for this account. Try again later, or use another auth/provider.";
 
 /// Open the credit-limit upsell on the given agent.
@@ -127,6 +127,10 @@ pub(super) fn open_credit_limit_upsell(
 ) {
     let _ = (mode, max_tier);
     use crate::scrollback::block::RenderBlock;
+    if crate::app::app_view::billing_upsell_opens_stop_ui() {
+        // Unreachable under fork policy; kept for structural symmetry.
+        return;
+    }
     agent.scrollback.push_block(RenderBlock::system(
         "Usage or credit limit from the provider. Continuing without upgrade prompts."
             .to_string(),
@@ -137,6 +141,9 @@ pub(super) fn open_credit_limit_upsell(
 pub(super) fn open_free_usage_upsell(agent: &mut AgentView, auth_method: Option<String>) {
     let _ = auth_method;
     use crate::scrollback::block::RenderBlock;
+    if crate::app::app_view::billing_upsell_opens_stop_ui() {
+        return;
+    }
     agent
         .scrollback
         .push_block(RenderBlock::system(FREE_USAGE_USER_MESSAGE.to_string()));

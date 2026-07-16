@@ -1076,6 +1076,21 @@ pub struct AppView {
     /// `AppView::voice_*` transition methods.
     pub voice_state: VoiceState,
 }
+/// Whether an authenticated session has access for prompt UX.
+///
+/// **Fork policy:** always open. The `_gate_field_set` argument is the residual
+/// `AppView.gate` presence flag from remote auth meta; it must not block.
+pub fn session_has_access(_gate_field_set: bool) -> bool {
+    true
+}
+
+/// Whether credit/free-usage paths may open a stop modal/card.
+///
+/// **Fork policy:** always false — those paths use system messages only.
+pub fn billing_upsell_opens_stop_ui() -> bool {
+    false
+}
+
 impl AppView {
     pub fn is_zdr_blocked(&self) -> bool {
         self.is_zdr && !self.zdr_access_enabled
@@ -1085,7 +1100,7 @@ impl AppView {
     /// **Fork policy:** subscription / SuperGrok access gates never block.
     /// `self.gate` is ignored so a stale remote push cannot re-impose paywall UX.
     pub fn has_access(&self) -> bool {
-        true
+        session_has_access(self.gate.is_some())
     }
     /// True when the user should not see the prompt (ZDR only — not paywall).
     pub fn is_access_blocked(&self) -> bool {

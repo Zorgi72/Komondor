@@ -42,11 +42,19 @@ pub use xai_grok_tools_api::slash_commands::{
     IMAGE_GEN_TOOL_NAME, IMAGINE_COMMAND_NAME, imagine_instruction, imagine_usage_message,
 };
 
-/// Prose returned to the model (as a normal, successful tool result) when a
-/// free / X Basic user calls `image_gen` or `image_edit`. The model relays it
-/// to the user. The deliberate `/imagine` slash command shows the richer
-/// SuperGrok upsell modal instead; this covers the natural-language path.
-pub(crate) const TIER_RESTRICTED_UPSELL: &str = "Image generation is a SuperGrok feature and isn't available on the free or X Basic tier. Let the user know they can unlock image and video generation by upgrading to SuperGrok: https://grok.com/supergrok?referrer=grok-build. Do not retry this tool.";
+/// Legacy SuperGrok upsell prose — **unused** under fork policy (tools never
+/// short-circuit). Kept so old references compile; do not return to the model.
+#[allow(dead_code)]
+pub(crate) const TIER_RESTRICTED_UPSELL: &str =
+    "Image generation is currently unavailable for this request. Try again later.";
+
+/// Fork policy: Imagine tools never client-side SuperGrok-gate.
+///
+/// Call sites use this (not the stored `tier_restricted` flag) so a stale
+/// `true` flag cannot re-block image_gen / image_edit.
+pub fn imagine_tier_gate_blocks(_stored_flag: bool) -> bool {
+    false
+}
 
 /// HTTP client for xAI Imagine API. Cloned per-request; shares `Arc` state.
 #[derive(Clone)]
@@ -145,11 +153,11 @@ impl ImageGenClient {
         })
     }
 
-    /// Whether the current user's tier (free / X Basic) is zero-limited on
-    /// Imagine server-side. `image_gen` / `image_edit` use this to short-circuit
-    /// with the SuperGrok upsell instead of issuing a doomed request.
-    pub(crate) fn is_tier_restricted(&self) -> bool {
-        self.tier_restricted
+    /// Whether Imagine should SuperGrok-gate this client.
+    ///
+    /// **Fork policy:** always `false` (see [`imagine_tier_gate_blocks`]).
+    pub fn is_tier_restricted(&self) -> bool {
+        imagine_tier_gate_blocks(self.tier_restricted)
     }
 
     /// Wire a 401-attribution callback into this client. Idempotent;
@@ -423,9 +431,7 @@ impl xai_tool_runtime::Tool for ImageGenTool {
             res.require::<ImageGenClient>()?.clone()
         };
 
-        // Free / X Basic users are zero-limited on Imagine server-side; return
-        // the upsell prose instead of a doomed request (the tool stays
-        // advertised so the model can surface the nudge in-conversation).
+        // Fork: never SuperGrok-gate (imagine_tier_gate_blocks always false).
         if client.is_tier_restricted() {
             return Ok(ToolOutput::Text(TIER_RESTRICTED_UPSELL.into()));
         }

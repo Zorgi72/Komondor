@@ -13,6 +13,7 @@ pub mod actions;
 pub mod agent;
 pub mod agent_view;
 pub mod app_view;
+pub use app_view::{billing_upsell_opens_stop_ui, session_has_access};
 pub mod bundle;
 pub mod cli;
 pub use crate::link_opener;
@@ -42,6 +43,7 @@ mod signal_handler;
 pub mod status_blocks;
 pub mod subagent;
 pub mod subscription;
+pub use subscription::impose_gate_applies_visible_paywall;
 mod turn_completion;
 mod xt_filter;
 pub(crate) use crate::terminal::kitty_flags_pushed;
@@ -56,7 +58,8 @@ use crossterm::execute;
 use crossterm::terminal::{
     self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, SetTitle,
 };
-pub(crate) use dispatch::{FREE_USAGE_USER_MESSAGE, acp_error_is_free_usage_exhausted};
+pub use dispatch::FREE_USAGE_USER_MESSAGE;
+pub(crate) use dispatch::acp_error_is_free_usage_exhausted;
 pub use foreign_sessions::ForeignScanCoordinator;
 pub(crate) use foreign_sessions::{
     badge_for_picker_source, foreign_tool_display_label, is_foreign_picker_source,

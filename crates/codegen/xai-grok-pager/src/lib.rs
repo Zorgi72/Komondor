@@ -5,6 +5,7 @@
 pub mod acp;
 pub mod actions;
 pub mod app;
+pub use app::FREE_USAGE_USER_MESSAGE;
 pub mod client_identity;
 pub mod completions_cmd;
 mod config_toml_edit;

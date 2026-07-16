@@ -35,9 +35,10 @@ mod transcript;
 mod turn;
 mod voice;
 
+pub use billing::FREE_USAGE_USER_MESSAGE;
 pub(crate) use billing::{
-    FREE_USAGE_USER_MESSAGE, UPSELL_URL_PAYG, UPSELL_URL_UPGRADE,
-    acp_error_is_free_usage_exhausted, is_credit_limit_error, is_free_usage_exhausted_error,
+    UPSELL_URL_PAYG, UPSELL_URL_UPGRADE, acp_error_is_free_usage_exhausted, is_credit_limit_error,
+    is_free_usage_exhausted_error,
 };
 pub(crate) use modes::{downgrade_displayed_auto_if_gated, effective_auto};
 pub(crate) use notes::{recap_unavailable_toast, scrollback_has_user_messages};

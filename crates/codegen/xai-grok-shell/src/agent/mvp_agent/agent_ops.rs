@@ -1217,24 +1217,13 @@ impl MvpAgent {
     /// doomed request), never the security boundary — under-restricting is safe,
     /// over-restricting would wrongly disable a paid feature.
     ///
-    /// Mirrors the pager's cosmetic slash-command gate
-    /// ([`crate::tier::is_restricted_tier_name`]); the only difference is the
-    /// absent-tier policy (the pager hides on `None`, we fail open on `None`).
+    /// Whether Imagine image/video tools should SuperGrok-gate the user.
+    ///
+    /// **Fork policy:** always `false` — never short-circuit image_gen /
+    /// image_edit / video tools with a SuperGrok upgrade CTA. Live servers may
+    /// still 429; the client does not stop with paywall copy.
     fn is_tier_restricted_capability(&self) -> bool {
-        let Some(auth) = self.auth_manager.current() else {
-            return false;
-        };
-        if !auth.is_xai_auth() || auth.team_id.is_some() {
-            return false;
-        }
-        let tier = self
-            .cfg
-            .borrow()
-            .remote_settings
-            .as_ref()
-            .and_then(|rs| rs.subscription_tier_display.clone())
-            .or_else(|| jwt_tier_claim(&auth.key));
-        tier.as_deref().is_some_and(crate::tier::is_restricted_tier_name)
+        false
     }
     /// Build image generation config.
     ///
@@ -1250,7 +1239,7 @@ impl MvpAgent {
         let Some(ref api_key) = sampling_config.api_key else {
             return ImageGenConfig::Disabled;
         };
-        let tier_restricted = self.is_tier_restricted_capability();
+        let tier_restricted = self.is_tier_restricted_capability(); // fork: always false
         let cfg = self.cfg.borrow();
         let base_url = cfg.endpoints.xai_api_base_url.clone();
         let version = cfg
