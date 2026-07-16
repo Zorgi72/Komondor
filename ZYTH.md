@@ -2,6 +2,8 @@
 
 Private/custom fork of [xai-org/grok-build](https://github.com/xai-org/grok-build) rebranded as **Zyth**.
 
+**Deep dive (SSO, models, security, release):** see **[docs/LOGINZYTH.md](docs/LOGINZYTH.md)**.
+
 ## What’s different
 
 ### Branding
@@ -17,36 +19,51 @@ Private/custom fork of [xai-org/grok-build](https://github.com/xai-org/grok-buil
 ### ZYTH theme (`theme = "zyth"`)
 - Pure-black OLED canvas, **brighter** near-white body text (`#fafafa`)
 - Pure white (`#ffffff`) accents for focus / headings
-- **Code highlighting** uses a Vercel-accurate `.tmTheme` (`assets/zyth.tmTheme`):
-  - Keyword / storage: `#FF0080`
-  - String: `#50E3C2`
-  - Function: `#3291FF`
-  - Type / cyan: `#00DFD8`
-  - Number: `#F5A623`
-  - Comment: `#666666`
-  - Background: `#000000`
+- **Code highlighting** uses a Vercel-accurate `.tmTheme` (`assets/zyth.tmTheme`)
 - Aliases: `zyth`, `vercel`, `geist`, `mono`, `monochrome`
 
-### UI polish
-- `~/.grok/pager.toml` companion settings for density/chrome (optional)
+### Authentication (this fork)
+| Command | Purpose |
+|---------|---------|
+| `/login` | SpaceXAI OAuth (`auth.x.ai`) — unchanged upstream path |
+| **`/loginzyth`** | **Zyth AuthStack SSO** (`auth.zyth.app`) + AI Gateway models |
+| `/logout` | Clear default (SpaceXAI) session |
+| **`/logoutzyth`** | Clear **only** Zyth session + gateway models; keep SpaceXAI |
+
+After `/loginzyth`:
+
+1. Browser SSO on Auth0 Universal Login  
+2. PKCE loopback on registered ports `56120–56139`  
+3. Server-side mint of LiteLLM virtual key (SSO, not manual API key UI)  
+4. Inference → `https://ai-gateway.zyth.app/v1`  
+5. **All** live gateway models written to `~/.grok/models_cache.json` (context + thinking levels)
 
 ## Build
 
 ```sh
+# Release (recommended)
 cargo build -p xai-grok-pager-bin --release
-# artifacts:
-#   target/release/zyth
-#   target/release/xai-grok-pager
+# → target/release/zyth
+# → target/release/xai-grok-pager
+
+# Package for ./release/install-linux.sh
+xz -f -k -T0 -c target/release/zyth > release/zyth-linux-x86_64.xz
 ```
 
 ## Install prebuilt Linux binary
 
+From a clone of this repo:
+
 ```sh
 ./release/install-linux.sh
-# or manually:
-xz -dk release/zyth-linux-x86_64.xz
-# place binary on PATH as `zyth`
+zyth --version
 ```
+
+This installs:
+
+- `~/.grok/downloads/zyth-linux-x86_64` — binary  
+- `~/.grok/bin/{zyth,grok,agent}` — symlinks  
+- `~/.local/bin/zyth` — PATH helper  
 
 ## Config
 
@@ -57,56 +74,21 @@ theme = "zyth"
 
 Settings, auth, and sessions stay under `~/.grok/` (same layout as upstream).
 
-## Authentication: `/loginzyth` (Zyth AuthStack + AI Gateway)
-
-SpaceXAI `/login` (auth.x.ai) remains unchanged. This fork adds **`/loginzyth`**, which mirrors the same OIDC Auth Code + PKCE loopback model but targets **Zyth**:
-
-| Piece | Value |
-|-------|--------|
-| IdP issuer | `https://auth.zyth.app/` (AuthStack / Auth0) |
-| Public CLI client | Auth0 native app **Zyth CLI** (PKCE, no client secret) |
-| AI endpoint | `https://ai-gateway.zyth.app/v1` (LiteLLM OpenAI-compatible gateway) |
-| Credential after SSO | LiteLLM **virtual key** (`sk-…`), minted via server-side exchange |
-
-### Flow
-
-1. `/loginzyth` opens the browser to Auth0 Universal Login on `auth.zyth.app`.
-2. Loopback redirect on `http://127.0.0.1:{port}/callback` (random port) with CSRF `state` validation; paste-fallback for remote/SSH.
-3. CLI exchanges the authorization code for tokens (public client + PKCE).
-4. CLI calls `POST https://ai-gateway.zyth.app/zyth/cli/v1/exchange` with the Auth0 JWT; the gateway validates JWKS and mints a virtual key (master key never leaves the server).
-5. Credentials are stored under a **distinct** `auth.json` scope (`https://auth.zyth.app::{client_id}`) so SpaceXAI sessions are not overwritten; inference is pointed at the Zyth gateway via `zyth_endpoints.toml` + API-key activation.
-
-### Overrides (optional)
+### Optional env (Zyth SSO)
 
 ```bash
 export ZYTH_OIDC_ISSUER=https://auth.zyth.app/
-export ZYTH_OIDC_CLIENT_ID=<public client id>
+export ZYTH_OIDC_CLIENT_ID=K8m9VaNO6p7LKEUdXj7qbsGKWEWdxRQb   # public
 export ZYTH_AI_GATEWAY_BASE_URL=https://ai-gateway.zyth.app/v1
 export ZYTH_CLI_EXCHANGE_URL=https://ai-gateway.zyth.app/zyth/cli/v1/exchange
 ```
 
-### `/logoutzyth`
+## Tests
 
-Mirrors SpaceXAI `/logout` structure (attributable telemetry, fail-soft disk
-updates) but is **scope-scoped** to Zyth:
-
-| Cleared | Kept |
-|---------|------|
-| `auth.json` scopes under `https://auth.zyth.app::…` | `https://auth.x.ai::…` OAuth sessions |
-| `xai::api_key` **only if** it equals the Zyth virtual key | Unrelated BYOK / `XAI_API_KEY` values |
-| `~/.grok/zyth_endpoints.toml` | User `config.toml` unrelated settings |
-| Process env set by `/loginzyth` (when values match) | Other env vars |
-
-Idempotent: running `/logoutzyth` with no Zyth session is a soft no-op toast.
-
-### Security notes
-
-- No Auth0 client secrets or LiteLLM master keys in the binary.
-- Tokens/secrets are not logged at info level; `auth.json` stays mode `0600`.
-- Failures (IdP deny, timeout, bind failure, bad paste, network) are user-visible and non-corruptive.
-- Key-exchange URL is allowlisted (`https://*.zyth.app`); no embedded URL credentials.
-- `/logoutzyth` integrity-checks that non-Zyth scopes are never dropped.
+```sh
+cargo test -p xai-grok-shell --test loginzyth_protocol
+```
 
 ## Upstream
 
-Based on xAI’s public Apache-2.0 tree. External contributions to upstream are not accepted by xAI; this fork is for personal/local use.
+Based on xAI’s public Apache-2.0 tree. This fork is for personal/local use.
