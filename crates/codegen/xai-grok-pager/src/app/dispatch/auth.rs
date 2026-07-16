@@ -179,7 +179,9 @@ pub(super) fn strip_trailing_auth_error_blocks(agent: &mut AgentView) {
 }
 
 /// Start Zyth AuthStack SSO (`/loginzyth`): browser OIDC + gateway virtual key.
-/// Reuses the welcome auth UI (loopback paste) when mid-session.
+///
+/// Uses [`AuthMode::Command`] (browser wait, **no** token paste box). Zyth has
+/// no manually insertable token — the loopback callback completes SSO.
 pub(super) fn dispatch_loginzyth(app: &mut AppView) -> Vec<Effect> {
     if !matches!(app.active_view, ActiveView::Welcome) {
         app.auth_return_view = Some(app.active_view);
@@ -194,7 +196,8 @@ pub(super) fn dispatch_loginzyth(app: &mut AppView) -> Vec<Effect> {
         request_seq,
         handle: None,
         auth_url: None,
-        mode: AuthMode::Loopback,
+        // Command = browser status arm without paste/token input.
+        mode: AuthMode::Command,
     };
 
     vec![
@@ -422,6 +425,8 @@ pub(super) fn handle_auth_url_ready(
     external: bool,
     mode: Option<String>,
 ) -> Vec<Effect> {
+    // Capture before mutably borrowing auth_state (Zyth has no paste token).
+    let is_zyth_login = app.login_label.as_deref() == Some("Zyth");
     if let AuthState::Authenticating {
         request_seq: current_seq,
         auth_url: current_url,
@@ -431,14 +436,14 @@ pub(super) fn handle_auth_url_ready(
         && *current_seq == request_seq
     {
         *current_url = auth_url;
-        // Prefer `mode`; fall back to `external` for older agents. An
-        // old-agent device login lands on Loopback (harmless paste box;
-        // the background poll still completes).
+        // Prefer shell-reported mode. Zyth always uses Command (no paste box).
         *current_mode = match mode.as_deref() {
             Some("device") => AuthMode::Device,
             Some("command") => AuthMode::Command,
+            Some("loopback") if is_zyth_login => AuthMode::Command,
             Some("loopback") => AuthMode::Loopback,
             _ if external => AuthMode::Command,
+            _ if is_zyth_login => AuthMode::Command,
             _ => AuthMode::Loopback,
         };
     }

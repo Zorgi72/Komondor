@@ -49,25 +49,54 @@ async fn bind_zyth_loopback() -> Result<TcpListener, String> {
 
 type CallbackResult = Result<PastedCallback, String>;
 
-fn callback_page(title: &str, message: &str, is_success: bool) -> String {
-    let color = if is_success { "#22c55e" } else { "#ef4444" };
+/// Minimal monochrome acceptance page (Geist Sans, pure black).
+///
+/// Success shows only "SSO Approved" — no icons, subtext, or light-mode flip.
+fn callback_page(title: &str, _message: &str, is_success: bool) -> String {
+    let heading = if is_success { "SSO Approved" } else { title };
+    // Escape for HTML text content (titles are static for success; errors may
+    // contain IdP text).
+    let heading = heading
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;");
     format!(
         r#"<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<meta name="color-scheme" content="light dark"/>
-<title>{title}</title>
+<meta name="color-scheme" content="dark"/>
+<title>{heading}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.css"/>
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}
-body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-display:flex;align-items:center;justify-content:center;min-height:100vh;
-background:#0a0a0a;color:#e5e5e5}}
-.card{{text-align:center;padding:48px;max-width:420px}}
-h1{{font-size:18px;font-weight:600;color:{color}}}
-p{{font-size:14px;color:#a3a3a3;margin-top:12px}}
-@media(prefers-color-scheme:light){{body{{background:#fafafa;color:#171717}}p{{color:#525252}}}}
-</style></head>
-<body><div class="card"><h1>{title}</h1><p>{message}</p></div></body></html>"#
+html,body{{height:100%}}
+body{{
+  background:#000;
+  color:#fff;
+  font-family:"Geist Sans",Geist,ui-sans-serif,system-ui,sans-serif;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}}
+h1{{
+  font-size:clamp(1.25rem,2.5vw,1.75rem);
+  font-weight:500;
+  letter-spacing:-0.02em;
+  color:#fff;
+  text-align:center;
+}}
+</style>
+</head>
+<body>
+  <h1>{heading}</h1>
+</body>
+</html>"#
     )
 }
 
@@ -94,12 +123,8 @@ async fn handle_callback(
 ) -> (StatusCode, Html<String>) {
     let result = parse_callback_params(&params);
     let (title, message, ok) = match &result {
-        Ok(_) => (
-            "Signed in to Zyth",
-            "You can close this window and return to the CLI.",
-            true,
-        ),
-        Err(_) => ("Access denied", "Close this window and try /loginzyth again.", false),
+        Ok(_) => ("SSO Approved", "", true),
+        Err(_) => ("SSO Denied", "", false),
     };
     let _ = tx.try_send(result);
     (StatusCode::OK, Html(callback_page(title, message, ok)))
@@ -381,16 +406,20 @@ pub async fn run_loginzyth_flow(
         eprintln!("  {auth_url}");
     }
 
+    // Headless CLI only: optional paste fallback. The TUI pager must NOT show a
+    // token/paste box — Zyth is pure browser SSO (loopback callback, no token).
     let use_stdin = !has_client_ui && std::io::stdin().is_terminal();
     if use_stdin {
         eprintln!();
-        eprintln!("Paste the callback URL here if the browser does not return automatically:");
+        eprintln!("Waiting for browser SSO… (or paste the callback URL if needed)");
     }
 
     if let Some(tx) = url_tx {
+        // Report Command (not Loopback) so the welcome UI hides the paste box.
+        // The callback server still binds loopback; only the TUI mode changes.
         let _ = tx.send(AuthUrlInfo {
             url: auth_url.clone(),
-            mode: AuthUrlMode::Loopback,
+            mode: AuthUrlMode::Command,
         });
     }
 

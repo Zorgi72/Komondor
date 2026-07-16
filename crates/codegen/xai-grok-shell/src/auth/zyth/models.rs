@@ -181,6 +181,40 @@ pub async fn sync_zyth_models_from_gateway(
     Ok((models, result))
 }
 
+fn is_zyth_gateway_model_entry(e: &ModelEntry) -> bool {
+    if e.info.base_url.contains("ai-gateway.zyth.app") {
+        return true;
+    }
+    e.info
+        .name
+        .as_deref()
+        .is_some_and(|n| n.starts_with("[ZYTH]") || n.contains("[ZYTH]"))
+}
+
+/// Strip gateway / `[ZYTH]` rows and clear gateway origin on a cache file.
+fn strip_zyth_rows_in_cache_file(cache_path: &Path) -> Result<(), ZythLoginError> {
+    let Ok(raw) = std::fs::read(cache_path) else {
+        return Ok(());
+    };
+    let Ok(mut cache) = serde_json::from_slice::<DiskModelsCache>(&raw) else {
+        return Ok(());
+    };
+    let before = cache.models.len();
+    let had_gateway_origin = cache
+        .origin
+        .as_deref()
+        .is_some_and(|o| o.contains("ai-gateway.zyth.app"));
+    cache.models.retain(|_, e| !is_zyth_gateway_model_entry(e));
+    if had_gateway_origin {
+        cache.origin = None;
+        cache.auth_method = None;
+    }
+    if cache.models.len() != before || had_gateway_origin {
+        write_models_cache_atomic(cache_path, &cache)?;
+    }
+    Ok(())
+}
+
 /// Remove Zyth gateway models and restore pre-login catalog if available.
 pub fn restore_models_after_logoutzyth(grok_home: &Path) -> Result<bool, ZythLoginError> {
     let cache_path = grok_home.join(MODELS_CACHE_FILE);
@@ -191,26 +225,11 @@ pub fn restore_models_after_logoutzyth(grok_home: &Path) -> Result<bool, ZythLog
         std::fs::copy(&backup_path, &cache_path)
             .map_err(|e| ZythLoginError::SaveAuth(format!("restore models cache: {e}")))?;
         let _ = std::fs::remove_file(&backup_path);
+        // Belt-and-suspenders: strip residual gateway / [ZYTH] rows from backup.
+        let _ = strip_zyth_rows_in_cache_file(&cache_path);
         true
     } else if cache_path.exists() {
-        if let Ok(raw) = std::fs::read(&cache_path) {
-            if let Ok(mut cache) = serde_json::from_slice::<DiskModelsCache>(&raw) {
-                let before = cache.models.len();
-                cache
-                    .models
-                    .retain(|_, e| !e.info.base_url.contains("ai-gateway.zyth.app"));
-                if cache
-                    .origin
-                    .as_deref()
-                    .is_some_and(|o| o.contains("ai-gateway.zyth.app"))
-                {
-                    cache.origin = None;
-                }
-                if cache.models.len() != before {
-                    write_models_cache_atomic(&cache_path, &cache)?;
-                }
-            }
-        }
+        strip_zyth_rows_in_cache_file(&cache_path)?;
         false
     } else {
         false

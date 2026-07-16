@@ -295,12 +295,28 @@ async fn handle_logout(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     let params: LogoutParams = serde_json::from_str(args.params.get())
         .map_err(|e| acp::Error::invalid_params().data(format!("invalid params: {e}")))?;
 
+    // Full `/logout` must also drop Zyth models + gateway key, not only
+    // SpaceXAI OIDC. Otherwise [ZYTH] entries linger after welcome return.
+    let grok_home = crate::util::grok_home::grok_home();
+    let _zyth = crate::auth::perform_logoutzyth(&grok_home);
+    if let Ok(ref z) = _zyth {
+        if z.cleared_api_key || z.was_logged_in {
+            let mut sampling_config = agent.sampling_config.borrow_mut();
+            sampling_config.api_key = crate::auth::read_api_key(&grok_home).or_else(|| {
+                crate::agent::auth_method::read_xai_api_key_env().ok()
+            });
+        }
+    }
+    // Strip gateway catalog from memory + disk restore before auth clear.
+    agent.models_manager.uninstall_gateway_catalog().await;
+
     let result = crate::auth::perform_logout(&agent.auth_manager, params.scope.as_deref())
         .map_err(|e| acp::Error::internal_error().data(format!("failed to logout: {e}")))?;
     // `auth.lifecycle` (not `auth`) avoids colliding with the pre-existing
     // per-request `AuthManager::auth()` `#[instrument]` span.
     tracing::info_span!("auth.lifecycle", action = "logout", success = true).in_scope(|| {});
 
+    // Final catalog refresh now that SpaceXAI identity is gone (or reduced).
     agent.models_manager.on_auth_changed().await;
 
     to_raw_response(&serde_json::json!({

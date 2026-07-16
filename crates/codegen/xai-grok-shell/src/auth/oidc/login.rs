@@ -68,48 +68,52 @@ fn parse_pasted_input(input: &str) -> Result<Callback, OidcError> {
     })
 }
 
-/// Render a styled callback page shown in the browser after the OAuth redirect.
-pub(crate) fn callback_page(title: &str, message: &str, is_success: bool) -> String {
-    let icon = if is_success {
-        // Grok logo
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 33 33"><path fill="currentColor" d="m13.237 21.04 11.082-8.19c.543-.4 1.32-.244 1.578.38 1.363 3.288.754 7.241-1.957 9.955-2.71 2.714-6.482 3.31-9.93 1.954l-3.765 1.745c5.401 3.697 11.96 2.782 16.059-1.324 3.251-3.255 4.258-7.692 3.317-11.693l.008.009c-1.365-5.878.336-8.227 3.82-13.031q.123-.17.247-.345l-4.585 4.59v-.014L13.234 21.044M10.95 23.031c-3.877-3.707-3.208-9.446.1-12.755 2.446-2.449 6.454-3.448 9.952-1.979L24.76 6.56c-.677-.49-1.545-1.017-2.54-1.387A12.465 12.465 0 0 0 8.675 7.901c-3.519 3.523-4.625 8.94-2.725 13.561 1.42 3.454-.907 5.898-3.251 8.364-.83.874-1.664 1.749-2.335 2.674l10.583-9.466"/></svg>"#
-    } else {
-        // X circle
-        r#"<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>"#
-    };
+/// Minimal monochrome acceptance page (Geist Sans, pure black).
+///
+/// Success shows only "SSO Approved" centered — no icons or subtext.
+pub(crate) fn callback_page(title: &str, _message: &str, is_success: bool) -> String {
+    let heading = if is_success { "SSO Approved" } else { title };
+    let heading = heading
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;");
     format!(
         r#"<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<meta name="color-scheme" content="light dark"/>
-<title>{title}</title>
+<meta name="color-scheme" content="dark"/>
+<title>{heading}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.css"/>
 <style>
-  *{{margin:0;padding:0;box-sizing:border-box}}
-  body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    display:flex;align-items:center;justify-content:center;min-height:100vh;
-    background:#0a0a0a;color:#e5e5e5}}
-  .card{{text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px}}
-  h1{{font-size:18px;font-weight:600}}
-  p{{font-size:14px;color:#a3a3a3}}
-  @media(prefers-color-scheme:light){{
-    body{{background:#fafafa;color:#171717}}
-    p{{color:#525252}}
-  }}
+*{{margin:0;padding:0;box-sizing:border-box}}
+html,body{{height:100%}}
+body{{
+  background:#000;
+  color:#fff;
+  font-family:"Geist Sans",Geist,ui-sans-serif,system-ui,sans-serif;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}}
+h1{{
+  font-size:clamp(1.25rem,2.5vw,1.75rem);
+  font-weight:500;
+  letter-spacing:-0.02em;
+  color:#fff;
+  text-align:center;
+}}
 </style>
 </head>
 <body>
-  <div class="card">
-    {icon}
-    <h1>{title}</h1>
-    <p>{message}</p>
-  </div>
+  <h1>{heading}</h1>
 </body>
-</html>"#,
-        title = title,
-        icon = icon,
-        message = message,
+</html>"#
     )
 }
 

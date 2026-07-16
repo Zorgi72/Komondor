@@ -633,7 +633,14 @@ impl ModelsManager {
         }
     }
 
-    /// Revert gateway endpoints and re-fetch / restore catalog after `/logoutzyth`.
+    /// Revert gateway endpoints and **remove Zyth models** after `/logoutzyth`
+    /// or full `/logout`.
+    ///
+    /// Critical: `on_auth_changed` alone is not enough — a failed re-fetch leaves
+    /// the prefetched gateway catalog in place (`apply_refresh_result` keeps
+    /// existing models on None). We strip gateway / `[ZYTH]` entries first,
+    /// apply the stripped (or restored disk) catalog, notify the UI, then
+    /// re-fetch for remaining SpaceXAI auth.
     pub async fn uninstall_gateway_catalog(&self) {
         // Drop custom models_base so resolve falls back to proxy / defaults.
         {
@@ -663,8 +670,61 @@ impl ModelsManager {
                 cfg.endpoints.models_list_url = None;
             }
         }
-        // Full auth-driven refresh: picks Session if SpaceXAI still logged in.
+        *self.inner.fetch_auth.write() = ModelFetchAuth::resolve(
+            &self.inner.cfg.read().endpoints,
+            self.inner.auth_manager.current_or_expired().is_some(),
+        );
+
+        // Disk may already be restored by restore_models_after_logoutzyth —
+        // load without TTL/auth gates (logout path must not re-show gateway).
+        let disk_models = self.inner.cache.load_any_models().map(strip_zyth_gateway_models);
+
+        let stripped_live = self
+            .inner
+            .prefetched
+            .read()
+            .clone()
+            .map(strip_zyth_gateway_models)
+            .unwrap_or_default();
+
+        let next = match disk_models {
+            Some(disk) if !disk.is_empty() => disk,
+            Some(_) | None if !stripped_live.is_empty() => stripped_live,
+            Some(disk) => disk,
+            None => IndexMap::new(),
+        };
+
+        let cfg = self.inner.cfg.read().clone();
+        let count = next.len();
+        // Force-apply even if empty so Zyth models cannot linger in the picker.
+        self.apply_refresh_result_force(&cfg, next, None);
+        tracing::info!(
+            remaining = count,
+            "model catalog: stripped Zyth gateway models (logout)"
+        );
+        self.notify_models_updated();
+
+        // Re-fetch for remaining SpaceXAI / env credentials (may repopulate
+        // non-Zyth models). Stripped catalog is already live if fetch fails.
         self.on_auth_changed().await;
+    }
+
+    /// Like [`Self::apply_refresh_result`] but accepts an empty map (logout path).
+    fn apply_refresh_result_force(
+        &self,
+        config: &config::Config,
+        new_prefetched: IndexMap<String, ModelEntry>,
+        new_etag: Option<String>,
+    ) {
+        *self.inner.has_fetched_real_catalog.write() = true;
+        *self.inner.prefetched.write() = Some(new_prefetched.clone());
+        self.rebuild(config, Some(new_prefetched));
+        *self.inner.etag.write() = new_etag;
+        let excludes_all = allowlist_matches_nothing(config, &self.inner.models.read());
+        self.inner
+            .allowlist_excludes_all
+            .store(excludes_all, Ordering::Relaxed);
+        self.reselect_current_model_if_missing(config);
     }
 
     /// Auth identity changed: invalidate disk cache and refresh the catalog.
@@ -1330,12 +1390,51 @@ struct ModelsCacheManager {
     ttl: std::time::Duration,
 }
 
+/// Drop AI-gateway / `[ZYTH]` catalog entries (logout path).
+fn strip_zyth_gateway_models(
+    mut models: IndexMap<String, ModelEntry>,
+) -> IndexMap<String, ModelEntry> {
+    models.retain(|_id, entry| {
+        let base = entry.info.base_url.as_str();
+        if base.contains("ai-gateway.zyth.app") {
+            return false;
+        }
+        if entry
+            .info
+            .name
+            .as_deref()
+            .is_some_and(|n| n.starts_with("[ZYTH]") || n.contains("[ZYTH]"))
+        {
+            return false;
+        }
+        true
+    });
+    models
+}
+
 impl ModelsCacheManager {
     fn new() -> Self {
         Self {
             path: crate::util::grok_home::grok_home().join(MODELS_CACHE_FILE),
             ttl: CACHE_TTL,
         }
+    }
+
+    /// Load models from disk without TTL / origin / auth gates.
+    ///
+    /// Used by logout to adopt a just-restored pre-Zyth cache immediately.
+    fn load_any_models(&self) -> Option<IndexMap<String, ModelEntry>> {
+        let data = std::fs::read(&self.path).ok()?;
+        let cache: ModelsCache = serde_json::from_slice(&data).ok()?;
+        // Reject only obvious gateway origin caches still on disk.
+        if cache
+            .origin
+            .as_deref()
+            .is_some_and(|o| o.contains("ai-gateway.zyth.app"))
+        {
+            return Some(strip_zyth_gateway_models(cache.models));
+        }
+        Some(cache.models)
     }
 
     /// Sync; used by `prefetch_models_blocking`. Will be removed once startup
