@@ -22,7 +22,8 @@ use super::super::oidc::protocol::{
     OidcError, OidcUserInfo, discover, exchange_code, extract_user_info, generate_pkce,
 };
 use super::super::storage::{read_auth_json, store_api_key, write_auth_json};
-use super::config::ZythLoginConfig;
+use super::config::{ZYTH_LOOPBACK_PORTS, ZythLoginConfig};
+use super::models::sync_zyth_models_from_gateway;
 use super::protocol::{
     GatewayExchangeResponse, PastedCallback, ZythLoginError, build_zyth_authorize_url,
     parse_exchange_response, parse_pasted_input, user_message, validate_exchange_url,
@@ -30,6 +31,21 @@ use super::protocol::{
 };
 
 const AUTH_CALLBACK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
+
+/// Bind the first free loopback port from the Auth0-registered range.
+async fn bind_zyth_loopback() -> Result<TcpListener, String> {
+    let mut last_err = String::from("no ports available");
+    for &port in ZYTH_LOOPBACK_PORTS {
+        match TcpListener::bind(("127.0.0.1", port)).await {
+            Ok(l) => return Ok(l),
+            Err(e) => last_err = format!("port {port}: {e}"),
+        }
+    }
+    Err(format!(
+        "could not bind any registered loopback port {:?}: {last_err}",
+        ZYTH_LOOPBACK_PORTS
+    ))
+}
 
 type CallbackResult = Result<PastedCallback, String>;
 
@@ -324,9 +340,11 @@ pub async fn run_loginzyth_flow(
     let state = uuid::Uuid::now_v7().to_string();
     let nonce = uuid::Uuid::now_v7().to_string();
 
-    let listener = TcpListener::bind(("127.0.0.1", 0))
+    // Bind a fixed Auth0-registered port (see ZYTH_LOOPBACK_PORTS). Random OS
+    // ports are rejected by Auth0 ("Callback URL mismatch").
+    let listener = bind_zyth_loopback()
         .await
-        .map_err(|e| anyhow::Error::new(ZythLoginError::BindLoopback(e.to_string())))?;
+        .map_err(|e| anyhow::Error::new(ZythLoginError::BindLoopback(e)))?;
     let port = listener.local_addr()?.port();
     let redirect_uri = format!("http://127.0.0.1:{port}/callback");
     let auth_url =
@@ -447,9 +465,10 @@ pub async fn run_loginzyth_flow(
 
     let now = Utc::now();
     let auth = GrokAuth {
-        // Store gateway virtual key as the Bearer credential (not Auth0 access token).
+        // SSO-minted gateway virtual key (Bearer). Provenance is OIDC login —
+        // not a manually pasted BYOK API key.
         key: exchange.api_key.clone(),
-        auth_mode: AuthMode::ApiKey,
+        auth_mode: AuthMode::Oidc,
         create_time: now,
         user_id: user_info.user_id,
         email: user_info.email.or(exchange.email),
@@ -483,11 +502,29 @@ pub async fn run_loginzyth_flow(
     persist_zyth_endpoint_overlay(grok_home, &gateway_base).map_err(anyhow::Error::new)?;
     activate_zyth_runtime(&gateway_base, &auth.key);
 
+    // Pull full live model inventory from the gateway and install into
+    // models_cache.json (context windows + thinking levels enriched).
+    let models_sync = match sync_zyth_models_from_gateway(grok_home, &gateway_base, &auth.key).await
+    {
+        Ok(r) => {
+            tracing::info!(
+                count = r.count,
+                "loginzyth: model catalog synced from gateway"
+            );
+            Some(r)
+        }
+        Err(e) => {
+            // Login still succeeds; models can be refreshed later.
+            tracing::warn!(error = %e, "loginzyth: model catalog sync failed");
+            None
+        }
+    };
+
     tracing::info!(
         user_id = %auth.user_id,
         scope = %scope,
         gateway = %gateway_base,
-        "loginzyth: complete — gateway virtual key stored"
+        "loginzyth: complete — SSO session + gateway credential stored"
     );
 
     if !has_client_ui {
@@ -497,6 +534,9 @@ pub async fn run_loginzyth_flow(
             auth.email.as_deref().unwrap_or(&auth.user_id)
         );
         eprintln!("AI endpoint: {gateway_base}");
+        if let Some(ref m) = models_sync {
+            eprintln!("Loaded {} models from gateway.", m.count);
+        }
         eprintln!();
     }
 

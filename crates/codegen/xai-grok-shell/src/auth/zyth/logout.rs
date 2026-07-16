@@ -8,6 +8,7 @@
 use std::path::Path;
 
 use super::config::{ZYTH_AI_GATEWAY_BASE_URL, ZythLoginConfig, normalize_issuer};
+use super::models::restore_models_after_logoutzyth;
 use super::protocol::ZythLoginError;
 use super::super::model::{API_KEY_SCOPE, AuthStore, GrokAuth};
 use super::super::storage::{read_auth_json, write_auth_json};
@@ -27,6 +28,8 @@ pub struct LogoutZythResult {
     pub api_key_env_still_set: bool,
     /// Number of Zyth scopes removed (normally 0 or 1; can be >1 if client_id rotated).
     pub scopes_removed: usize,
+    /// True if the pre-Zyth model catalog was restored (or gateway models stripped).
+    pub restored_models: bool,
 }
 
 /// True if this auth.json scope key is a Zyth AuthStack scope.
@@ -238,6 +241,8 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
     let cleared_endpoints = remove_endpoint_overlay(grok_home);
     deactivate_zyth_runtime(zyth_key.as_deref(), &cfg.gateway_base_url);
 
+    let restored_models = restore_models_after_logoutzyth(grok_home).unwrap_or(false);
+
     let api_key_env_still_set = crate::agent::auth_method::has_xai_api_key_env();
 
     Ok(LogoutZythResult {
@@ -247,6 +252,7 @@ pub fn perform_logoutzyth(grok_home: &Path) -> Result<LogoutZythResult, ZythLogi
         cleared_endpoints,
         api_key_env_still_set,
         scopes_removed: scopes.len(),
+        restored_models,
     })
 }
 
@@ -268,6 +274,11 @@ pub fn format_logoutzyth_result(r: &LogoutZythResult) -> String {
     }
     if r.cleared_endpoints {
         parts.push("Restored default AI endpoints".to_owned());
+    }
+    if r.restored_models {
+        parts.push("Restored previous model catalog".to_owned());
+    } else if r.was_logged_in {
+        parts.push("Removed Zyth gateway models from catalog".to_owned());
     }
     if r.api_key_env_still_set {
         parts.push("Note: XAI_API_KEY is still set in the environment".to_owned());
@@ -364,6 +375,7 @@ mod tests {
         assert!(r.cleared_api_key);
         assert!(r.cleared_endpoints);
         assert_eq!(r.scopes_removed, 1);
+        // no models cache in this fixture — restored_models may be false
 
         let after = read_auth_json(&path).unwrap();
         assert!(after.contains_key("https://auth.x.ai::xai-client"));
@@ -421,6 +433,7 @@ mod tests {
             cleared_endpoints: true,
             api_key_env_still_set: false,
             scopes_removed: 1,
+            restored_models: true,
         });
         assert!(!msg.contains("sk-"));
         assert!(msg.contains("Zyth"));

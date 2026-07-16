@@ -59,9 +59,12 @@ async fn handle_loginzyth(agent: &MvpAgent) -> ExtResult {
             agent.models_manager.on_auth_changed().await;
             tracing::info_span!("auth.lifecycle", action = "loginzyth", success = true)
                 .in_scope(|| {});
+            // Hot-reload model catalog written by loginzyth (gateway inventory).
+            agent.models_manager.on_auth_changed().await;
             to_raw_response(&serde_json::json!({
                 "ok": true,
                 "provider": "zyth",
+                "auth": "sso",
                 "user_id": auth.user_id,
                 "email": auth.email,
                 "gateway": crate::auth::zyth::ZYTH_AI_GATEWAY_BASE_URL,
@@ -203,6 +206,7 @@ async fn handle_logoutzyth(agent: &MvpAgent) -> ExtResult {
     )
     .in_scope(|| {});
 
+    // Reload catalog after restore/strip of Zyth models.
     agent.models_manager.on_auth_changed().await;
 
     let message = crate::auth::format_logoutzyth_result(&result);
@@ -213,6 +217,7 @@ async fn handle_logoutzyth(agent: &MvpAgent) -> ExtResult {
         "cleared_api_key": result.cleared_api_key,
         "cleared_endpoints": result.cleared_endpoints,
         "scopes_removed": result.scopes_removed,
+        "restored_models": result.restored_models,
         "api_key_env_still_set": result.api_key_env_still_set,
         "message": message,
     }))

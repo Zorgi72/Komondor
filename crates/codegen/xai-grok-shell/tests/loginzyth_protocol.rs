@@ -107,6 +107,39 @@ fn logoutzyth_idempotent_empty_home() {
 }
 
 #[test]
+fn model_enrichment_covers_all_gateway_ids_with_thinking() {
+    // Mirrors live inventory from ai-gateway (13 models as of deploy).
+    use xai_grok_shell::auth::zyth::enrich_ids_for_test;
+    let ids = [
+        "grok-4.20-0309-non-reasoning",
+        "grok-4.20-multi-agent-0309",
+        "grok-3-mini",
+        "grok-3-mini-fast",
+        "grok-imagine-image",
+        "grok-imagine-video-1.5-preview",
+        "grok-build-0.1",
+        "grok-4.3",
+        "grok-4.20-0309-reasoning",
+        "grok-composer-2.5-fast",
+        "grok-imagine-image-quality",
+        "grok-imagine-video",
+        "grok-4.5",
+    ];
+    let map = enrich_ids_for_test(&ids);
+    assert_eq!(map.len(), 13);
+    let g = map.get("grok-4.5").expect("grok-4.5");
+    assert_eq!(g.info.context_window.get(), 500_000);
+    assert!(g.info.supports_reasoning_effort);
+    assert!(g.info.reasoning_efforts.len() >= 3);
+    assert!(g.info.base_url.contains("ai-gateway.zyth.app"));
+    assert!(g.info.supported_in_api);
+    let r = map.get("grok-4.20-0309-reasoning").unwrap();
+    assert!(r.info.supports_reasoning_effort);
+    let n = map.get("grok-4.20-0309-non-reasoning").unwrap();
+    assert!(!n.info.supports_reasoning_effort);
+}
+
+#[test]
 fn logoutzyth_preserves_xai_scope() {
     use chrono::Utc;
     use xai_grok_shell::auth::{AuthMode, GrokAuth, read_auth_json, store_api_key};

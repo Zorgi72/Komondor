@@ -15,6 +15,13 @@ pub const ZYTH_AI_GATEWAY_BASE_URL: &str = "https://ai-gateway.zyth.app/v1";
 /// Path on the gateway that mints a LiteLLM virtual key from an Auth0 JWT.
 pub const ZYTH_CLI_EXCHANGE_PATH: &str = "/zyth/cli/v1/exchange";
 
+/// Auth0-registered loopback ports for `/loginzyth` (must match AuthStack
+/// `auth0_client.zyth_cli` callbacks). CLI binds the first free port in range.
+pub const ZYTH_LOOPBACK_PORTS: &[u16] = &[
+    56120, 56121, 56122, 56123, 56124, 56125, 56126, 56127, 56128, 56129, 56130, 56131, 56132,
+    56133, 56134, 56135, 56136, 56137, 56138, 56139,
+];
+
 /// Distinct auth.json scope prefix helper — full scope is `{issuer}::{client_id}`.
 pub const ZYTH_SCOPE_LABEL: &str = "zyth";
 
