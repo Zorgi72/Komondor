@@ -3,6 +3,17 @@
 //! These methods let the client read/write the API key via the agent and
 //! drive the OAuth login flow. The agent is the single source of truth for
 //! `auth.json`.
+//!
+//! # Threat model (SH-H1 — accepted residual)
+//!
+//! Auth methods (`loginzyth`, `logout*`, `getBearerToken`, `setApiKey`) are **not**
+//! gated by a separate capability token. This is intentional under the **single-user
+//! local ACP** model: the pager/IDE process that speaks ACP *is* the user. Multi-client
+//! agent leaders, remote ACP, or shared-host malware that can open the ACP pipe can mint
+//! or exfiltrate credentials — that is out of scope for this SSO hardening pass (see
+//! `sso-pentest/SUMMARY.md` residual SH-H1). Mitigations for multi-tenant ACP would be:
+//! client capability proofs, OS peer-credential checks, or refusing secret-returning
+//! methods to untrusted connectors. Concurrent login race (SH-H2) **is** mitigated below.
 
 use agent_client_protocol as acp;
 use serde::{Deserialize, Serialize};
