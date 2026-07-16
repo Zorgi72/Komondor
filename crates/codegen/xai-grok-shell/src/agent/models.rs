@@ -1,7 +1,7 @@
 //! Model fetching, resolution, and management.
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use parking_lot::RwLock;
 
@@ -146,6 +146,17 @@ struct Inner {
     /// registry — no manual fan-out, no listener-leak risk, no
     /// `unregister` API to maintain.
     model_switch_watch: tokio::sync::watch::Sender<u64>,
+    /// When true, a Zyth gateway catalog is sticky: non-gateway refreshes
+    /// (`on_auth_changed` Session fetch, disk cache with SpaceXAI origin)
+    /// must not overwrite the live picker. Cleared by
+    /// [`Self::uninstall_gateway_catalog`] / [`Self::clear`].
+    gateway_catalog_sticky: AtomicBool,
+    /// Generation bumped on each gateway install; late async fetches that
+    /// started before the install must not clobber a newer sticky catalog.
+    gateway_catalog_generation: AtomicU64,
+    /// Sticky gateway base URL (e.g. `https://ai-gateway.zyth.app/v1`) for
+    /// re-applying endpoints if a config reload drops them.
+    gateway_base_sticky: RwLock<Option<String>>,
 }
 
 impl Default for ModelsManager {
@@ -189,8 +200,57 @@ impl ModelsManager {
                 retry_in_flight: AtomicBool::new(false),
                 allowlist_excludes_all: AtomicBool::new(false),
                 model_switch_watch: tokio::sync::watch::channel(0u64).0,
+                gateway_catalog_sticky: AtomicBool::new(false),
+                gateway_catalog_generation: AtomicU64::new(0),
+                gateway_base_sticky: RwLock::new(None),
             }),
         }
+    }
+
+    /// Whether a Zyth gateway catalog is currently sticky (loginzyth active).
+    pub fn gateway_catalog_is_sticky(&self) -> bool {
+        self.inner.gateway_catalog_sticky.load(Ordering::Acquire)
+    }
+
+    /// True if the catalog is clearly a Zyth AI Gateway install (`[ZYTH]` or
+    /// `ai-gateway.zyth.app` base URLs). Used to reject non-gateway overwrites.
+    pub fn catalog_looks_like_gateway(models: &IndexMap<String, ModelEntry>) -> bool {
+        models.values().any(|e| {
+            e.info.base_url.contains("ai-gateway.zyth.app")
+                || e.info
+                    .name
+                    .as_deref()
+                    .is_some_and(|n| n.contains("[ZYTH]"))
+        })
+    }
+
+    fn clear_gateway_sticky(&self) {
+        self.inner
+            .gateway_catalog_sticky
+            .store(false, Ordering::Release);
+        *self.inner.gateway_base_sticky.write() = None;
+    }
+
+    fn set_gateway_sticky(&self, gateway_base: &str) {
+        self.inner
+            .gateway_catalog_sticky
+            .store(true, Ordering::Release);
+        self.inner
+            .gateway_catalog_generation
+            .fetch_add(1, Ordering::AcqRel);
+        *self.inner.gateway_base_sticky.write() =
+            Some(gateway_base.trim_end_matches('/').to_owned());
+    }
+
+    /// Re-apply sticky gateway endpoints onto `endpoints` (in place).
+    fn reapply_sticky_gateway_endpoints(&self, endpoints: &mut config::EndpointsConfig) {
+        let Some(base) = self.inner.gateway_base_sticky.read().clone() else {
+            return;
+        };
+        let list_url = format!("{base}/models");
+        endpoints.xai_api_base_url = base.clone();
+        endpoints.models_base_url = Some(base);
+        endpoints.models_list_url = Some(list_url);
     }
 
     /// Subscribe to model-switch events. Returns a `watch::Receiver`
@@ -299,8 +359,17 @@ impl ModelsManager {
         };
         let new_preferred = new_config.models.default.clone();
         let has_session = self.inner.auth_manager.current_or_expired().is_some();
+        let mut new_config = new_config;
+        // Sticky Zyth: config.toml reload must not drop gateway endpoints or
+        // flip fetch_auth back to Session (that would Session-wipe the picker).
+        if self.gateway_catalog_is_sticky() {
+            self.reapply_sticky_gateway_endpoints(&mut new_config.endpoints);
+        }
         *self.inner.fetch_auth.write() =
             ModelFetchAuth::resolve(&new_config.endpoints, has_session);
+        if self.gateway_catalog_is_sticky() {
+            *self.inner.fetch_auth.write() = ModelFetchAuth::CustomEndpoint;
+        }
         *self.inner.cfg.write() = new_config.clone();
         // Recompute the prompt-block flag so a corrective reload unblocks.
         if has_real_catalog {
@@ -606,6 +675,8 @@ impl ModelsManager {
             cfg.endpoints.models_list_url = Some(list_url.clone());
         }
         *self.inner.fetch_auth.write() = ModelFetchAuth::CustomEndpoint;
+        // Sticky before apply so concurrent on_auth_changed cannot Session-wipe.
+        self.set_gateway_sticky(&gateway_base);
 
         let cfg = self.inner.cfg.read().clone();
         let applied = self.apply_refresh_result(&cfg, Some(models.clone()), None);
@@ -619,6 +690,7 @@ impl ModelsManager {
             tracing::info!(
                 count,
                 origin = %list_url,
+                sticky = true,
                 "model catalog: installed gateway catalog (loginzyth)"
             );
             xai_grok_telemetry::unified_log::info(
@@ -627,6 +699,7 @@ impl ModelsManager {
                 Some(serde_json::json!({
                     "model_count": count,
                     "origin": list_url,
+                    "sticky": true,
                 })),
             );
             self.notify_models_updated();
@@ -670,6 +743,8 @@ impl ModelsManager {
                 cfg.endpoints.models_list_url = None;
             }
         }
+        // Drop sticky first so subsequent on_auth_changed may re-fetch SpaceXAI.
+        self.clear_gateway_sticky();
         *self.inner.fetch_auth.write() = ModelFetchAuth::resolve(
             &self.inner.cfg.read().endpoints,
             self.inner.auth_manager.current_or_expired().is_some(),
@@ -734,8 +809,72 @@ impl ModelsManager {
     /// we have never had a real catalog (`!has_fetched_real_catalog`), or via
     /// the genuine no-auth path (`clear()`).
     ///
+    /// **Zyth sticky:** when a gateway catalog is sticky (post-`/loginzyth`),
+    /// concurrent auth.json watcher → `on_auth_changed` must **not** wipe the
+    /// picker with a SpaceXAI cli-chat-proxy Session fetch. We re-apply sticky
+    /// endpoints, optionally refresh from the gateway only, and keep the live
+    /// catalog if the fetch fails or returns a non-gateway set.
+    ///
     /// Respects the auth snapshot / hot-swap discipline.
     pub async fn on_auth_changed(&self) {
+        // ── Sticky Zyth path: never Session-wipe gateway models ──────────
+        if self.gateway_catalog_is_sticky() {
+            tracing::info!(
+                "on_auth_changed: preserving sticky Zyth gateway catalog (skip Session wipe)"
+            );
+            xai_grok_telemetry::unified_log::info(
+                "model catalog: sticky gateway preserved on auth change",
+                None,
+                Some(serde_json::json!({
+                    "generation": self.inner.gateway_catalog_generation.load(Ordering::Acquire),
+                })),
+            );
+            // Ensure endpoints + fetch_auth still point at the gateway.
+            {
+                let mut cfg = self.inner.cfg.write();
+                self.reapply_sticky_gateway_endpoints(&mut cfg.endpoints);
+            }
+            *self.inner.fetch_auth.write() = ModelFetchAuth::CustomEndpoint;
+
+            // Optional gateway-only refresh; reject non-gateway results.
+            if crate::util::config::resolve_remote_fetch_enabled() {
+                let gen_before = self.inner.gateway_catalog_generation.load(Ordering::Acquire);
+                let auth = self.inner.auth_manager.auth().await.ok();
+                // Prefer env/api virtual key for gateway list (sk-), not OIDC JWT.
+                let cfg = self.inner.cfg.read().clone();
+                let new_prefetched =
+                    fetch_models_async(cfg.endpoints.clone(), auth, ModelFetchAuth::CustomEndpoint)
+                        .await;
+                // Late install bumps generation — discard stale fetch.
+                let gen_after = self.inner.gateway_catalog_generation.load(Ordering::Acquire);
+                if gen_before == gen_after {
+                    match new_prefetched {
+                        Some(ref models) if Self::catalog_looks_like_gateway(models) => {
+                            let _ = self.apply_refresh_result(&cfg, new_prefetched, None);
+                        }
+                        Some(_) => {
+                            tracing::warn!(
+                                "on_auth_changed: rejecting non-gateway catalog while Zyth sticky"
+                            );
+                        }
+                        None => {
+                            tracing::debug!(
+                                "on_auth_changed: gateway re-fetch failed; keeping sticky catalog"
+                            );
+                        }
+                    }
+                } else {
+                    tracing::debug!(
+                        gen_before,
+                        gen_after,
+                        "on_auth_changed: discarded stale fetch after newer gateway install"
+                    );
+                }
+            }
+            self.notify_models_updated();
+            return;
+        }
+
         let config = self.inner.cfg.read().clone();
         crate::agent::init::update_telemetry_config(&config, &self.inner.auth_manager);
         self.inner.cache.invalidate();
@@ -844,9 +983,32 @@ impl ModelsManager {
         let fetch_auth = *self.inner.fetch_auth.read();
         let Some(cached) = cache.load_fresh(&fetch_auth.cache_auth_method(), &self.cache_origin())
         else {
+            // While Zyth is sticky, also try load_any so a slightly-stale
+            // gateway cache can re-apply; never accept non-gateway while sticky.
+            if self.gateway_catalog_is_sticky() {
+                if let Some(models) = cache.load_any_models() {
+                    if Self::catalog_looks_like_gateway(&models) {
+                        let cfg = self.inner.cfg.read().clone();
+                        let _ = self.apply_refresh_result(&cfg, Some(models), None);
+                        self.notify_models_updated();
+                        return;
+                    }
+                    tracing::debug!(
+                        "models cache on disk is non-gateway while Zyth sticky; ignoring"
+                    );
+                }
+            }
             tracing::debug!("models cache changed on disk but is not loadable; ignoring");
             return;
         };
+
+        // Sticky: ignore SpaceXAI / non-gateway disk catalogs.
+        if self.gateway_catalog_is_sticky() && !Self::catalog_looks_like_gateway(&cached.models) {
+            tracing::info!(
+                "models cache hot-reload ignored: non-gateway while Zyth sticky"
+            );
+            return;
+        }
 
         // Self-write / no-change dedup by content. `ModelEntry` doesn't impl
         // `PartialEq` (nested config types), so compare the serialized form —
@@ -1063,6 +1225,7 @@ impl ModelsManager {
 
     /// Wipe in-memory state so a previous identity's catalog doesn't leak.
     fn clear(&self) {
+        self.clear_gateway_sticky();
         *self.inner.prefetched.write() = None;
         *self.inner.models.write() = IndexMap::new();
         *self.inner.etag.write() = None;
@@ -1250,6 +1413,22 @@ impl ModelsManager {
             );
             return false;
         };
+
+        // Sticky Zyth: never let a non-gateway catalog replace the live picker.
+        if self.gateway_catalog_is_sticky() && !Self::catalog_looks_like_gateway(&new_prefetched) {
+            tracing::warn!(
+                count = new_prefetched.len(),
+                "model catalog: rejected non-gateway overwrite while Zyth sticky"
+            );
+            xai_grok_telemetry::unified_log::warn(
+                "model catalog: sticky gateway blocked non-gateway apply",
+                None,
+                Some(serde_json::json!({
+                    "incoming_count": new_prefetched.len(),
+                })),
+            );
+            return false;
+        }
 
         let first_real_catalog = {
             let mut flag = self.inner.has_fetched_real_catalog.write();
