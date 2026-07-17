@@ -1,0 +1,42 @@
+name: open-e2e-pr
+on:
+  push:
+    branches: [e2e-bot-seed]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  open:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: create bot PR branch content
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B e2e-bot-review
+          mkdir -p src
+          cat > src/vuln.py << 'EOF'
+          # intentional insecure sample for review policy e2e
+          import os
+          SECRET = "sk-live-hardcoded-bot-pr"
+          def run(cmd):
+              return os.system(cmd)  # command injection surface
+          def div(a,b):
+              return a/b
+          if __name__ == "__main__":
+              print(div(1,0))
+          EOF
+          git add src/vuln.py
+          git commit -m "e2e: insecure sample for non-self review" || true
+          git push -f origin e2e-bot-review
+      - name: open PR as actions bot
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create --base main --head e2e-bot-review \
+            --title "E2E bot-authored PR for Kodus REQUEST_CHANGES" \
+            --body "Opened by github-actions[bot] so Zorgi72/Kodus can request changes.
+
+@kody start-review" || gh pr list --head e2e-bot-review
