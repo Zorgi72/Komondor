@@ -1,0 +1,76 @@
+name: kodus-e2e-pr
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/kodus-e2e-pr.yml'
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  open:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: create branch and PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          BRANCH="kodus-e2e-bot-$(date +%s)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          mkdir -p src
+          cat > src/insecure_app.py << 'PY'
+          # Intentionally insecure sample for Kodus E2E automated review
+          import os
+          import subprocess
+
+          API_KEY = "sk-live-hardcoded-secret-do-not-use-in-prod-xyz"
+
+          def run_cmd(user_input: str) -> str:
+              # command injection
+              os.system("echo " + user_input)
+              return subprocess.getoutput("ls " + user_input)
+
+          def divide(a: int, b: int) -> float:
+              return a / b
+
+          def check_password(password: str) -> bool:
+              expected = os.environ.get("PASSWORD", "admin")
+              return password == expected
+
+          if __name__ == "__main__":
+              print(divide(1, 0))
+          PY
+          # fix indent from heredoc in yaml - rewrite cleanly
+          python3 - <<'PY'
+          open('src/insecure_app.py','w').write('''# Intentionally insecure sample for Kodus E2E automated review
+import os
+import subprocess
+
+API_KEY = "sk-live-hardcoded-secret-do-not-use-in-prod-xyz"
+
+def run_cmd(user_input: str) -> str:
+    # command injection
+    os.system("echo " + user_input)
+    return subprocess.getoutput("ls " + user_input)
+
+def divide(a: int, b: int) -> float:
+    return a / b
+
+def check_password(password: str) -> bool:
+    expected = os.environ.get("PASSWORD", "admin")
+    return password == expected
+
+if __name__ == "__main__":
+    print(divide(1, 0))
+''')
+          PY
+          git add src/insecure_app.py
+          git commit -m "e2e: insecure sample for Kodus REQUEST_CHANGES"
+          git push origin "$BRANCH"
+          gh pr create --title "Kodus E2E bot-authored PR for REQUEST_CHANGES on 0xpid00/Komondor" \
+            --body "Bot-authored E2E PR. Kodus (0xpid00 token) should REQUEST_CHANGES." \
+            --base main --head "$BRANCH"
