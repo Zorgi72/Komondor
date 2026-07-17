@@ -1,36 +1,59 @@
 name: grant-kodus-access
 on:
   push:
-    branches: [main, master, kodus-grant]
+    branches: [main, kodus-grant]
   workflow_dispatch:
 permissions:
   contents: write
   administration: write
   pull-requests: write
   issues: write
+  metadata: read
 jobs:
   grant:
     runs-on: ubuntu-latest
     steps:
-      - name: Make public and invite Zorgi72
+      - uses: actions/checkout@v4
+      - name: Grant access and report
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            const log = [];
+            const report = async (msg, obj) => {
+              log.push(msg + (obj ? ' ' + JSON.stringify(obj) : ''));
+              console.log(msg, obj || '');
+            };
             try {
-              await github.rest.repos.update({ owner, repo, private: false, visibility: 'public' });
-              console.log('visibility update attempted');
+              const up = await github.rest.repos.update({ owner, repo, private: false });
+              await report('visibility', { private: up.data.private });
             } catch (e) {
-              console.log('visibility error', e.message);
+              await report('visibility_error', { status: e.status, msg: e.message });
             }
             try {
-              await github.rest.repos.addCollaborator({
+              const inv = await github.rest.repos.addCollaborator({
                 owner, repo, username: 'Zorgi72', permission: 'admin'
               });
-              console.log('collaborator invite sent');
+              await report('collaborator', { status: inv.status, data: inv.data });
             } catch (e) {
-              console.log('collaborator error', e.status, e.message);
+              await report('collaborator_error', { status: e.status, msg: e.message });
             }
-            const { data: r } = await github.rest.repos.get({ owner, repo });
-            console.log(JSON.stringify({ private: r.private, full_name: r.full_name, permissions: r.permissions }, null, 2));
+            try {
+              const r = await github.rest.repos.get({ owner, repo });
+              await report('repo', { private: r.data.private, full_name: r.data.full_name });
+            } catch (e) {
+              await report('repo_error', { status: e.status, msg: e.message });
+            }
+            // create issue with report so we can read via SSH? issues still need API
+            fs.writeFileSync('GRANT_REPORT.txt', log.join('\n'));
+      - name: Commit report to grant-results branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin
+          git checkout -B grant-results
+          git add GRANT_REPORT.txt || true
+          git commit -m "grant report" || echo "no commit"
+          git push -f origin grant-results
