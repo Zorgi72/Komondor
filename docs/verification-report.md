@@ -9,10 +9,10 @@
 
 | Gate | Result |
 |------|--------|
-| Unit / pipeline tests (shipped entry points) | **PASS** (14/14) |
+| Unit / pipeline tests (shipped entry points) | **PASS** (17/17) |
 | Full fixture E2E (vulnerable-app) | **PASS** (non-empty findings; classic vulns present) |
 | Command checklist (all listed subcommands) | **PASS** |
-| Edge / resume / empty / binary | **PASS** |
+| Edge / resume / empty / binary / permission / missing path / root pin | **PASS** |
 | Packaging (plugin + 11 skills) | **PASS** |
 | Live `grok -p "/deepsec …"` TUI load | **N/A in this env** — skills installed at `~/.grok/plugins/deepsec`; deterministic path is the CLI the skills invoke |
 
@@ -20,12 +20,12 @@
 
 ```text
 python3 plugins/deepsec/scripts/tests/test_deepsec.py
-Ran 14 tests … OK
+Ran 17 tests … OK
 ```
 
 Log: `deepsec-unit.log`
 
-Covers: matcher hits on official fixture files, candidate merge idempotency, JSON parser/normalizer, full init→scan→process→export→revalidate→triage→enrich→report, inject-response path, empty dir, resume after `--limit`.
+Covers: matcher hits on official fixture files, candidate merge idempotency, JSON parser/normalizer, full init→scan→process→export→revalidate→triage→enrich→report, inject-response path, empty dir, resume after `--limit`, **permission-denied stderr warnings**, **missing scoped path exit≠0**, **mismatched --root rejection** (no duplicate FileRecords).
 
 ## 2. Command checklist
 
@@ -68,12 +68,15 @@ Vendored at `plugins/deepsec/fixtures/vulnerable-app`.
 |------|--------|
 | Empty directory | scan 0/0, clean status |
 | Binary-only | skipped, 0 records |
+| **Permission denied (chmod 000)** | stderr: `warning: permission denied, skipping: …`; readable files still scanned; exit 0 with note |
+| **Missing scoped path** | stderr: `error: scan path does not exist: …`; **exit 2** |
+| **Mismatched `--root` vs `project.json` rootPath** | stderr error; **exit 2**; only canonical `src/…` records (no duplicates) |
 | No git enrich | skipped message, exit 0 |
 | No git --diff | actionable error |
 | Resume after --limit | remaining pending processed |
 | Concurrent lock | exclusive `.process.lock` |
 
-Log: `deepsec-edge.log`
+Log: `deepsec-edge.log` (re-run after hardening; includes permission / missing-path / root-pin cases)
 
 ## 5. Packaging
 

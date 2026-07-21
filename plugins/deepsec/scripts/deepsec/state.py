@@ -125,6 +125,42 @@ def default_project_id(root: Path) -> str:
     return cleaned or "project"
 
 
+def load_project_json(paths: DeepSecPaths) -> dict[str, Any] | None:
+    if not paths.project_json.is_file():
+        return None
+    try:
+        return read_json(paths.project_json)
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def resolve_canonical_root(
+    paths: DeepSecPaths,
+    cli_root: Path | None,
+    *,
+    allow_mismatch: bool = False,
+) -> Path:
+    """Return the project source root used for FileRecord relative paths.
+
+    Once project.json exists, its rootPath is authoritative. A CLI --root that
+    resolves to a different path is rejected so re-scans cannot create
+    duplicate FileRecords (e.g. src/x.ts vs x.ts).
+    """
+    proj = load_project_json(paths)
+    if proj and proj.get("rootPath"):
+        stored = Path(proj["rootPath"]).resolve()
+        if cli_root is not None:
+            cli = Path(cli_root).resolve()
+            if cli != stored and not allow_mismatch:
+                raise ValueError(
+                    f"--root {cli} does not match project rootPath {stored}. "
+                    f"Use --root {stored} (or re-init with --force to retarget). "
+                    f"Scoped scans use: scan <subdir> --root {stored}"
+                )
+        return stored
+    return Path(cli_root or Path.cwd()).resolve()
+
+
 def new_run_id() -> str:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     return f"{stamp}-{uuid.uuid4().hex[:16]}"

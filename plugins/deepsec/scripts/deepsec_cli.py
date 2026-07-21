@@ -45,6 +45,7 @@ from deepsec.state import (  # noqa: E402
     load_file_record,
     reclaim_stale_file_locks,
     release_process_lock,
+    resolve_canonical_root,
     resolve_workspace,
     utc_now,
 )
@@ -116,6 +117,22 @@ def _paths_from_args(args: argparse.Namespace, root: Path) -> DeepSecPaths:
     return DeepSecPaths(workspace, pid)
 
 
+def _resolve_root(args: argparse.Namespace, paths: DeepSecPaths | None = None) -> tuple[Path, DeepSecPaths]:
+    """Resolve project root pinned to project.json rootPath when present."""
+    cli_root = Path(args.root).resolve() if getattr(args, "root", None) else None
+    # Need project_id before full pin; use cli_root or cwd for id default
+    probe_root = cli_root or Path.cwd().resolve()
+    if paths is None:
+        paths = _paths_from_args(args, probe_root)
+    try:
+        root = resolve_canonical_root(paths, cli_root)
+    except ValueError as e:
+        raise SystemExit(f"error: {e}") from e
+    # Re-bind paths with stable project id from probe (project_id flag wins)
+    paths = _paths_from_args(args, root)
+    return root, paths
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     root = Path(args.root or Path.cwd()).resolve()
     workspace = resolve_workspace(
@@ -168,19 +185,38 @@ def _ensure_inited(paths: DeepSecPaths) -> None:
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
-    # --root is always the project root. Optional positional path scopes the walk
-    # (e.g. scan src/ --root .) without changing FileRecord path relativity.
-    root = Path(args.root or Path.cwd()).resolve()
-    scope = Path(args.path).resolve() if getattr(args, "path", None) else root
-    if not str(scope).startswith(str(root)):
-        print(f"error: scan path {scope} is outside project root {root}", file=sys.stderr)
-        return 2
-    paths = _paths_from_args(args, root)
+    # --root is the project root (pinned to project.json once init'd).
+    # Optional positional path scopes the walk without changing path relativity.
+    cli_root = Path(args.root or Path.cwd()).resolve()
+    paths = _paths_from_args(args, cli_root)
     if not paths.project_json.is_file():
-        args.root = str(root)
+        args.root = str(cli_root)
         args.force = False
         cmd_init(args)
-        paths = _paths_from_args(args, root)
+        paths = _paths_from_args(args, cli_root)
+    try:
+        root = resolve_canonical_root(paths, Path(args.root).resolve() if args.root else cli_root)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    paths = _paths_from_args(args, root)
+
+    scope = Path(args.path).resolve() if getattr(args, "path", None) else root
+    if getattr(args, "path", None):
+        if not scope.exists():
+            print(
+                f"error: scan path does not exist: {scope}\n"
+                f"  Project root: {root}\n"
+                f"  Hint: pass an existing file or directory under the project root.",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            scope.relative_to(root)
+        except ValueError:
+            print(f"error: scan path {scope} is outside project root {root}", file=sys.stderr)
+            return 2
+
     matcher_dirs = [default_matcher_dir(PLUGIN_ROOT)]
     extra = paths.workspace / "matchers"
     if extra.is_dir():
@@ -195,8 +231,12 @@ def cmd_scan(args: argparse.Namespace) -> int:
     if scope != root:
         from deepsec.scan import iter_source_files
 
-        file_list = iter_source_files(scope)
-        source_label = f"path:{scope.relative_to(root).as_posix()}"
+        if scope.is_file():
+            file_list = [scope]
+            source_label = f"path:{scope.relative_to(root).as_posix()}"
+        else:
+            file_list = iter_source_files(scope)
+            source_label = f"path:{scope.relative_to(root).as_posix()}"
 
     result = scan_project(
         root=root,
@@ -211,13 +251,24 @@ def cmd_scan(args: argparse.Namespace) -> int:
         f"scan complete: files={s['filesScanned']} candidates={s['candidatesFound']} "
         f"records={s['recordsWritten']} matchers={s['matcherCount']} run={result['run']['runId']}"
     )
+    if s.get("skippedPermission"):
+        print(
+            f"note: {s['skippedPermission']} file(s) skipped due to permissions (see stderr warnings)",
+            file=sys.stderr,
+        )
     return 0
 
 
 def cmd_process(args: argparse.Namespace) -> int:
-    root = Path(args.root or Path.cwd()).resolve()
-    paths = _paths_from_args(args, root)
+    cli_root = Path(args.root or Path.cwd()).resolve()
+    paths = _paths_from_args(args, cli_root)
     _ensure_inited(paths)
+    try:
+        root = resolve_canonical_root(paths, Path(args.root).resolve() if args.root else cli_root)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    paths = _paths_from_args(args, root)
 
     if args.diff is not None:
         base = args.diff if args.diff != "" and args.diff is not True else "HEAD"
@@ -294,9 +345,15 @@ def cmd_process(args: argparse.Namespace) -> int:
 
 
 def cmd_revalidate(args: argparse.Namespace) -> int:
-    root = Path(args.root or Path.cwd()).resolve()
-    paths = _paths_from_args(args, root)
+    cli_root = Path(args.root or Path.cwd()).resolve()
+    paths = _paths_from_args(args, cli_root)
     _ensure_inited(paths)
+    try:
+        root = resolve_canonical_root(paths, Path(args.root).resolve() if args.root else cli_root)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    paths = _paths_from_args(args, root)
     text = Path(args.inject_response).read_text(encoding="utf-8") if args.inject_response else None
     result = apply_revalidation(
         paths,
@@ -311,9 +368,15 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
 
 
 def cmd_triage(args: argparse.Namespace) -> int:
-    root = Path(args.root or Path.cwd()).resolve()
-    paths = _paths_from_args(args, root)
+    cli_root = Path(args.root or Path.cwd()).resolve()
+    paths = _paths_from_args(args, cli_root)
     _ensure_inited(paths)
+    try:
+        root = resolve_canonical_root(paths, Path(args.root).resolve() if args.root else cli_root)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    paths = _paths_from_args(args, root)
     text = Path(args.inject_response).read_text(encoding="utf-8") if args.inject_response else None
     result = apply_triage(
         paths,
@@ -329,18 +392,30 @@ def cmd_triage(args: argparse.Namespace) -> int:
 
 
 def cmd_enrich(args: argparse.Namespace) -> int:
-    root = Path(args.root or Path.cwd()).resolve()
-    paths = _paths_from_args(args, root)
+    cli_root = Path(args.root or Path.cwd()).resolve()
+    paths = _paths_from_args(args, cli_root)
     _ensure_inited(paths)
+    try:
+        root = resolve_canonical_root(paths, Path(args.root).resolve() if args.root else cli_root)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    paths = _paths_from_args(args, root)
     result = enrich_project(paths, root, force=args.force)
     print(f"enrich complete: {result}")
     return 0
 
 
 def cmd_export(args: argparse.Namespace) -> int:
-    root = Path(args.root or Path.cwd()).resolve()
-    paths = _paths_from_args(args, root)
+    cli_root = Path(args.root or Path.cwd()).resolve()
+    paths = _paths_from_args(args, cli_root)
     _ensure_inited(paths)
+    try:
+        root = resolve_canonical_root(paths, Path(args.root).resolve() if args.root else cli_root)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    paths = _paths_from_args(args, root)
     fmt = (args.format or "json").lower()
     out = Path(args.out) if args.out else None
     if fmt == "json":
@@ -360,8 +435,17 @@ def cmd_export(args: argparse.Namespace) -> int:
 
 
 def cmd_status(args: argparse.Namespace) -> int:
-    root = Path(args.root or Path.cwd()).resolve()
-    paths = _paths_from_args(args, root)
+    cli_root = Path(args.root or Path.cwd()).resolve()
+    paths = _paths_from_args(args, cli_root)
+    if paths.project_json.is_file():
+        try:
+            root = resolve_canonical_root(paths, Path(args.root).resolve() if args.root else cli_root)
+        except ValueError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 2
+        paths = _paths_from_args(args, root)
+    else:
+        root = cli_root
     if not paths.data.is_dir():
         print(f"DeepSec not initialized under {paths.workspace}")
         print("Run: deepsec_cli.py init")
@@ -380,9 +464,17 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 
 def cmd_resume(args: argparse.Namespace) -> int:
-    root = Path(args.root or Path.cwd()).resolve()
-    paths = _paths_from_args(args, root)
+    cli_root = Path(args.root or Path.cwd()).resolve()
+    paths = _paths_from_args(args, cli_root)
     _ensure_inited(paths)
+    try:
+        root = resolve_canonical_root(paths, Path(args.root).resolve() if args.root else cli_root)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    # ensure process uses pinned root
+    args.root = str(root)
+    paths = _paths_from_args(args, root)
     n = reclaim_stale_file_locks(paths)
     print(f"reclaimed {n} stale file locks")
     args.heuristic = True
@@ -394,9 +486,15 @@ def cmd_resume(args: argparse.Namespace) -> int:
 
 
 def cmd_report(args: argparse.Namespace) -> int:
-    root = Path(args.root or Path.cwd()).resolve()
-    paths = _paths_from_args(args, root)
+    cli_root = Path(args.root or Path.cwd()).resolve()
+    paths = _paths_from_args(args, cli_root)
     _ensure_inited(paths)
+    try:
+        root = resolve_canonical_root(paths, Path(args.root).resolve() if args.root else cli_root)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    paths = _paths_from_args(args, root)
     outs = write_report(paths)
     print(f"report: {outs['md']}")
     print(f"report: {outs['json']}")

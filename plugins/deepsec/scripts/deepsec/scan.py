@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any, Callable
 
@@ -90,20 +91,33 @@ def _simple_ignore(rel: str, glob: str) -> bool:
     return path_matches_glob(rel, g) or rel.startswith(g.rstrip("*"))
 
 
-def read_text_safe(path: Path) -> str | None:
+def read_text_safe(path: Path) -> tuple[str | None, str | None]:
+    """Return (content, skip_reason).
+
+    skip_reason is None on success.
+    On failure: 'permission', 'binary', or a short error string.
+    """
     try:
         data = path.read_bytes()
-    except OSError:
-        return None
+    except PermissionError as e:
+        return None, f"permission: {e}"
+    except OSError as e:
+        # EACCES may surface as OSError on some platforms
+        err = getattr(e, "errno", None)
+        import errno
+
+        if err in (errno.EACCES, errno.EPERM):
+            return None, f"permission: {e}"
+        return None, f"unreadable: {e}"
     if b"\x00" in data[:8192]:
-        return None  # binary
+        return None, "binary"
     try:
-        return data.decode("utf-8")
+        return data.decode("utf-8"), None
     except UnicodeDecodeError:
         try:
-            return data.decode("utf-8", errors="replace")
-        except Exception:
-            return None
+            return data.decode("utf-8", errors="replace"), None
+        except Exception as e:
+            return None, f"decode: {e}"
 
 
 def scan_project(
@@ -115,6 +129,7 @@ def scan_project(
     file_list: list[Path] | None = None,
     source_label: str | None = None,
     on_progress: Callable[[str], None] | None = None,
+    on_warning: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
     paths.ensure_layout()
     cfg = load_project_config(paths)
@@ -122,6 +137,8 @@ def scan_project(
     matchers = load_matchers(matcher_dirs)
     if not matchers:
         raise RuntimeError(f"no matchers loaded from {matcher_dirs}")
+
+    warn = on_warning or (lambda msg: print(msg, file=sys.stderr))
 
     run = create_run_meta(
         paths,
@@ -138,30 +155,44 @@ def scan_project(
     )
 
     if file_list is not None:
-        targets = [p.resolve() for p in file_list if p.exists() and p.is_file()]
+        targets = []
+        for p in file_list:
+            rp = p.resolve()
+            if not rp.exists():
+                warn(f"warning: missing file skipped: {p}")
+                continue
+            if rp.is_file():
+                targets.append(rp)
     else:
         targets = iter_source_files(root, ignore)
 
     files_scanned = 0
     candidates_found = 0
     records_written = 0
+    skipped_permission: list[str] = []
+    skipped_other: list[str] = []
     root = root.resolve()
 
     for path in targets:
         try:
             rel = path.relative_to(root).as_posix()
         except ValueError:
+            warn(f"warning: path outside project root skipped: {path}")
             continue
-        content = read_text_safe(path)
+        content, reason = read_text_safe(path)
         if content is None:
-            if file_list is not None:
-                # still write empty record for explicit list
-                rec = load_file_record(paths, rel) or empty_file_record(rel, paths.project_id)
-                rec["lastScannedAt"] = utc_now()
-                rec["lastScannedRunId"] = run["runId"]
-                rec["fileHash"] = None
-                save_file_record(paths, rec)
-                records_written += 1
+            if reason and reason.startswith("permission"):
+                skipped_permission.append(rel)
+                warn(f"warning: permission denied, skipping: {rel} ({reason})")
+            elif reason == "binary":
+                skipped_other.append(rel)
+                # binary is normal — no loud warning per file; count only
+            else:
+                skipped_other.append(rel)
+                warn(f"warning: could not read, skipping: {rel} ({reason})")
+            if file_list is not None and reason != "binary":
+                # explicit list: still note the file was considered
+                pass
             continue
 
         new_cands: list[dict[str, Any]] = []
@@ -194,11 +225,20 @@ def scan_project(
         records_written += 1
         candidates_found += max(0, len(rec["candidates"]) - before) if before else len(new_cands)
 
+    if skipped_permission:
+        warn(
+            f"warning: skipped {len(skipped_permission)} unreadable file(s) due to permissions: "
+            + ", ".join(skipped_permission[:20])
+            + ("…" if len(skipped_permission) > 20 else "")
+        )
+
     stats = {
         "filesScanned": files_scanned,
         "candidatesFound": candidates_found,
         "recordsWritten": records_written,
         "matcherCount": len(matchers),
+        "skippedPermission": len(skipped_permission),
+        "skippedOther": len(skipped_other),
     }
     complete_run(paths, run, "done", stats)
-    return {"run": run, "stats": stats}
+    return {"run": run, "stats": stats, "skippedPermission": skipped_permission}

@@ -386,5 +386,100 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(updated.get("status"), "analyzed")
 
 
+class EdgeCaseTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="deepsec-edge-"))
+        self.root = self.tmp / "app"
+        self.root.mkdir()
+        (self.root / "ok.ts").write_text("const x = `SELECT * FROM t WHERE id = ${id}`;\n")
+        self.data = self.tmp / "ds"
+
+    def tearDown(self):
+        # restore perms so cleanup works
+        for p in self.root.rglob("*"):
+            try:
+                os.chmod(p, 0o644)
+            except OSError:
+                pass
+        try:
+            os.chmod(self.root, 0o755)
+        except OSError:
+            pass
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_permission_denied_warns_on_stderr(self):
+        secret = self.root / "secret.ts"
+        secret.write_text("const y = `SELECT ${z}`;\n")
+        os.chmod(secret, 0o000)
+        r = run_cli(
+            ["init", "--root", str(self.root), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.root,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        r = run_cli(
+            ["scan", "--root", str(self.root), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.root,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        # Must surface clear permission warning (not silent skip)
+        combined = r.stderr + r.stdout
+        self.assertIn("permission", combined.lower(), combined)
+        self.assertIn("secret.ts", combined)
+        # Readable file still scanned
+        self.assertIn("candidates=", r.stdout)
+
+    def test_missing_scope_path_errors(self):
+        r = run_cli(
+            ["init", "--root", str(self.root), "--data-dir", str(self.data), "--project-id", "m"],
+            cwd=self.root,
+        )
+        self.assertEqual(r.returncode, 0)
+        missing = self.root / "does-not-exist"
+        r = run_cli(
+            [
+                "scan",
+                str(missing),
+                "--root",
+                str(self.root),
+                "--data-dir",
+                str(self.data),
+                "--project-id",
+                "m",
+            ],
+            cwd=self.root,
+        )
+        self.assertNotEqual(r.returncode, 0, r.stdout)
+        self.assertIn("does not exist", r.stderr.lower() + r.stdout.lower())
+
+    def test_mismatched_root_rejects_duplicate_paths(self):
+        # Seed a nested layout
+        src = self.root / "src"
+        src.mkdir()
+        (src / "db.ts").write_text("const q = `SELECT * FROM u WHERE id = ${id}`;\n")
+        r = run_cli(
+            ["init", "--root", str(self.root), "--data-dir", str(self.data), "--project-id", "dup"],
+            cwd=self.root,
+        )
+        self.assertEqual(r.returncode, 0)
+        r = run_cli(
+            ["scan", "--root", str(self.root), "--data-dir", str(self.data), "--project-id", "dup"],
+            cwd=self.root,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        # Second scan with --root pointing at subdirectory must be rejected
+        r = run_cli(
+            ["scan", "--root", str(src), "--data-dir", str(self.data), "--project-id", "dup"],
+            cwd=self.root,
+        )
+        self.assertNotEqual(r.returncode, 0, r.stdout)
+        self.assertIn("does not match project rootPath", r.stderr)
+        # Only records under original root (src/db.ts), not db.ts
+        files_dir = self.data / "data/dup/files"
+        recs = list(files_dir.rglob("*.json"))
+        rels = [json.loads(p.read_text())["filePath"] for p in recs]
+        self.assertTrue(any(x.endswith("src/db.ts") or x == "src/db.ts" for x in rels), rels)
+        self.assertFalse(any(x == "db.ts" for x in rels), rels)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
