@@ -134,35 +134,74 @@ def _resolve_root(args: argparse.Namespace, paths: DeepSecPaths | None = None) -
 
 
 def cmd_init(args: argparse.Namespace) -> int:
-    root = Path(args.root or Path.cwd()).resolve()
+    import shutil
+
+    cli_root = Path(args.root or Path.cwd()).resolve()
     workspace = resolve_workspace(
-        cwd=root,
-        data_dir=Path(args.data_dir) if args.data_dir else root / ".grok" / "deepsec",
+        cwd=cli_root,
+        data_dir=Path(args.data_dir) if args.data_dir else cli_root / ".grok" / "deepsec",
     )
-    pid = args.project_id or default_project_id(root)
+    pid = args.project_id or default_project_id(cli_root)
     paths = DeepSecPaths(workspace, pid)
     paths.ensure_layout()
-    project = {
-        "projectId": pid,
-        "rootPath": str(root),
-        "createdAt": utc_now(),
-        "githubUrl": detect_github_url(root),
-    }
-    if paths.project_json.exists() and not args.force:
-        existing = json.loads(paths.project_json.read_text())
-        existing["rootPath"] = str(root)
-        if not existing.get("githubUrl"):
-            existing["githubUrl"] = project["githubUrl"]
-        project = existing
+
+    force = bool(getattr(args, "force", False))
+    existing: dict | None = None
+    if paths.project_json.exists():
+        try:
+            existing = json.loads(paths.project_json.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            existing = None
+
+    if existing and existing.get("rootPath"):
+        stored = Path(existing["rootPath"]).resolve()
+        if stored != cli_root and not force:
+            print(
+                f"error: project already initialized with rootPath {stored}\n"
+                f"  Refusing to retarget to {cli_root} without --force "
+                f"(would create duplicate FileRecords with different relative paths).\n"
+                f"  Use: deepsec_cli.py init --root {stored}\n"
+                f"  Or retarget (clears files/ + runs/): deepsec_cli.py init --force --root {cli_root}",
+                file=sys.stderr,
+            )
+            return 2
+        if stored != cli_root and force:
+            # Retarget: clear scan/process state so relative paths stay unique
+            for sub in (paths.files, paths.runs):
+                if sub.is_dir():
+                    shutil.rmtree(sub)
+            paths.files.mkdir(parents=True, exist_ok=True)
+            paths.runs.mkdir(parents=True, exist_ok=True)
+            print(
+                f"note: --force retarget {stored} → {cli_root}; cleared files/ and runs/",
+                file=sys.stderr,
+            )
+
+    root = cli_root
+    if existing and existing.get("rootPath") and not force:
+        # Preserve stored rootPath (and createdAt); only fill missing githubUrl
+        root = Path(existing["rootPath"]).resolve()
+        project = dict(existing)
+        project["projectId"] = pid
+        project["rootPath"] = str(root)
+        if not project.get("githubUrl"):
+            project["githubUrl"] = detect_github_url(root)
+    else:
+        project = {
+            "projectId": pid,
+            "rootPath": str(root),
+            "createdAt": (existing or {}).get("createdAt") or utc_now(),
+            "githubUrl": detect_github_url(root),
+        }
+
     atomic_write_json(paths.project_json, project)
-    if not paths.info_md.exists() or args.force:
+    if not paths.info_md.exists() or force:
         atomic_write_text(paths.info_md, INFO_TEMPLATE)
-    if not paths.setup_md.exists() or args.force:
+    if not paths.setup_md.exists() or force:
         atomic_write_text(paths.setup_md, SETUP_TEMPLATE)
     ws_cfg = workspace / "config.json"
     if not ws_cfg.exists():
         atomic_write_json(ws_cfg, {"defaultProjectId": pid, "version": 1})
-    # gitignore fragment
     gi = workspace / ".gitignore"
     if not gi.exists():
         atomic_write_text(

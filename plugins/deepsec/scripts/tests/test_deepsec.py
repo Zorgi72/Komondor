@@ -386,6 +386,110 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(updated.get("status"), "analyzed")
 
 
+class InitRootPathTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="deepsec-init-"))
+        self.app = self.tmp / "app"
+        self.src = self.app / "src"
+        self.src.mkdir(parents=True)
+        (self.src / "db.ts").write_text("const q = `SELECT * FROM t WHERE id = ${id}`;\n")
+        self.data = self.tmp / "ds"
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_init_preserves_rootpath_without_force(self):
+        r = run_cli(
+            ["init", "--root", str(self.app), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.app,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        r = run_cli(
+            ["scan", "--root", str(self.app), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.app,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        # Re-init with subdirectory root without --force must fail (not retarget)
+        r = run_cli(
+            ["init", "--root", str(self.src), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.app,
+        )
+        self.assertNotEqual(r.returncode, 0, r.stdout)
+        self.assertIn("without --force", r.stderr)
+        # project.json rootPath unchanged
+        proj = json.loads((self.data / "data/p/project.json").read_text())
+        self.assertEqual(Path(proj["rootPath"]).resolve(), self.app.resolve())
+        # scan still works with original root; only src/db.ts records
+        r = run_cli(
+            ["scan", "--root", str(self.app), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.app,
+        )
+        self.assertEqual(r.returncode, 0)
+        rels = [
+            json.loads(p.read_text())["filePath"]
+            for p in (self.data / "data/p/files").rglob("*.json")
+        ]
+        self.assertTrue(any(x == "src/db.ts" or x.endswith("src/db.ts") for x in rels), rels)
+        self.assertFalse(any(x == "db.ts" for x in rels), rels)
+
+    def test_init_force_retarget_clears_files(self):
+        r = run_cli(
+            ["init", "--root", str(self.app), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.app,
+        )
+        self.assertEqual(r.returncode, 0)
+        r = run_cli(
+            ["scan", "--root", str(self.app), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.app,
+        )
+        self.assertEqual(r.returncode, 0)
+        self.assertTrue(any((self.data / "data/p/files").rglob("*.json")))
+        # Force retarget to src/
+        r = run_cli(
+            [
+                "init",
+                "--force",
+                "--root",
+                str(self.src),
+                "--data-dir",
+                str(self.data),
+                "--project-id",
+                "p",
+            ],
+            cwd=self.app,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr + r.stdout)
+        self.assertIn("cleared files", (r.stderr + r.stdout).lower())
+        proj = json.loads((self.data / "data/p/project.json").read_text())
+        self.assertEqual(Path(proj["rootPath"]).resolve(), self.src.resolve())
+        # Old records gone
+        self.assertFalse(any((self.data / "data/p/files").rglob("*.json")))
+        # New scan under new root uses db.ts (not src/db.ts)
+        r = run_cli(
+            ["scan", "--root", str(self.src), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.src,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        rels = [
+            json.loads(p.read_text())["filePath"]
+            for p in (self.data / "data/p/files").rglob("*.json")
+        ]
+        self.assertIn("db.ts", rels)
+        self.assertFalse(any("src/" in x for x in rels), rels)
+
+    def test_init_same_root_idempotent(self):
+        r = run_cli(
+            ["init", "--root", str(self.app), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.app,
+        )
+        self.assertEqual(r.returncode, 0)
+        r = run_cli(
+            ["init", "--root", str(self.app), "--data-dir", str(self.data), "--project-id", "p"],
+            cwd=self.app,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+
+
 class EdgeCaseTests(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="deepsec-edge-"))

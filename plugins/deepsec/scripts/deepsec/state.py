@@ -154,8 +154,9 @@ def resolve_canonical_root(
             if cli != stored and not allow_mismatch:
                 raise ValueError(
                     f"--root {cli} does not match project rootPath {stored}. "
-                    f"Use --root {stored} (or re-init with --force to retarget). "
-                    f"Scoped scans use: scan <subdir> --root {stored}"
+                    f"Use --root {stored}. Scoped scans: scan <subdir> --root {stored}. "
+                    f"To retarget the project root (clears files/ + runs/): "
+                    f"init --force --root {cli}"
                 )
         return stored
     return Path(cli_root or Path.cwd()).resolve()

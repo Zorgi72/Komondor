@@ -9,7 +9,7 @@
 
 | Gate | Result |
 |------|--------|
-| Unit / pipeline tests (shipped entry points) | **PASS** (17/17) |
+| Unit / pipeline tests (shipped entry points) | **PASS** (20/20) |
 | Full fixture E2E (vulnerable-app) | **PASS** (non-empty findings; classic vulns present) |
 | Command checklist (all listed subcommands) | **PASS** |
 | Edge / resume / empty / binary / permission / missing path / root pin | **PASS** |
@@ -20,12 +20,12 @@
 
 ```text
 python3 plugins/deepsec/scripts/tests/test_deepsec.py
-Ran 17 tests … OK
+Ran 20 tests … OK
 ```
 
 Log: `deepsec-unit.log`
 
-Covers: matcher hits on official fixture files, candidate merge idempotency, JSON parser/normalizer, full init→scan→process→export→revalidate→triage→enrich→report, inject-response path, empty dir, resume after `--limit`, **permission-denied stderr warnings**, **missing scoped path exit≠0**, **mismatched --root rejection** (no duplicate FileRecords).
+Covers: matcher hits on official fixture files, candidate merge idempotency, JSON parser/normalizer, full init→scan→process→export→revalidate→triage→enrich→report, inject-response path, empty dir, resume after `--limit`, **permission-denied stderr warnings**, **missing scoped path exit≠0**, **mismatched --root rejection**, **init preserves rootPath without --force**, **init --force retarget clears files/**.
 
 ## 2. Command checklist
 
@@ -71,6 +71,8 @@ Vendored at `plugins/deepsec/fixtures/vulnerable-app`.
 | **Permission denied (chmod 000)** | stderr: `warning: permission denied, skipping: …`; readable files still scanned; exit 0 with note |
 | **Missing scoped path** | stderr: `error: scan path does not exist: …`; **exit 2** |
 | **Mismatched `--root` vs `project.json` rootPath** | stderr error; **exit 2**; only canonical `src/…` records (no duplicates) |
+| **Re-init with different `--root` without `--force`** | **exit 2**; rootPath unchanged; no duplicate FileRecords |
+| **`init --force` retarget** | clears `files/` + `runs/`; new rootPath; fresh scan paths only |
 | No git enrich | skipped message, exit 0 |
 | No git --diff | actionable error |
 | Resume after --limit | remaining pending processed |
