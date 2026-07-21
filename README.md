@@ -100,7 +100,7 @@ python3 plugins/deepsec/scripts/deepsec_cli.py process --heuristic --root /path/
 python3 plugins/deepsec/scripts/deepsec_cli.py export --format md-dir --out ./findings --root /path/to/repo
 ```
 
-Docs: [`docs/deepsec-port-design.md`](docs/deepsec-port-design.md), [`docs/deepsec-full-analysis.md`](docs/deepsec-full-analysis.md), [`docs/verification-report.md`](docs/verification-report.md), [`plugins/deepsec/README.md`](plugins/deepsec/README.md).
+**Docs index:** [`docs/DEEPSEC.md`](docs/DEEPSEC.md) · design [`docs/deepsec-port-design.md`](docs/deepsec-port-design.md) · analysis [`docs/deepsec-full-analysis.md`](docs/deepsec-full-analysis.md) · verification [`docs/verification-report.md`](docs/verification-report.md) · plugin [`plugins/deepsec/README.md`](plugins/deepsec/README.md) · upstream pin [`plugins/deepsec/UPSTREAM.md`](plugins/deepsec/UPSTREAM.md).
 
 ## Documentation
 

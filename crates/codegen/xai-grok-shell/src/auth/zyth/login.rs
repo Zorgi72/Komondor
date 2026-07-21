@@ -49,9 +49,11 @@ async fn bind_zyth_loopback() -> Result<TcpListener, String> {
 
 type CallbackResult = Result<PastedCallback, String>;
 
-/// Minimal monochrome acceptance page (Geist Sans, pure black).
+/// Minimal monochrome callback page (Geist Sans, pure black).
 ///
-/// Success shows only "SSO Approved" — no icons, subtext, or light-mode flip.
+/// On success: immediately tries `window.close()` (standard OAuth CLI pattern,
+/// e.g. oauth2cli / kubelogin). Browsers only allow auto-close when the tab was
+/// opened by script — if blocked, a brief "SSO Approved" fallback appears.
 fn callback_page(title: &str, _message: &str, is_success: bool) -> String {
     let heading = if is_success { "SSO Approved" } else { title };
     // Escape for HTML text content (titles are static for success; errors may
@@ -61,6 +63,33 @@ fn callback_page(title: &str, _message: &str, is_success: bool) -> String {
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;");
+    let auto_close = if is_success {
+        r#"
+<script>
+(function () {
+  function tryClose() {
+    try { window.open("", "_self"); } catch (e) {}
+    try { window.close(); } catch (e) {}
+  }
+  tryClose();
+  setTimeout(tryClose, 50);
+  setTimeout(tryClose, 250);
+  /* If the browser blocks close, reveal fallback copy */
+  setTimeout(function () {
+    var el = document.getElementById("fallback");
+    if (el) el.hidden = false;
+  }, 400);
+})();
+</script>"#
+    } else {
+        ""
+    };
+    let fallback_hidden = if is_success { " hidden" } else { "" };
+    let sub = if is_success {
+        "You can close this tab and return to the terminal."
+    } else {
+        "Close this tab and try again."
+    };
     format!(
         r#"<!DOCTYPE html>
 <html lang="en">
@@ -78,8 +107,10 @@ body{{
   color:#fff;
   font-family:"Geist Sans",Geist,ui-sans-serif,system-ui,sans-serif;
   display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
+  gap:12px;
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -91,10 +122,23 @@ h1{{
   color:#fff;
   text-align:center;
 }}
+p{{
+  font-size:0.875rem;
+  font-weight:400;
+  letter-spacing:-0.01em;
+  color:hsl(0 0% 63%);
+  text-align:center;
+  max-width:28ch;
+}}
+#fallback[hidden]{{display:none!important}}
 </style>
+{auto_close}
 </head>
 <body>
-  <h1>{heading}</h1>
+  <div id="fallback"{fallback_hidden}>
+    <h1>{heading}</h1>
+    <p>{sub}</p>
+  </div>
 </body>
 </html>"#
     )
