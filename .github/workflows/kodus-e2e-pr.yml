@@ -1,3 +1,8 @@
+# Open an intentionally insecure sample PR for Kodus self-host E2E review.
+#
+# GITHUB_TOKEN cannot create PRs unless the repo allows it
+# (Settings → Actions → General → "Allow GitHub Actions to create and approve
+# pull requests"). Prefer secrets.KODUS_GRANT_TOKEN / GH_PAT with repo scope.
 name: kodus-e2e-pr
 on:
   workflow_dispatch:
@@ -5,19 +10,21 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/kodus-e2e-pr.yml'
+
 permissions:
   contents: write
   pull-requests: write
+
 jobs:
   open:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.KODUS_GRANT_TOKEN || secrets.GH_PAT || github.token }}
       - name: create branch file and PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.KODUS_GRANT_TOKEN || secrets.GH_PAT || github.token }}
         run: |
           set -eux
           BRANCH="kodus-e2e-bot-${GITHUB_RUN_ID}"
@@ -41,12 +48,19 @@ jobs:
           if __name__ == "__main__":
               print(divide(1, 0))
           PY
-          # strip leading spaces from cat indent
           sed -i 's/^          //' src/insecure_app.py
           git add src/insecure_app.py
           git commit -m "e2e: insecure sample for Kodus REQUEST_CHANGES"
           git push origin "$BRANCH"
-          gh pr create --repo "${{ github.repository }}" \
-            --title "Kodus E2E bot-authored PR for REQUEST_CHANGES" \
-            --body "Bot-authored E2E PR for Kodus on 0xpid00/Komondor." \
-            --base main --head "$BRANCH"
+          # Prefer REST create if GraphQL is blocked for Actions bot
+          if ! gh pr create --repo "${{ github.repository }}" \
+              --title "Kodus E2E bot-authored PR for REQUEST_CHANGES" \
+              --body "Bot-authored E2E PR for Kodus on 0xpid00/Komondor. Comment \`@kody start-review\` if auto-review does not fire." \
+              --base main --head "$BRANCH"; then
+            echo "gh pr create failed — attempting REST API"
+            curl -fsS -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls" \
+              -d "{\"title\":\"Kodus E2E bot-authored PR for REQUEST_CHANGES\",\"head\":\"${BRANCH}\",\"base\":\"main\",\"body\":\"Bot-authored E2E PR for Kodus.\"}"
+          fi
