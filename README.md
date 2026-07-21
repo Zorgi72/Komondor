@@ -72,7 +72,10 @@ The binary artifact is named `xai-grok-pager`; official installs ship it as
 
 ## DeepSec (native security pipeline)
 
-This fork ships a **zero-Node** port of [Vercel DeepSec](https://github.com/vercel-labs/deepsec) as a first-class Grok plugin:
+This fork ships a **zero-Node** port of [Vercel DeepSec](https://github.com/vercel-labs/deepsec) as a first-class Grok plugin.
+**Upstream baseline: deepsec `2.2.4`** at
+[`97ebd04`](https://github.com/vercel-labs/deepsec/tree/97ebd04b455a492dfd5b9ad86f2dd9cf8b05fa04)
+(see [`plugins/deepsec/UPSTREAM.md`](plugins/deepsec/UPSTREAM.md)).
 
 | Slash | Purpose |
 |-------|---------|

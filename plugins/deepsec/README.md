@@ -2,6 +2,18 @@
 
 Native port of [vercel-labs/deepsec](https://github.com/vercel-labs/deepsec) as a **zero-Node** Grok plugin.
 
+## Upstream baseline
+
+This plugin was **refactored from upstream DeepSec `2.2.4`** at commit
+[`97ebd04`](https://github.com/vercel-labs/deepsec/tree/97ebd04b455a492dfd5b9ad86f2dd9cf8b05fa04)
+(2026-07-19). Full pin: [`UPSTREAM.md`](UPSTREAM.md) · [`SOURCE_REV`](SOURCE_REV).
+
+| | |
+|--|--|
+| Upstream version | **2.2.4** |
+| Upstream commit | `97ebd04b455a492dfd5b9ad86f2dd9cf8b05fa04` |
+| This plugin | 1.0.0 |
+
 ## Install
 
 ```bash

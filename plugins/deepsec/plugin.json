@@ -1,9 +1,17 @@
 {
   "name": "deepsec",
   "version": "1.0.0",
-  "description": "AI-powered vulnerability scanner pipeline (scan → process → revalidate → triage → export) for Grok Build. Zero Node — pure Python matchers + Grok skills.",
+  "description": "AI-powered vulnerability scanner pipeline (scan → process → revalidate → triage → export) for Grok Build. Zero Node — pure Python matchers + Grok skills. Refactored from vercel-labs/deepsec 2.2.4.",
   "author": { "name": "Komondor / Grok Build fork" },
   "license": "Apache-2.0",
   "keywords": ["security", "sast", "vulnerability", "scan", "deepsec"],
-  "skills": "skills"
+  "skills": "skills",
+  "upstream": {
+    "name": "vercel-labs/deepsec",
+    "url": "https://github.com/vercel-labs/deepsec",
+    "version": "2.2.4",
+    "commit": "97ebd04b455a492dfd5b9ad86f2dd9cf8b05fa04",
+    "commitDate": "2026-07-19",
+    "tree": "https://github.com/vercel-labs/deepsec/tree/97ebd04b455a492dfd5b9ad86f2dd9cf8b05fa04"
+  }
 }

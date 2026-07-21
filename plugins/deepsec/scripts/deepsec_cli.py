@@ -83,6 +83,8 @@ SETUP_TEMPLATE = """# DeepSec setup for this project
 """
 
 HELP = """DeepSec — AI-assisted vulnerability pipeline for Grok Build
+Plugin 1.0.0 · refactored from vercel-labs/deepsec 2.2.4 (97ebd04, 2026-07-19)
+See plugins/deepsec/UPSTREAM.md
 
 Commands:
   init                 Scaffold .grok/deepsec workspace

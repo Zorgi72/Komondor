@@ -3,6 +3,9 @@
 **Phase 0 deliverable.** Synthesizes the six specialist reports under `docs/analysis/`.  
 **Sources:** vercel-labs/deepsec (clone used during analysis), Grok-Fork plugin/skills model, live `~/.grok` conventions.
 
+**Upstream pin (refactor baseline):** deepsec **2.2.4** @ `97ebd04b455a492dfd5b9ad86f2dd9cf8b05fa04` (2026-07-19).  
+See [`plugins/deepsec/UPSTREAM.md`](../plugins/deepsec/UPSTREAM.md) and `plugins/deepsec/SOURCE_REV`.
+
 | Doc | Focus |
 |-----|--------|
 | [01-pipeline-and-architecture.md](analysis/01-pipeline-and-architecture.md) | Stages, FileRecord lifecycle, locks, resume |
