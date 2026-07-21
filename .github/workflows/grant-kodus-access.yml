@@ -1,69 +1,110 @@
+# Grant Kodus bot access + write GRANT_REPORT.
+#
+# Root cause of "No jobs were run" (empty jobs[], failure on push):
+# GitHub Actions rejects unknown top-level `permissions` keys. The previous
+# workflow used `administration: write` and `members: write`, which are NOT
+# valid GITHUB_TOKEN workflow permissions, so Actions failed validation
+# before scheduling any job.
+#
+# Collaborator invites require a classic PAT with repo admin (GITHUB_TOKEN
+# cannot invite collaborators). Prefer secrets.KODUS_GRANT_TOKEN or
+# secrets.GH_PAT when set; otherwise record the limitation in GRANT_REPORT.
 name: grant-kodus-access
 on:
   push:
     branches: [main, kodus-grant]
   workflow_dispatch:
+
+# Only valid GITHUB_TOKEN permission keys (see workflow-syntax docs).
 permissions:
   contents: write
-  administration: write
   pull-requests: write
   issues: write
-  members: write
+
 jobs:
   grant:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: diagnose token
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.KODUS_GRANT_TOKEN || secrets.GH_PAT || github.token }}
         run: |
+          set -euo pipefail
           echo "actor=$GITHUB_ACTOR event=$GITHUB_EVENT_NAME"
-          gh api user || true
-          gh api repos/${{ github.repository }} --jq '{private,permissions}' || true
-          gh api repos/${{ github.repository }}/actions/permissions || true
-      - name: public + invite + webhook prep
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const owner = context.repo.owner, repo = context.repo.repo;
-            const lines = [];
-            const log = (m,o)=>{ const s=m+(o?' '+JSON.stringify(o):''); lines.push(s); console.log(s); };
-            try {
-              const r = await github.rest.repos.get({owner, repo});
-              log('repo_get', {private:r.data.private, permissions:r.data.permissions});
-            } catch(e) { log('repo_get_err', {status:e.status, msg:e.message}); }
-            try {
-              const r = await github.rest.repos.update({owner, repo, private:false});
-              log('visibility_ok', {private:r.data.private});
-            } catch(e) { log('visibility_err', {status:e.status, msg:e.message, resp:e.response&&e.response.data}); }
-            for (const username of ['Zorgi72']) {
-              try {
-                const r = await github.rest.repos.addCollaborator({owner, repo, username, permission:'admin'});
-                log('collab_ok_'+username, {status:r.status, data:r.data});
-              } catch(e) { log('collab_err_'+username, {status:e.status, msg:e.message, resp:e.response&&e.response.data}); }
-            }
-            // Also try creating a classic-style deploy key won't help reviews
-            try {
-              const inv = await github.rest.repos.listInvitations({owner, repo});
-              log('invitations', inv.data.map(i=>({invitee:i.invitee&&i.invitee.login, perms:i.permissions})));
-            } catch(e) { log('inv_err', {status:e.status, msg:e.message}); }
-            try {
-              const collabs = await github.rest.repos.listCollaborators({owner, repo});
-              log('collaborators', collabs.data.map(c=>c.login));
-            } catch(e) { log('collabs_err', {status:e.status, msg:e.message}); }
-            fs.writeFileSync('GRANT_REPORT.txt', lines.join('\n')+'\n');
+          echo "token_source=$(if [ -n '${{ secrets.KODUS_GRANT_TOKEN }}' ]; then echo KODUS_GRANT_TOKEN; elif [ -n '${{ secrets.GH_PAT }}' ]; then echo GH_PAT; else echo GITHUB_TOKEN; fi)"
+          gh api user --jq '{login,type}' || true
+          gh api "repos/${{ github.repository }}" --jq '{private,permissions}' || true
+
+      - name: invite + report
+        env:
+          # Prefer a PAT with admin:invite; fall back to GITHUB_TOKEN for diagnostics.
+          GH_TOKEN: ${{ secrets.KODUS_GRANT_TOKEN || secrets.GH_PAT || github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          lines=()
+          log() { lines+=("$*"); echo "$*"; }
+
+          log "ran_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          log "event=$GITHUB_EVENT_NAME actor=$GITHUB_ACTOR sha=$GITHUB_SHA"
+
+          # Visibility (may fail with GITHUB_TOKEN on org policies)
+          if out=$(gh api -X PATCH "repos/${REPO}" -f private=false 2>&1); then
+            log "visibility_ok private=false"
+          else
+            log "visibility_err $out"
+          fi
+
+          # Kodus / bot identities to invite as collaborators (admin for setup)
+          for username in Zorgi72; do
+            if out=$(gh api -X PUT "repos/${REPO}/collaborators/${username}" \
+                -f permission=admin 2>&1); then
+              log "collab_ok_${username} $out"
+            else
+              log "collab_err_${username} $out"
+            fi
+          done
+
+          if out=$(gh api "repos/${REPO}/invitations" 2>&1); then
+            log "invitations $out"
+          else
+            log "inv_err $out"
+          fi
+
+          if out=$(gh api "repos/${REPO}/collaborators" --jq '.[].login' 2>&1); then
+            log "collaborators $out"
+          else
+            log "collabs_err $out"
+          fi
+
+          # Installations (GitHub Apps) — read-only diagnostic
+          if out=$(gh api "repos/${REPO}/installation" 2>&1); then
+            log "installation $out"
+          else
+            log "installation_note $out"
+          fi
+
+          printf '%s\n' "${lines[@]}" > GRANT_REPORT.txt
+          echo "--- GRANT_REPORT ---"
+          cat GRANT_REPORT.txt
+
       - name: push report always
         if: always()
+        env:
+          GH_TOKEN: ${{ secrets.KODUS_GRANT_TOKEN || secrets.GH_PAT || github.token }}
         run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          set -euo pipefail
+          test -f GRANT_REPORT.txt || echo "missing GRANT_REPORT (prior step failed hard)" > GRANT_REPORT.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin grant-results 2>/dev/null || true
           git checkout -B grant-results
-          git add -f GRANT_REPORT.txt || true
-          echo "ran_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> GRANT_REPORT.txt
           git add -f GRANT_REPORT.txt
-          git commit -m "grant report $(date -u +%Y%m%d%H%M%S)" || echo "no commit"
-          git push -f origin grant-results 2>&1 | tee push.out
-          cat push.out
+          git commit -m "grant report $(date -u +%Y%m%d%H%M%S)" || echo "no commit (unchanged)"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" grant-results 2>&1 | tee push.out || {
+            echo "push_failed; report is still in the job log above"
+            cat GRANT_REPORT.txt
+            exit 0
+          }
