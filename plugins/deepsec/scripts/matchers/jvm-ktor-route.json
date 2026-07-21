@@ -1,0 +1,30 @@
+{
+  "slug": "jvm-ktor-route",
+  "description": "Ktor routing DSL (gated on Ktor)",
+  "filePatterns": [
+    "**/*.kt"
+  ],
+  "patterns": [
+    {
+      "regex": "\\brouting\\s*\\{",
+      "label": "routing { ... } block",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:get|post|put|patch|delete)\\s*\\(\\s*\"[^\"]+\"\\s*\\)\\s*\\{",
+      "label": "<verb>(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bauthenticate\\s*\\(\\s*\"[^\"]+\"\\s*\\)\\s*\\{",
+      "label": "authenticate(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcall\\.receive\\b",
+      "label": "call.receive (untrusted body)",
+      "flags": ""
+    }
+  ],
+  "source": "jvm-ktor-route.ts"
+}

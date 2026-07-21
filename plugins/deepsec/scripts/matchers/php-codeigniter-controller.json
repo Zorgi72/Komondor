@@ -1,0 +1,31 @@
+{
+  "slug": "php-codeigniter-controller",
+  "description": "CodeIgniter 4 controllers and route mappings (gated on CodeIgniter)",
+  "filePatterns": [
+    "**/app/Controllers/**/*.php",
+    "**/Controllers/**/*.php"
+  ],
+  "patterns": [
+    {
+      "regex": "class\\s+\\w+\\s+extends\\s+(?:BaseController|ResourceController|Controller)\\b",
+      "label": "CI Controller class",
+      "flags": ""
+    },
+    {
+      "regex": "\\$this->request->getVar\\s*\\(|\\$this->request->getPost\\s*\\(",
+      "label": "request var accessor",
+      "flags": ""
+    },
+    {
+      "regex": "\\$routes->(?:get|post|put|patch|delete|add)\\s*\\(",
+      "label": "$routes-> registration",
+      "flags": ""
+    },
+    {
+      "regex": "helper\\s*\\(\\s*['\"][^'\"]+['\"]\\s*\\)",
+      "label": "helper() \u2014 review for unsafe loaders",
+      "flags": ""
+    }
+  ],
+  "source": "php-codeigniter-controller.ts"
+}

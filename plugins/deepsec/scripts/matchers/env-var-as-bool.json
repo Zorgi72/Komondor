@@ -1,0 +1,30 @@
+{
+  "slug": "env-var-as-bool",
+  "description": "Security env vars checked with truthy/falsy \u2014 ",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "if\\s*\\(\\s*!?\\s*process\\.env\\.\\w*(DISABLE|SKIP|BYPASS|NO_)\\w{0,40}AUTH",
+      "label": "Security disable flag checked as truthy",
+      "flags": "i"
+    },
+    {
+      "regex": "if\\s*\\(\\s*!?\\s*process\\.env\\.\\w*(DISABLE|SKIP|BYPASS|NO_)\\w{0,40}(VERIFY|CHECK|VALIDATE)",
+      "label": "Verification disable flag checked as truthy",
+      "flags": "i"
+    },
+    {
+      "regex": "if\\s*\\(\\s*process\\.env\\.\\w*(ENABLE|REQUIRE)\\w{0,40}AUTH\\b",
+      "label": "Auth enable flag \u2014 falsy when unset",
+      "flags": "i"
+    },
+    {
+      "regex": "process\\.env\\.\\w*(SECRET|TOKEN|KEY)\\w*\\s*[^!=?|&]",
+      "label": "Secret env var used as boolean",
+      "flags": ""
+    }
+  ],
+  "source": "env-var-as-bool.ts"
+}

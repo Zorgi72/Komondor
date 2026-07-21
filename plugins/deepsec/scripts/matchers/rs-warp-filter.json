@@ -1,0 +1,30 @@
+{
+  "slug": "rs-warp-filter",
+  "description": "Warp filter compositions (gated on Warp)",
+  "filePatterns": [
+    "**/*.rs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bwarp::path!\\s*\\(",
+      "label": "warp::path!() filter",
+      "flags": ""
+    },
+    {
+      "regex": "\\bwarp::(?:get|post|put|patch|delete)\\s*\\(\\s*\\)",
+      "label": "warp::<verb>()",
+      "flags": ""
+    },
+    {
+      "regex": "\\.and_then\\s*\\(",
+      "label": ".and_then(handler)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bwarp::filters::body::json\\s*\\(",
+      "label": "json body extractor",
+      "flags": ""
+    }
+  ],
+  "source": "rs-warp-filter.ts"
+}

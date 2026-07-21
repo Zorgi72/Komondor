@@ -1,0 +1,30 @@
+{
+  "slug": "go-fiber-route",
+  "description": "Fiber route registrations (gated on Fiber)",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:app|api|router|g)\\.(?:Get|Post|Put|Patch|Delete|All)\\s*\\(",
+      "label": "Fiber method registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\bfiber\\.New\\s*\\(",
+      "label": "fiber.New() init",
+      "flags": ""
+    },
+    {
+      "regex": "\\.Group\\s*\\(",
+      "label": "Fiber .Group (auth scope)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bc\\.(?:Query|Params|Body(?:Parser)?|Get|FormValue|Cookies)\\b",
+      "label": "Request accessor (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "go-fiber-route.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "py-starlette-route",
+  "description": "Starlette Route / Mount / WebSocketRoute declarations (gated on Starlette)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bRoute\\s*\\(\\s*['\"][^'\"]+['\"]\\s*,",
+      "label": "Route(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bMount\\s*\\(\\s*['\"][^'\"]+['\"]\\s*,",
+      "label": "Mount(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bWebSocketRoute\\s*\\(",
+      "label": "WebSocketRoute declaration",
+      "flags": ""
+    },
+    {
+      "regex": "\\bAuthenticationMiddleware\\b",
+      "label": "AuthenticationMiddleware wiring",
+      "flags": ""
+    }
+  ],
+  "source": "py-starlette-route.ts"
+}

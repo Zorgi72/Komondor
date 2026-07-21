@@ -1,0 +1,60 @@
+{
+  "slug": "test-header-bypass",
+  "description": "Test/debug headers that bypass security checks in production",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "x-automated-test",
+      "label": "x-automated-test header",
+      "flags": "i"
+    },
+    {
+      "regex": "x-test-",
+      "label": "x-test-* header",
+      "flags": "i"
+    },
+    {
+      "regex": "x-debug",
+      "label": "x-debug header",
+      "flags": "i"
+    },
+    {
+      "regex": "x-internal",
+      "label": "x-internal header",
+      "flags": "i"
+    },
+    {
+      "regex": "x-bypass",
+      "label": "x-bypass header",
+      "flags": "i"
+    },
+    {
+      "regex": "x-skip-auth",
+      "label": "x-skip-auth header",
+      "flags": "i"
+    },
+    {
+      "regex": "x-no-rate-limit",
+      "label": "x-no-rate-limit header",
+      "flags": "i"
+    },
+    {
+      "regex": "x-admin",
+      "label": "x-admin header",
+      "flags": "i"
+    },
+    {
+      "regex": "['\"]test['\"].{0,40}===.{0,40}headers",
+      "label": "test value in header check",
+      "flags": "i"
+    },
+    {
+      "regex": "headers.{0,80}['\"]test['\"]",
+      "label": "header compared to test",
+      "flags": "i"
+    }
+  ],
+  "source": "test-header-bypass.ts"
+}

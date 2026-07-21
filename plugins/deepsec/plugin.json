@@ -1,0 +1,9 @@
+{
+  "name": "deepsec",
+  "version": "1.0.0",
+  "description": "AI-powered vulnerability scanner pipeline (scan → process → revalidate → triage → export) for Grok Build. Zero Node — pure Python matchers + Grok skills.",
+  "author": { "name": "Komondor / Grok Build fork" },
+  "license": "Apache-2.0",
+  "keywords": ["security", "sast", "vulnerability", "scan", "deepsec"],
+  "skills": "skills"
+}

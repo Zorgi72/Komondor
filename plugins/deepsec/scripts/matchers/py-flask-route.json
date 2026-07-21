@@ -1,0 +1,30 @@
+{
+  "slug": "py-flask-route",
+  "description": "Flask route registrations \u2014 entry points (gated on Flask)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*@(?:app|bp|blueprint|api)\\.route\\s*\\(",
+      "label": "Flask @app.route / blueprint.route",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*@(?:app|bp)\\.(?:get|post|put|patch|delete)\\s*\\(",
+      "label": "Flask method-shortcut decorator",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bBlueprint\\s*\\(",
+      "label": "Blueprint(...) registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\brender_template_string\\s*\\(",
+      "label": "render_template_string (SSTI sink)",
+      "flags": ""
+    }
+  ],
+  "source": "py-flask-route.ts"
+}

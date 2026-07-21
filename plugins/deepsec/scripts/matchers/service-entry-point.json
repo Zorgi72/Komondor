@@ -1,0 +1,45 @@
+{
+  "slug": "service-entry-point",
+  "description": "Lambda handlers, event consumers, cron jobs, and API endpoints in services (weak candidate)",
+  "filePatterns": [
+    "**/services/**/src/index.ts",
+    "**/services/**/src/event-consumer.ts",
+    "**/services/**/src/endpoint.ts",
+    "**/services/**/src/endpoints/**/*.ts",
+    "**/services/**/src/handler.ts",
+    "**/services/**/src/handlers/**/*.ts"
+  ],
+  "patterns": [
+    {
+      "regex": "export\\s+default\\s+(async\\s+)?(function\\s*)?\\(",
+      "label": "Lambda default export handler (weak candidate)",
+      "flags": ""
+    },
+    {
+      "regex": "export\\s+default\\s+async\\s+function\\b",
+      "label": "Lambda default export handler (weak candidate)",
+      "flags": ""
+    },
+    {
+      "regex": "eventConsumer|event-consumer|EventConsumer",
+      "label": "Event consumer entry point (weak candidate)",
+      "flags": ""
+    },
+    {
+      "regex": "createEndpoint|registerEndpoint",
+      "label": "Service endpoint registration (weak candidate)",
+      "flags": ""
+    },
+    {
+      "regex": "handleRequest|routeHandler|createRouter",
+      "label": "Request handler (weak candidate)",
+      "flags": ""
+    },
+    {
+      "regex": "withSchema\\s*\\(",
+      "label": "withSchema route handler (weak candidate)",
+      "flags": ""
+    }
+  ],
+  "source": "service-entry-point.ts"
+}

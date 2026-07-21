@@ -1,0 +1,35 @@
+{
+  "slug": "apex-rest-resource",
+  "description": "Salesforce Apex REST resources and class sharing (gated on Apex)",
+  "filePatterns": [
+    "**/*.cls"
+  ],
+  "patterns": [
+    {
+      "regex": "@RestResource\\s*\\(\\s*urlMapping\\s*=\\s*'[^']+'\\s*\\)",
+      "label": "@RestResource declaration",
+      "flags": ""
+    },
+    {
+      "regex": "@Http(?:Get|Post|Put|Patch|Delete|Head)\\b",
+      "label": "@HttpVerb method",
+      "flags": ""
+    },
+    {
+      "regex": "\\bwithout\\s+sharing\\b",
+      "label": "without sharing \u2014 bypasses record-level security (REVIEW)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bwith\\s+sharing\\b",
+      "label": "with sharing \u2014 record security applied",
+      "flags": ""
+    },
+    {
+      "regex": "\\bAuraEnabled\\s*\\(",
+      "label": "@AuraEnabled \u2014 exposed to Lightning",
+      "flags": ""
+    }
+  ],
+  "source": "apex-rest-resource.ts"
+}

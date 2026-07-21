@@ -1,0 +1,90 @@
+{
+  "slug": "sql-injection",
+  "description": "Raw SQL string concatenation or interpolation",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "`\\s*SELECT\\s+[^`]{0,400}\\$\\{",
+      "label": "template literal SELECT with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "`\\s*INSERT\\s+[^`]{0,400}\\$\\{",
+      "label": "template literal INSERT with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "`\\s*UPDATE\\s+[^`]{0,400}\\$\\{",
+      "label": "template literal UPDATE with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "`\\s*DELETE\\s+[^`]{0,400}\\$\\{",
+      "label": "template literal DELETE with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "['\"]SELECT\\s+[^'\"]{0,400}['\"]\\s*\\+",
+      "label": "string concat SELECT",
+      "flags": ""
+    },
+    {
+      "regex": "['\"]INSERT\\s+[^'\"]{0,400}['\"]\\s*\\+",
+      "label": "string concat INSERT",
+      "flags": ""
+    },
+    {
+      "regex": "['\"]UPDATE\\s+[^'\"]{0,400}['\"]\\s*\\+",
+      "label": "string concat UPDATE",
+      "flags": ""
+    },
+    {
+      "regex": "['\"]DELETE\\s+[^'\"]{0,400}['\"]\\s*\\+",
+      "label": "string concat DELETE",
+      "flags": ""
+    },
+    {
+      "regex": "query\\s*\\(\\s*`[^`]*\\$\\{",
+      "label": "query() with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "\\.raw\\s*\\(\\s*`[^`]*\\$\\{",
+      "label": ".raw() with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "LIKE\\s+['\"]?%?\\$\\{",
+      "label": "LIKE with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "LIKE\\s+['\"]%\\$\\{",
+      "label": "LIKE ",
+      "flags": ""
+    },
+    {
+      "regex": "RLIKE\\s+['\"]?\\$\\{",
+      "label": "RLIKE with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "executeQuery\\w*\\s*\\(\\s*`[^`]*\\$\\{",
+      "label": "executeQuery with template interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "sql\\.raw\\s*\\(",
+      "label": "sql.raw() \u2014 raw SQL (verify parameterized)",
+      "flags": ""
+    },
+    {
+      "regex": "sql`[^`]{0,400}\\$\\{[^}]{0,200}\\}",
+      "label": "sql tagged template with interpolation",
+      "flags": ""
+    }
+  ],
+  "source": "sql-injection.ts"
+}

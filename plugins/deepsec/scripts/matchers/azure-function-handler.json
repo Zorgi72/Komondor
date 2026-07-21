@@ -1,0 +1,31 @@
+{
+  "slug": "azure-function-handler",
+  "description": "Azure Functions Node/Python/JS handler signatures (gated on Azure Functions)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs,cjs,py}",
+    "**/function.json"
+  ],
+  "patterns": [
+    {
+      "regex": "module\\.exports\\s*=\\s*async\\s*function\\s*\\(\\s*context\\b",
+      "label": "module.exports = async function(context, req) \u2014 Azure Functions Node",
+      "flags": ""
+    },
+    {
+      "regex": "^\\s*def\\s+main\\s*\\(\\s*req\\s*:\\s*func\\.HttpRequest",
+      "label": "Python def main(req: func.HttpRequest)",
+      "flags": "m"
+    },
+    {
+      "regex": "\"authLevel\"\\s*:\\s*\"(?:anonymous|function|admin)\"",
+      "label": "function.json authLevel \u2014 confirm anonymous is intentional",
+      "flags": ""
+    },
+    {
+      "regex": "\\bapp\\.http\\s*\\(\\s*['\"][^'\"]+['\"]\\s*,",
+      "label": "app.http(",
+      "flags": ""
+    }
+  ],
+  "source": "azure-function-handler.ts"
+}

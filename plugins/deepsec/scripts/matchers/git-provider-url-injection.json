@@ -1,0 +1,35 @@
+{
+  "slug": "git-provider-url-injection",
+  "description": "Git provider API URLs constructed with interpolated user input \u2014 path injection risk",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "api\\.github\\.com[^`'\"]{0,200}\\$\\{",
+      "label": "GitHub API URL with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "github\\.com\\/[^`'\"]{0,200}\\$\\{",
+      "label": "GitHub URL with interpolated path",
+      "flags": ""
+    },
+    {
+      "regex": "gitlab\\.com[^`'\"]{0,200}\\$\\{",
+      "label": "GitLab URL with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "bitbucket\\.org[^`'\"]{0,200}\\$\\{",
+      "label": "Bitbucket URL with interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "`https?:\\/\\/[^`]{0,80}git[^`]{0,80}\\$\\{",
+      "label": "Git provider URL with interpolation",
+      "flags": ""
+    }
+  ],
+  "source": "git-provider-url-injection.ts"
+}

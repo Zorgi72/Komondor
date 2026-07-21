@@ -1,0 +1,40 @@
+{
+  "slug": "go-http-handler",
+  "description": "Go HTTP handler functions \u2014 entry points for investigation (weak candidate)",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "http\\.HandleFunc\\s*\\(",
+      "label": "http.HandleFunc registration",
+      "flags": ""
+    },
+    {
+      "regex": "http\\.Handle\\s*\\(",
+      "label": "http.Handle registration",
+      "flags": ""
+    },
+    {
+      "regex": "mux\\.Handle(Func)?\\s*\\(",
+      "label": "mux handler registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\.GET\\s*\\(|\\.POST\\s*\\(|\\.PUT\\s*\\(|\\.DELETE\\s*\\(",
+      "label": "HTTP method handler",
+      "flags": ""
+    },
+    {
+      "regex": "func\\s+\\w+\\s*\\(\\s*w\\s+http\\.ResponseWriter.*r\\s+\\*http\\.Request",
+      "label": "HTTP handler function signature",
+      "flags": ""
+    },
+    {
+      "regex": "ServeHTTP\\s*\\(",
+      "label": "ServeHTTP implementation",
+      "flags": ""
+    }
+  ],
+  "source": "go-http-handler.ts"
+}

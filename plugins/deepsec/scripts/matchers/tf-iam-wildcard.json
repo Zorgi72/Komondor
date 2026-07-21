@@ -1,0 +1,52 @@
+{
+  "slug": "tf-iam-wildcard",
+  "description": "Terraform IAM/KMS/S3/SNS policy with wildcard Action/Resource/Principal",
+  "filePatterns": [
+    "**/*.tf",
+    "**/*.tf.json",
+    "**/*.hcl"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*actions\\s*=\\s*\\[\\s*['\"]\\*['\"]\\s*\\]",
+      "label": "actions = [",
+      "flags": "i"
+    },
+    {
+      "regex": "['\"]Action['\"]\\s*:\\s*['\"]\\*['\"]",
+      "label": "Action = ",
+      "flags": "i"
+    },
+    {
+      "regex": "^\\s*resources\\s*=\\s*\\[\\s*['\"]\\*['\"]\\s*\\]",
+      "label": "resources = [",
+      "flags": "i"
+    },
+    {
+      "regex": "['\"]Resource['\"]\\s*:\\s*['\"]\\*['\"]",
+      "label": "Resource = ",
+      "flags": "i"
+    },
+    {
+      "regex": "['\"]Principal['\"]\\s*:\\s*['\"]\\*['\"]",
+      "label": "Principal = ",
+      "flags": "i"
+    },
+    {
+      "regex": "['\"]AWS['\"]\\s*:\\s*['\"]\\*['\"]",
+      "label": "",
+      "flags": "i"
+    },
+    {
+      "regex": "\\bidentifiers\\s*=\\s*\\[\\s*['\"]\\*['\"]\\s*\\]",
+      "label": "identifiers = [",
+      "flags": "i"
+    },
+    {
+      "regex": "\\bassume_role_policy\\s*=\\s*[^\"]*\\bAWS['\"]\\s*:\\s*['\"]\\*['\"]",
+      "label": "assume_role with AWS:*",
+      "flags": "i"
+    }
+  ],
+  "source": "tf-iam-wildcard.ts"
+}

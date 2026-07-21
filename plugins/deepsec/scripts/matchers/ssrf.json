@@ -1,0 +1,30 @@
+{
+  "slug": "ssrf",
+  "description": "HTTP requests with dynamic/user-controlled URLs",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "fetch\\s*\\(\\s*(req\\.|request\\.|params\\.|query\\.|body\\.|parsed\\.)",
+      "label": "fetch with request-derived URL",
+      "flags": ""
+    },
+    {
+      "regex": "axios\\.(get|post|put|delete|patch|request)\\s*\\(\\s*(req\\.|request\\.|params\\.|query\\.|body\\.)",
+      "label": "axios with request-derived URL",
+      "flags": ""
+    },
+    {
+      "regex": "https?\\.request\\s*\\(\\s*`[^`]*\\$\\{",
+      "label": "http.request with interpolated URL",
+      "flags": ""
+    },
+    {
+      "regex": "new\\s+URL\\s*\\(\\s*(req\\.|request\\.|params\\.|query\\.|body\\.)",
+      "label": "new URL from request data",
+      "flags": ""
+    }
+  ],
+  "source": "ssrf.ts"
+}

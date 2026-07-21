@@ -1,0 +1,30 @@
+{
+  "slug": "dotnet-minimal-api",
+  "description": "ASP.NET Core minimal-API endpoint mappings (gated on .NET)",
+  "filePatterns": [
+    "**/*.cs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bapp\\.Map(?:Get|Post|Put|Patch|Delete|Methods)\\s*\\(",
+      "label": "app.Map<Verb> registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\.RequireAuthorization\\s*\\(",
+      "label": ".RequireAuthorization() \u2014 auth gate",
+      "flags": ""
+    },
+    {
+      "regex": "\\.AllowAnonymous\\s*\\(\\s*\\)",
+      "label": ".AllowAnonymous() \u2014 public route",
+      "flags": ""
+    },
+    {
+      "regex": "\\bWebApplication\\.CreateBuilder\\s*\\(",
+      "label": "WebApplication.CreateBuilder() init",
+      "flags": ""
+    }
+  ],
+  "source": "dotnet-minimal-api.ts"
+}

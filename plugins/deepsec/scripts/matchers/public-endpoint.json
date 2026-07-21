@@ -1,0 +1,28 @@
+{
+  "slug": "public-endpoint",
+  "description": "Endpoints with __PUBLIC__ auth strategy or no authentication \u2014 high-value investigation targets",
+  "filePatterns": [
+    "**/apps/**/route.ts",
+    "**/apps/**/route.*.ts",
+    "**/services/**/endpoints/**/*.ts",
+    "**/services/**/src/index.ts"
+  ],
+  "patterns": [
+    {
+      "regex": "authStrategy:\\s*['\"]__PUBLIC__['\"]",
+      "label": "__PUBLIC__ auth strategy",
+      "flags": ""
+    },
+    {
+      "regex": "authStrategy:\\s*['\"]static['\"]",
+      "label": "static auth strategy (header-based)",
+      "flags": ""
+    },
+    {
+      "regex": "authStrategy:\\s*['\"]none['\"]",
+      "label": "no auth strategy",
+      "flags": ""
+    }
+  ],
+  "source": "public-endpoint.ts"
+}

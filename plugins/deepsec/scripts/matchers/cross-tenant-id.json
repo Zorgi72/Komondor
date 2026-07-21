@@ -1,0 +1,35 @@
+{
+  "slug": "cross-tenant-id",
+  "description": "User-supplied IDs used in DB lookups without ownership verification \u2014 cross-tenant risk",
+  "filePatterns": [
+    "**/services/**/endpoints/**/*.ts",
+    "**/services/**/endpoint/**/*.ts",
+    "**/services/**/src/index.ts",
+    "**/apps/**/route.ts",
+    "**/apps/**/route.*.ts",
+    "**/app/api/**/*.ts"
+  ],
+  "patterns": [
+    {
+      "regex": "get\\w+By(Id|Uid)\\s*\\(\\s*(parsed\\.(body|query|params)|req\\.(body|query|params))",
+      "label": "DB lookup with user-supplied ID from request",
+      "flags": ""
+    },
+    {
+      "regex": "(teamId|ownerId|userId|installationId|configurationId|integrationConfigurationId)\\s*[:=]\\s*(parsed|req)\\.(body|query|params)",
+      "label": "Tenant/user ID extracted from request input",
+      "flags": ""
+    },
+    {
+      "regex": "getTeamById\\s*\\(\\s*\\w+\\.(ownerId|teamId)",
+      "label": "getTeamById with potentially unverified ownerId",
+      "flags": ""
+    },
+    {
+      "regex": "find(One)?By(Id|Uid)\\s*\\(\\s*(parsed|req)\\.",
+      "label": "findById with user-supplied ID",
+      "flags": ""
+    }
+  ],
+  "source": "cross-tenant-id.ts"
+}

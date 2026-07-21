@@ -1,0 +1,32 @@
+{
+  "slug": "js-astro-endpoint",
+  "description": "Astro API endpoints and SSR routes (gated on Astro)",
+  "filePatterns": [
+    "**/pages/**/*.{ts,js}",
+    "**/pages/api/**/*.{ts,js}",
+    "**/src/pages/**/*.astro"
+  ],
+  "patterns": [
+    {
+      "regex": "export\\s+(?:async\\s+)?(?:const|function)\\s+(GET|POST|PUT|PATCH|DELETE|ALL)\\b",
+      "label": "Astro endpoint method export",
+      "flags": ""
+    },
+    {
+      "regex": "\\bAstro\\.(?:request|cookies|params|url)\\b",
+      "label": "Astro.* request accessor",
+      "flags": ""
+    },
+    {
+      "regex": "\\bexport\\s+const\\s+prerender\\s*=",
+      "label": "prerender flag (SSR / SSG split)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bSetCookie\\s*\\(|cookies\\.set\\s*\\(",
+      "label": "cookie write \u2014 auth surface",
+      "flags": ""
+    }
+  ],
+  "source": "js-astro-endpoint.ts"
+}

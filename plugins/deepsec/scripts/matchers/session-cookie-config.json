@@ -1,0 +1,43 @@
+{
+  "slug": "session-cookie-config",
+  "description": "Session/auth cookie configuration \u2014 verify httpOnly + sameSite + secure",
+  "filePatterns": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.mjs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bcookies\\(\\)\\s*\\.\\s*set\\s*\\(",
+      "label": "next/headers cookies().set() \u2014 verify cookie options",
+      "flags": ""
+    },
+    {
+      "regex": "\\bres\\.\\s*cookie\\s*\\(|\\bresponse\\.\\s*cookie\\s*\\(",
+      "label": "res.cookie() \u2014 verify httpOnly+secure+sameSite",
+      "flags": ""
+    },
+    {
+      "regex": "\\bnew\\s+(?:NextAuth|BetterAuth|Lucia)\\s*\\(",
+      "label": "Auth library construction \u2014 review cookie config",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsessionCookie\\s*:\\s*\\{|\\bcookieOptions\\s*:\\s*\\{|\\bcookies\\s*:\\s*\\{",
+      "label": "Cookie options block",
+      "flags": ""
+    },
+    {
+      "regex": "\\bironOptions\\s*=\\s*\\{|\\bironSession\\s*\\(",
+      "label": "iron-session config",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsetHeader\\s*\\(\\s*[\"']Set-Cookie[\"']",
+      "label": "Raw Set-Cookie header \u2014 verify flags",
+      "flags": ""
+    }
+  ],
+  "source": "session-cookie-config.ts"
+}

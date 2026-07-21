@@ -1,0 +1,30 @@
+{
+  "slug": "rs-rocket-route",
+  "description": "Rocket route attributes and mount! macro (gated on Rocket)",
+  "filePatterns": [
+    "**/*.rs"
+  ],
+  "patterns": [
+    {
+      "regex": "#\\[\\s*(?:get|post|put|patch|delete|head|options)\\s*\\(\\s*\"[^\"]+\"\\s*\\)",
+      "label": "Rocket route attribute",
+      "flags": ""
+    },
+    {
+      "regex": "\\brocket::routes!\\s*\\[",
+      "label": "routes![...] macro",
+      "flags": ""
+    },
+    {
+      "regex": "\\.mount\\s*\\(\\s*\"[^\"]+\"",
+      "label": ".mount() registration",
+      "flags": ""
+    },
+    {
+      "regex": "Json<[^>]+>|Form<[^>]+>|Query<[^>]+>",
+      "label": "guard / extractor (untrusted)",
+      "flags": ""
+    }
+  ],
+  "source": "rs-rocket-route.ts"
+}

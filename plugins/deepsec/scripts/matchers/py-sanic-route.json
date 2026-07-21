@@ -1,0 +1,30 @@
+{
+  "slug": "py-sanic-route",
+  "description": "Sanic route handlers and Blueprints (gated on Sanic)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*@(?:app|bp|blueprint)\\.route\\s*\\(",
+      "label": "Sanic @app.route / @bp.route",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*@(?:app|bp)\\.(?:get|post|put|patch|delete|head|options|websocket)\\s*\\(",
+      "label": "Sanic method-shortcut decorator",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bSanic\\s*\\(\\s*['\"][^'\"]*['\"]\\s*\\)",
+      "label": "Sanic() instance",
+      "flags": ""
+    },
+    {
+      "regex": "\\brequest\\.(?:args|json|form|files|headers)\\b",
+      "label": "request accessor",
+      "flags": ""
+    }
+  ],
+  "source": "py-sanic-route.ts"
+}

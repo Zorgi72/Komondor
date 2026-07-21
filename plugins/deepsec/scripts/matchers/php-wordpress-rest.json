@@ -1,0 +1,35 @@
+{
+  "slug": "php-wordpress-rest",
+  "description": "WordPress REST routes, AJAX hooks, and shortcodes (gated on WordPress)",
+  "filePatterns": [
+    "**/*.php"
+  ],
+  "patterns": [
+    {
+      "regex": "register_rest_route\\s*\\(",
+      "label": "register_rest_route() \u2014 REST endpoint",
+      "flags": ""
+    },
+    {
+      "regex": "add_action\\s*\\(\\s*['\"]wp_ajax_(?:nopriv_)?[^'\"]+['\"]",
+      "label": "wp_ajax_*/wp_ajax_nopriv_* hook (nopriv = unauthenticated)",
+      "flags": ""
+    },
+    {
+      "regex": "add_shortcode\\s*\\(",
+      "label": "add_shortcode() \u2014 user-content surface",
+      "flags": ""
+    },
+    {
+      "regex": "'permission_callback'\\s*=>\\s*'__return_true'",
+      "label": "permission_callback => __return_true (public REST route)",
+      "flags": ""
+    },
+    {
+      "regex": "\\$_(?:GET|POST|REQUEST|COOKIE|SERVER)\\b",
+      "label": "PHP superglobal (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "php-wordpress-rest.ts"
+}

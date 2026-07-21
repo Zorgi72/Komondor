@@ -1,0 +1,31 @@
+{
+  "slug": "js-remix-route",
+  "description": "Remix route loaders and actions (gated on Remix)",
+  "filePatterns": [
+    "**/app/routes/**/*.{ts,tsx,js,jsx}",
+    "**/routes/**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "export\\s+(?:async\\s+)?(?:const|function)\\s+(?:loader|action)\\b",
+      "label": "Remix loader/action export",
+      "flags": ""
+    },
+    {
+      "regex": "export\\s+default\\s+function\\s+\\w+",
+      "label": "Remix default export route component",
+      "flags": ""
+    },
+    {
+      "regex": "\\bjson\\s*\\(\\s*\\{[^}]*\\}\\s*,\\s*\\{\\s*headers",
+      "label": "json() with custom headers (auth response)",
+      "flags": ""
+    },
+    {
+      "regex": "\\brequireUser(?:Id)?\\s*\\(",
+      "label": "common Remix auth helper",
+      "flags": ""
+    }
+  ],
+  "source": "js-remix-route.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "clj-ring-handler",
+  "description": "Clojure Ring/Compojure routes and handlers (gated on Clojure)",
+  "filePatterns": [
+    "**/*.{clj,cljs,cljc}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bdefroutes\\b",
+      "label": "defroutes Compojure declaration",
+      "flags": ""
+    },
+    {
+      "regex": "\\((?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|ANY)\\s+\"[^\"]+\"",
+      "label": "Compojure route verb",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdefn\\s+\\w+\\s+\\[\\s*(?:request|req)\\b",
+      "label": "Ring handler fn (request-shape arg)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bwrap-(?:authentication|authorization|cors|csrf)\\b",
+      "label": "Ring middleware",
+      "flags": ""
+    }
+  ],
+  "source": "clj-ring-handler.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "py-celery-task",
+  "description": "Celery task definitions \u2014 background-job auth-gap surface (gated on Celery)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*@(?:app|celery|shared_task)\\.task\\b",
+      "label": "@app.task / @celery.task",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*@shared_task\\b",
+      "label": "@shared_task decorator",
+      "flags": "m"
+    },
+    {
+      "regex": "\\.delay\\s*\\(|\\.apply_async\\s*\\(",
+      "label": "task.delay/apply_async dispatch site",
+      "flags": ""
+    },
+    {
+      "regex": "\\bCelery\\s*\\(\\s*['\"]",
+      "label": "Celery(",
+      "flags": ""
+    }
+  ],
+  "source": "py-celery-task.ts"
+}

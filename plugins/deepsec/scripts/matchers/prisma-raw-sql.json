@@ -1,0 +1,45 @@
+{
+  "slug": "prisma-raw-sql",
+  "description": "Prisma raw SQL ($queryRaw / $executeRaw / *Unsafe) \u2014 verify parameterization and source of inputs",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx,mjs,cjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\$queryRawUnsafe\\s*\\(",
+      "label": "$queryRawUnsafe \u2014 string-built SQL, no parameterization",
+      "flags": ""
+    },
+    {
+      "regex": "\\$executeRawUnsafe\\s*\\(",
+      "label": "$executeRawUnsafe \u2014 string-built SQL, no parameterization",
+      "flags": ""
+    },
+    {
+      "regex": "\\$queryRaw\\s*\\(",
+      "label": "$queryRaw called as function (not tagged template) \u2014 verify parameterization",
+      "flags": ""
+    },
+    {
+      "regex": "\\$executeRaw\\s*\\(",
+      "label": "$executeRaw called as function (not tagged template) \u2014 verify parameterization",
+      "flags": ""
+    },
+    {
+      "regex": "\\$queryRaw\\s*`[^`]*\\$\\{",
+      "label": "$queryRaw template with interpolation \u2014 verify Prisma.raw isn",
+      "flags": ""
+    },
+    {
+      "regex": "\\$executeRaw\\s*`[^`]*\\$\\{",
+      "label": "$executeRaw template with interpolation \u2014 verify Prisma.raw isn",
+      "flags": ""
+    },
+    {
+      "regex": "Prisma\\.raw\\s*\\(",
+      "label": "Prisma.raw \u2014 bypasses parameterization, must not include user input",
+      "flags": ""
+    }
+  ],
+  "source": "prisma-raw-sql.ts"
+}

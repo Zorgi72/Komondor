@@ -1,0 +1,35 @@
+{
+  "slug": "spread-operator-injection",
+  "description": "Object spread of user input into payloads \u2014 prototype pollution or key injection risk",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\.\\.\\.(req\\.body|request\\.body)",
+      "label": "Spread of req.body",
+      "flags": ""
+    },
+    {
+      "regex": "\\.\\.\\.(parsed\\.body|parsed\\.query)",
+      "label": "Spread of parsed input",
+      "flags": ""
+    },
+    {
+      "regex": "\\.\\.\\.searchParams",
+      "label": "Spread of searchParams",
+      "flags": ""
+    },
+    {
+      "regex": "\\.\\.\\.(params|query)\\b",
+      "label": "Spread of params/query",
+      "flags": ""
+    },
+    {
+      "regex": "Object\\.assign\\s*\\(\\s*\\{?\\s*\\}\\s*,\\s*(req|body|params|query)",
+      "label": "Object.assign from user input",
+      "flags": ""
+    }
+  ],
+  "source": "spread-operator-injection.ts"
+}

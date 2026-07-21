@@ -1,0 +1,25 @@
+{
+  "slug": "rs-tide-route",
+  "description": "Tide route handlers (gated on Tide)",
+  "filePatterns": [
+    "**/*.rs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bapp\\.at\\s*\\(\\s*\"[^\"]+\"\\s*\\)\\.(?:get|post|put|patch|delete|all)\\s*\\(",
+      "label": "app.at(",
+      "flags": ""
+    },
+    {
+      "regex": "\\btide::new\\s*\\(\\s*\\)",
+      "label": "tide::new() factory",
+      "flags": ""
+    },
+    {
+      "regex": "\\bMiddleware\\b",
+      "label": "Middleware trait \u2014 auth wiring",
+      "flags": ""
+    }
+  ],
+  "source": "rs-tide-route.ts"
+}

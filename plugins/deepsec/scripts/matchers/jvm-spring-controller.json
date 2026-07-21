@@ -1,0 +1,35 @@
+{
+  "slug": "jvm-spring-controller",
+  "description": "Spring controllers, mappings, and security config (gated on Spring)",
+  "filePatterns": [
+    "**/*.{java,kt}"
+  ],
+  "patterns": [
+    {
+      "regex": "@(?:Rest)?Controller\\b",
+      "label": "@Controller / @RestController",
+      "flags": ""
+    },
+    {
+      "regex": "@(?:Get|Post|Put|Patch|Delete|Request)Mapping\\b",
+      "label": "@<Verb>Mapping",
+      "flags": ""
+    },
+    {
+      "regex": "@PreAuthorize\\s*\\(",
+      "label": "@PreAuthorize SpEL expression",
+      "flags": ""
+    },
+    {
+      "regex": "\\.permitAll\\s*\\(\\s*\\)",
+      "label": ".permitAll() \u2014 opens public access",
+      "flags": ""
+    },
+    {
+      "regex": "\\bantMatchers?\\s*\\(",
+      "label": "antMatcher(...) auth scope",
+      "flags": ""
+    }
+  ],
+  "source": "jvm-spring-controller.ts"
+}

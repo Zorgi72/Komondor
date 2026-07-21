@@ -1,0 +1,53 @@
+{
+  "slug": "mcp-tool-handler",
+  "description": "MCP server tool handlers \u2014 verify per-tool authz + input validation",
+  "filePatterns": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.mjs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bserver\\.\\s*tool\\s*\\(",
+      "label": "MCP tool registration: server.tool(...)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bregisterTool\\s*\\(",
+      "label": "MCP registerTool(...)",
+      "flags": ""
+    },
+    {
+      "regex": "setRequestHandler\\s*\\(\\s*CallToolRequestSchema",
+      "label": "MCP CallTool handler",
+      "flags": ""
+    },
+    {
+      "regex": "setRequestHandler\\s*\\(\\s*ListToolsRequestSchema",
+      "label": "MCP ListTools handler \u2014 verify scope to authenticated client",
+      "flags": ""
+    },
+    {
+      "regex": "\\bnew McpServer\\s*\\(",
+      "label": "MCP server construction site",
+      "flags": ""
+    },
+    {
+      "regex": "\\bnew McpAgent\\s*\\(",
+      "label": "MCP agent construction site",
+      "flags": ""
+    },
+    {
+      "regex": "\\bregisterResource\\s*\\(|\\bserver\\.\\s*resource\\s*\\(",
+      "label": "MCP resource registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\bregisterPrompt\\s*\\(|\\bserver\\.\\s*prompt\\s*\\(",
+      "label": "MCP prompt registration",
+      "flags": ""
+    }
+  ],
+  "source": "mcp-tool-handler.ts"
+}

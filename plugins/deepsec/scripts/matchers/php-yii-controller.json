@@ -1,0 +1,31 @@
+{
+  "slug": "php-yii-controller",
+  "description": "Yii2 controller classes and actionXxx methods (gated on Yii)",
+  "filePatterns": [
+    "**/controllers/**/*.php",
+    "**/src/controllers/**/*.php"
+  ],
+  "patterns": [
+    {
+      "regex": "class\\s+\\w+Controller\\s+extends\\s+(?:Controller|ActiveController|RestController)\\b",
+      "label": "Yii Controller class",
+      "flags": ""
+    },
+    {
+      "regex": "public\\s+function\\s+action[A-Z]\\w*\\s*\\(",
+      "label": "actionXxx() \u2014 Yii public action",
+      "flags": ""
+    },
+    {
+      "regex": "\\bbehaviors\\s*\\(\\s*\\)\\s*[:{]",
+      "label": "behaviors() \u2014 verify auth filter",
+      "flags": ""
+    },
+    {
+      "regex": "AccessControl::class|ContentNegotiator::class",
+      "label": "auth/behavior class wired up",
+      "flags": ""
+    }
+  ],
+  "source": "php-yii-controller.ts"
+}

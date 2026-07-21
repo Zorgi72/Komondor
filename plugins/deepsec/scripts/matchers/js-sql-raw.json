@@ -1,0 +1,100 @@
+{
+  "slug": "js-sql-raw",
+  "description": "Raw SQL escape hatches across popular JS/TS DB drivers (pg, mysql2, TypeORM, Sequelize, Knex, Kysely, postgres.js, better-sqlite3) \u2014 interpolated input is SQL injection",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx,mjs,cjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:client|pool|conn)\\.query\\s*\\(\\s*['\"`]\\s*(?:SELECT|INSERT|UPDATE|DELETE|CREATE|DROP)\\b[^)]{0,400}\\$\\{",
+      "label": "node-postgres/pg: client/pool/conn.query with template-literal interpolation \u2014 SQL injection",
+      "flags": "i"
+    },
+    {
+      "regex": "\\.query\\s*\\(\\s*['\"`][^'\"`]{0,200}['\"`]\\s*\\+",
+      "label": ".query(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bmysql\\.createConnection\\s*\\(|require\\(\\s*['\"]mysql2?['\"]\\s*\\)",
+      "label": "mysql/mysql2 driver in use \u2014 verify all query() calls use placeholders, not concatenation",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:repo|repository|entityManager|manager|connection|dataSource|getRepository\\(\\w+\\))\\.query\\s*\\(",
+      "label": "TypeORM repository/manager.query \u2014 raw SQL, must use parameter array not interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "@Query\\s*\\(\\s*['\"`][^'\"`]{0,400}['\"`]\\s*\\+",
+      "label": "TypeORM @Query with string concatenation \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsequelize\\.query\\s*\\(\\s*`?[^`)]{0,400}\\$\\{",
+      "label": "Sequelize sequelize.query with template-literal interpolation \u2014 pass replacements/bind instead",
+      "flags": ""
+    },
+    {
+      "regex": "Sequelize\\.literal\\s*\\(",
+      "label": "Sequelize.literal \u2014 bypasses escaping; must not include user input",
+      "flags": ""
+    },
+    {
+      "regex": "Sequelize\\.fn\\s*\\(\\s*['\"`][A-Z]+['\"`]\\s*,\\s*\\$\\{",
+      "label": "Sequelize.fn with template-literal interpolation \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\.raw\\s*\\(\\s*['\"`][^'\"`]{0,400}\\$\\{",
+      "label": "Knex .raw with template-literal interpolation \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\.whereRaw\\s*\\(",
+      "label": "Knex .whereRaw \u2014 verify bindings are passed as second argument, not interpolated",
+      "flags": ""
+    },
+    {
+      "regex": "\\.orderByRaw\\s*\\(",
+      "label": "Knex .orderByRaw \u2014 verify bindings are passed as second argument, not interpolated",
+      "flags": ""
+    },
+    {
+      "regex": "\\.havingRaw\\s*\\(",
+      "label": "Knex .havingRaw \u2014 verify bindings are passed as second argument, not interpolated",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsql\\.raw\\s*\\(",
+      "label": "Kysely sql.raw \u2014 bypasses parameterization, must not include user input",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsql\\.lit\\s*\\(",
+      "label": "Kysely sql.lit \u2014 inserts literal SQL, must not include user input",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsql\\.unsafe\\s*\\(",
+      "label": "postgres.js sql.unsafe \u2014 bypasses parameterization, must not include user input",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.prepare\\s*\\(\\s*`[^`]{0,400}\\$\\{",
+      "label": "better-sqlite3 db.prepare with template-literal interpolation \u2014 use bound parameters",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.exec\\s*\\(\\s*`[^`]{0,400}\\$\\{",
+      "label": "better-sqlite3 db.exec with template-literal interpolation \u2014 db.exec cannot bind, refactor to prepare()",
+      "flags": ""
+    },
+    {
+      "regex": "\\bquery\\s*\\(\\s*['\"`]\\s*(?:SELECT|INSERT|UPDATE|DELETE)\\b[^)]{0,400}['\"`]\\s*\\+",
+      "label": "Generic .query(",
+      "flags": "i"
+    }
+  ],
+  "source": "js-sql-raw.ts"
+}

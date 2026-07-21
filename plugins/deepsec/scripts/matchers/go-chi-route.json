@@ -1,0 +1,40 @@
+{
+  "slug": "go-chi-route",
+  "description": "Chi router registrations and route groups (gated on Chi)",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:r|router|api)\\.(?:Get|Post|Put|Patch|Delete|Method|Handle|HandleFunc)\\s*\\(",
+      "label": "Chi method registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\bchi\\.NewRouter\\s*\\(\\s*\\)",
+      "label": "chi.NewRouter() init",
+      "flags": ""
+    },
+    {
+      "regex": "\\.Route\\s*\\(",
+      "label": "Chi .Route (subroute scope)",
+      "flags": ""
+    },
+    {
+      "regex": "\\.Group\\s*\\(",
+      "label": "Chi .Group (middleware scope)",
+      "flags": ""
+    },
+    {
+      "regex": "\\.Mount\\s*\\(",
+      "label": "Chi .Mount (subrouter \u2014 middleware inheritance gotcha)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bchi\\.URLParam\\s*\\(",
+      "label": "chi.URLParam (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "go-chi-route.ts"
+}

@@ -1,0 +1,50 @@
+{
+  "slug": "sensitive-data-in-traces",
+  "description": "Sensitive data sent to tracing/observability \u2014 check for PII, secrets, tokens",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "addTagsToCurrentSpan\\s*\\(",
+      "label": "Datadog span tags",
+      "flags": ""
+    },
+    {
+      "regex": "tracer\\.trace\\s*\\(",
+      "label": "Datadog tracer",
+      "flags": ""
+    },
+    {
+      "regex": "span\\.setTag\\s*\\(",
+      "label": "Datadog span tag",
+      "flags": ""
+    },
+    {
+      "regex": "Sentry\\.captureException\\s*\\(",
+      "label": "Sentry exception capture",
+      "flags": ""
+    },
+    {
+      "regex": "Sentry\\.setContext\\s*\\(",
+      "label": "Sentry context",
+      "flags": ""
+    },
+    {
+      "regex": "Sentry\\.setExtra\\s*\\(",
+      "label": "Sentry extra data",
+      "flags": ""
+    },
+    {
+      "regex": "span\\.setAttribute\\s*\\(",
+      "label": "OTel span attribute",
+      "flags": ""
+    },
+    {
+      "regex": "span\\.addEvent\\s*\\(",
+      "label": "OTel span event",
+      "flags": ""
+    }
+  ],
+  "source": "sensitive-data-in-traces.ts"
+}

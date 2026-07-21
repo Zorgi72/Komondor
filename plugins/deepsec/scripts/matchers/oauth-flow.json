@@ -1,0 +1,49 @@
+{
+  "slug": "oauth-flow",
+  "description": "OAuth authorize/callback endpoints and token-bearing redirects",
+  "filePatterns": [
+    "**/oauth/**/*.{ts,tsx}",
+    "**/auth/**/*.{ts,tsx}",
+    "**/callback/**/*.{ts,tsx}",
+    "**/app/api/**/*.{ts,tsx}",
+    "**/api/**/*.{ts,tsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "redirect_uri",
+      "label": "OAuth redirect_uri handling",
+      "flags": ""
+    },
+    {
+      "regex": "authorization_code|grant_type",
+      "label": "OAuth authorization code flow",
+      "flags": ""
+    },
+    {
+      "regex": "code_verifier|code_challenge",
+      "label": "PKCE flow",
+      "flags": ""
+    },
+    {
+      "regex": "state=.{0,80}redirect|redirect.{0,80}state=",
+      "label": "OAuth state + redirect",
+      "flags": ""
+    },
+    {
+      "regex": "\\?code=|&code=",
+      "label": "Authorization code in URL",
+      "flags": ""
+    },
+    {
+      "regex": "access_token.{0,80}redirect|redirect.{0,80}access_token",
+      "label": "Token in redirect URL",
+      "flags": ""
+    },
+    {
+      "regex": "callback.{0,80}token|token.{0,80}callback",
+      "label": "Token in callback",
+      "flags": ""
+    }
+  ],
+  "source": "oauth-flow.ts"
+}

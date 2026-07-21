@@ -1,0 +1,32 @@
+{
+  "slug": "js-sveltekit-route",
+  "description": "SvelteKit endpoint and load handlers (gated on SvelteKit)",
+  "filePatterns": [
+    "**/+page.server.{ts,js}",
+    "**/+server.{ts,js}",
+    "**/+layout.server.{ts,js}"
+  ],
+  "patterns": [
+    {
+      "regex": "export\\s+(?:async\\s+)?(?:const|function)\\s+(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\\b",
+      "label": "+server method handler",
+      "flags": ""
+    },
+    {
+      "regex": "export\\s+(?:async\\s+)?(?:const|function)\\s+load\\b",
+      "label": "+page.server.ts / +layout.server.ts load function",
+      "flags": ""
+    },
+    {
+      "regex": "export\\s+const\\s+actions\\s*[:=]",
+      "label": "+page.server.ts actions export (form actions)",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:fail|redirect|error)\\s*\\(",
+      "label": "SvelteKit response helper",
+      "flags": ""
+    }
+  ],
+  "source": "js-sveltekit-route.ts"
+}

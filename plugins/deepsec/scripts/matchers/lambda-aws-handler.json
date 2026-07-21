@@ -1,0 +1,35 @@
+{
+  "slug": "lambda-aws-handler",
+  "description": "AWS Lambda handler signatures across Node/Python/Java (gated on aws-lambda)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs,cjs,py,java,kt}"
+  ],
+  "patterns": [
+    {
+      "regex": "exports\\.handler\\s*=\\s*(?:async\\s*)?\\(\\s*event\\b",
+      "label": "Node.js exports.handler = (event, context) => ...",
+      "flags": ""
+    },
+    {
+      "regex": "^\\s*def\\s+lambda_handler\\s*\\(\\s*event\\s*,\\s*context\\s*\\)",
+      "label": "Python def lambda_handler(event, context)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bimplements\\s+RequestHandler<[^>]+>",
+      "label": "Java RequestHandler<I,O> impl",
+      "flags": ""
+    },
+    {
+      "regex": "\\bAPIGateway(?:Proxy|V2)Event\\b|\\bAPIGatewayProxyResult\\b",
+      "label": "API Gateway event types",
+      "flags": ""
+    },
+    {
+      "regex": "\\bevent\\.requestContext\\.authorizer\\b",
+      "label": "API Gateway authorizer claim",
+      "flags": ""
+    }
+  ],
+  "source": "lambda-aws-handler.ts"
+}

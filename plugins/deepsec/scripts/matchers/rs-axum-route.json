@@ -1,0 +1,40 @@
+{
+  "slug": "rs-axum-route",
+  "description": "Axum router declarations (gated on Axum)",
+  "filePatterns": [
+    "**/*.rs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bRouter::new\\s*\\(\\s*\\)",
+      "label": "Router::new() factory",
+      "flags": ""
+    },
+    {
+      "regex": "\\.route\\s*\\(\\s*\"[^\"]+\"\\s*,\\s*(?:get|post|put|patch|delete|any|on)\\s*\\(",
+      "label": ".route(",
+      "flags": ""
+    },
+    {
+      "regex": "\\.nest\\s*\\(\\s*\"[^\"]+\"",
+      "label": ".nest() subroute",
+      "flags": ""
+    },
+    {
+      "regex": "\\.merge\\s*\\(",
+      "label": ".merge() router composition",
+      "flags": ""
+    },
+    {
+      "regex": "\\bExtension<[^>]+>|\\bState<[^>]+>",
+      "label": "Extension/State extractor (auth identity)",
+      "flags": ""
+    },
+    {
+      "regex": "Path<[^>]+>|Query<[^>]+>|Json<[^>]+>",
+      "label": "request extractor (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "rs-axum-route.ts"
+}

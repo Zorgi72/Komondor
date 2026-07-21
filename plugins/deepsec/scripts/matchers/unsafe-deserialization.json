@@ -1,0 +1,35 @@
+{
+  "slug": "unsafe-deserialization",
+  "description": "JSON.parse on user input without schema validation, or unsafe eval of parsed data",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "JSON\\.parse\\s*\\(\\s*(req\\.|request\\.|body\\.|params\\.|query\\.)",
+      "label": "JSON.parse of request input (verify schema validation)",
+      "flags": ""
+    },
+    {
+      "regex": "JSON\\.parse\\s*\\(\\s*await\\s+(req|request)\\.text\\(\\)",
+      "label": "JSON.parse of raw request text",
+      "flags": ""
+    },
+    {
+      "regex": "eval\\s*\\(\\s*JSON\\.parse",
+      "label": "eval of parsed JSON",
+      "flags": ""
+    },
+    {
+      "regex": "new\\s+Function\\s*\\(\\s*JSON\\.parse",
+      "label": "new Function from parsed JSON",
+      "flags": ""
+    },
+    {
+      "regex": "yaml\\.load\\s*\\(|safeLoad\\s*\\(",
+      "label": "YAML deserialization (verify safe mode)",
+      "flags": ""
+    }
+  ],
+  "source": "unsafe-deserialization.ts"
+}

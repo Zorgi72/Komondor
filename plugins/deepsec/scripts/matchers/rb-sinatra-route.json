@@ -1,0 +1,30 @@
+{
+  "slug": "rb-sinatra-route",
+  "description": "Sinatra route blocks (gated on Sinatra)",
+  "filePatterns": [
+    "**/*.rb"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*(?:get|post|put|patch|delete|options|head)\\s+['\"][^'\"]+['\"]\\s+do\\b",
+      "label": "Sinatra <verb> ",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*before\\s+do\\b",
+      "label": "before do \u2014 auth filter",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*halt\\s+\\d+",
+      "label": "halt \u2014 auth response",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bparams\\[",
+      "label": "params[:x] (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "rb-sinatra-route.ts"
+}

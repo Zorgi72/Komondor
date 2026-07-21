@@ -1,0 +1,25 @@
+{
+  "slug": "cr-kemal-route",
+  "description": "Crystal Kemal route handlers (gated on kemal)",
+  "filePatterns": [
+    "**/*.cr"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*(?:get|post|put|patch|delete|options|ws)\\s+\"[^\"]+\"\\s+do\\b",
+      "label": "Kemal <verb> ",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*before_(?:all|get|post|put|delete)\\s+do\\b",
+      "label": "before_* do \u2014 auth filter",
+      "flags": "m"
+    },
+    {
+      "regex": "\\benv\\.params\\.(?:url|query|json|body|files)\\b",
+      "label": "env.params accessor",
+      "flags": ""
+    }
+  ],
+  "source": "cr-kemal-route.ts"
+}

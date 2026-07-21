@@ -1,0 +1,57 @@
+{
+  "slug": "streaming-endpoint",
+  "description": "AI streaming endpoints \u2014 auth bypass, prompt injection, state leakage risk",
+  "filePatterns": [
+    "**/route.{ts,tsx,js,jsx}",
+    "**/api/**/*.{ts,tsx,js,jsx}",
+    "**/app/**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "streamText\\s*\\(",
+      "label": "AI SDK streamText \u2014 streaming LLM endpoint",
+      "flags": ""
+    },
+    {
+      "regex": "streamObject\\s*\\(",
+      "label": "AI SDK streamObject \u2014 streaming structured output",
+      "flags": ""
+    },
+    {
+      "regex": "generateText\\s*\\(",
+      "label": "AI SDK generateText \u2014 LLM generation endpoint",
+      "flags": ""
+    },
+    {
+      "regex": "StreamingTextResponse",
+      "label": "StreamingTextResponse \u2014 legacy streaming pattern",
+      "flags": ""
+    },
+    {
+      "regex": "new\\s+ReadableStream",
+      "label": "ReadableStream \u2014 raw streaming response",
+      "flags": ""
+    },
+    {
+      "regex": "TransformStream",
+      "label": "TransformStream \u2014 streaming pipeline",
+      "flags": ""
+    },
+    {
+      "regex": "openai.{0,80}stream.{0,40}true|stream:\\s*true",
+      "label": "LLM API call with streaming enabled",
+      "flags": "i"
+    },
+    {
+      "regex": "\\.chat\\.completions\\.create[^)]{0,200}stream",
+      "label": "OpenAI chat completion stream",
+      "flags": "i"
+    },
+    {
+      "regex": "\\/api\\/chat|\\/api\\/completion|\\/api\\/generate",
+      "label": "AI chat/completion API route",
+      "flags": "i"
+    }
+  ],
+  "source": "streaming-endpoint.ts"
+}

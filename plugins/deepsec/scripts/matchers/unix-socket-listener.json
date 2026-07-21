@@ -1,0 +1,45 @@
+{
+  "slug": "unix-socket-listener",
+  "description": "Unix-socket / vsock listener setup (incl. umask + auto-recreate patterns)",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bnet\\.Listen\\s*\\(\\s*\"unix(?:packet|gram)?\"",
+      "label": "net.Listen unix socket",
+      "flags": ""
+    },
+    {
+      "regex": "\\bnet\\.ListenUnix\\s*\\(",
+      "label": "net.ListenUnix",
+      "flags": ""
+    },
+    {
+      "regex": "\\bvsock\\.(?:Listen|Dial|ListenContextID)\\s*\\(",
+      "label": "vsock listener/dial",
+      "flags": ""
+    },
+    {
+      "regex": "\\bnet\\.ListenPacket\\s*\\(\\s*\"unix",
+      "label": "net.ListenPacket unix",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsyscall\\.Umask\\s*\\(",
+      "label": "syscall.Umask (socket perm)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bos\\.(?:Remove|RemoveAll)\\s*\\([^)]*[Ss]ocket",
+      "label": "socket file removal",
+      "flags": ""
+    },
+    {
+      "regex": "\\bfsnotify\\.\\w+|inotify\\.|watcher\\.Add\\s*\\(",
+      "label": "filesystem watcher",
+      "flags": ""
+    }
+  ],
+  "source": "unix-socket-listener.ts"
+}

@@ -1,0 +1,31 @@
+{
+  "slug": "dotnet-razor-pages",
+  "description": "Razor Pages OnGet/OnPost handlers (gated on .NET)",
+  "filePatterns": [
+    "**/Pages/**/*.cshtml.cs",
+    "**/*.cshtml.cs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bclass\\s+\\w+\\s*:\\s*PageModel\\b",
+      "label": "PageModel subclass",
+      "flags": ""
+    },
+    {
+      "regex": "\\bpublic\\s+(?:async\\s+)?(?:Task<?[^>]*>?\\s+)?On(?:Get|Post|Put|Delete)(?:Async)?\\s*\\(",
+      "label": "OnGet/OnPost handler",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*BindProperty\\b",
+      "label": "[BindProperty] (request-bound input)",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*ValidateAntiForgeryToken\\s*\\]",
+      "label": "[ValidateAntiForgeryToken] CSRF guard",
+      "flags": ""
+    }
+  ],
+  "source": "dotnet-razor-pages.ts"
+}

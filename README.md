@@ -70,6 +70,35 @@ The binary artifact is named `xai-grok-pager`; official installs ship it as
 `grok`. On first launch it opens your browser to authenticate — see the
 [authentication guide](crates/codegen/xai-grok-pager/docs/user-guide/02-authentication.md).
 
+## DeepSec (native security pipeline)
+
+This fork ships a **zero-Node** port of [Vercel DeepSec](https://github.com/vercel-labs/deepsec) as a first-class Grok plugin:
+
+| Slash | Purpose |
+|-------|---------|
+| `/deepsec` | Help + status |
+| `/deepsec-init` | Scaffold `.grok/deepsec/` |
+| `/deepsec-scan` | Regex matcher scan (no AI) |
+| `/deepsec-process` | Investigate candidates → findings |
+| `/deepsec-revalidate` | TP / FP / fixed / uncertain |
+| `/deepsec-triage` | P0 / P1 / P2 / skip |
+| `/deepsec-enrich` | Git committer metadata |
+| `/deepsec-export` | md / json / md-dir |
+| `/deepsec-status` / `-resume` / `-report` | Status, resume, reports |
+
+```sh
+# Install plugin (user scope)
+ln -sfn "$(pwd)/plugins/deepsec" ~/.grok/plugins/deepsec
+
+# Headless pipeline on a repo
+python3 plugins/deepsec/scripts/deepsec_cli.py init --root /path/to/repo
+python3 plugins/deepsec/scripts/deepsec_cli.py scan --root /path/to/repo
+python3 plugins/deepsec/scripts/deepsec_cli.py process --heuristic --root /path/to/repo
+python3 plugins/deepsec/scripts/deepsec_cli.py export --format md-dir --out ./findings --root /path/to/repo
+```
+
+Docs: [`docs/deepsec-port-design.md`](docs/deepsec-port-design.md), [`docs/deepsec-full-analysis.md`](docs/deepsec-full-analysis.md), [`docs/verification-report.md`](docs/verification-report.md), [`plugins/deepsec/README.md`](plugins/deepsec/README.md).
+
 ## Documentation
 
 Full online documentation is available at

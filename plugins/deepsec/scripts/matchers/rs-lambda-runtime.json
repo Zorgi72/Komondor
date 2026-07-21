@@ -1,0 +1,25 @@
+{
+  "slug": "rs-lambda-runtime",
+  "description": "Rust AWS Lambda handlers via lambda_runtime (gated on lambda-rs)",
+  "filePatterns": [
+    "**/*.rs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\blambda_runtime::run\\s*\\(\\s*service_fn\\s*\\(",
+      "label": "lambda_runtime::run(service_fn(handler))",
+      "flags": ""
+    },
+    {
+      "regex": "\\bLambdaEvent<[^>]+>",
+      "label": "LambdaEvent shape",
+      "flags": ""
+    },
+    {
+      "regex": "\\baws_lambda_events::",
+      "label": "AWS event types (APIGatewayProxyRequest, etc.)",
+      "flags": ""
+    }
+  ],
+  "source": "rs-lambda-runtime.ts"
+}

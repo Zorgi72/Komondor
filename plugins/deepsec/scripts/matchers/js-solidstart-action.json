@@ -1,0 +1,25 @@
+{
+  "slug": "js-solidstart-action",
+  "description": "SolidStart server actions and cached server functions (gated on SolidStart)",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:action|cache|query)\\s*\\(\\s*async\\s*\\(",
+      "label": "action/cache/query factory",
+      "flags": ""
+    },
+    {
+      "regex": "\\b['\"]use server['\"]\\s*;?",
+      "label": "",
+      "flags": ""
+    },
+    {
+      "regex": "\\baction\\$\\s*\\(|\\bserver\\$\\s*\\(",
+      "label": "action$ / server$ helper",
+      "flags": ""
+    }
+  ],
+  "source": "js-solidstart-action.ts"
+}

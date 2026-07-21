@@ -1,0 +1,35 @@
+{
+  "slug": "js-nestjs-controller",
+  "description": "NestJS controllers and route methods \u2014 entry-point surface (gated on @nestjs/*)",
+  "filePatterns": [
+    "**/*.{ts,js}"
+  ],
+  "patterns": [
+    {
+      "regex": "@Controller\\s*\\(",
+      "label": "@Controller decorator",
+      "flags": ""
+    },
+    {
+      "regex": "@(?:Get|Post|Put|Patch|Delete|Options|Head|All)\\s*\\(",
+      "label": "HTTP method decorator",
+      "flags": ""
+    },
+    {
+      "regex": "@UseGuards\\s*\\(",
+      "label": "@UseGuards (auth gate)",
+      "flags": ""
+    },
+    {
+      "regex": "@Public\\s*\\(\\s*\\)",
+      "label": "@Public() decorator (skips global auth)",
+      "flags": ""
+    },
+    {
+      "regex": "@Body\\s*\\(\\s*\\)",
+      "label": "@Body() (request body sink)",
+      "flags": ""
+    }
+  ],
+  "source": "js-nestjs-controller.ts"
+}

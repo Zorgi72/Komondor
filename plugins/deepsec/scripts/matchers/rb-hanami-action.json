@@ -1,0 +1,26 @@
+{
+  "slug": "rb-hanami-action",
+  "description": "Hanami action classes (gated on Hanami)",
+  "filePatterns": [
+    "**/app/actions/**/*.rb",
+    "**/actions/**/*.rb"
+  ],
+  "patterns": [
+    {
+      "regex": "^class\\s+\\w+\\s*<\\s*(?:Hanami::Action|App::Action)\\b",
+      "label": "Hanami action subclass",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*def\\s+handle\\s*\\(\\s*request\\s*,\\s*response\\s*\\)",
+      "label": "handle(request, response) entry",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*include\\s+Deps\\[\\s*['\"][^'\"]+['\"]\\s*\\]",
+      "label": "Deps[] DI accessor",
+      "flags": "m"
+    }
+  ],
+  "source": "rb-hanami-action.ts"
+}

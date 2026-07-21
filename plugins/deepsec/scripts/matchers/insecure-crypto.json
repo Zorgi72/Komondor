@@ -1,0 +1,55 @@
+{
+  "slug": "insecure-crypto",
+  "description": "Weak cryptographic algorithms and insecure random number generation",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "createHash\\s*\\(\\s*['\"]md5['\"]",
+      "label": "MD5 hash",
+      "flags": ""
+    },
+    {
+      "regex": "createHash\\s*\\(\\s*['\"]sha1['\"]",
+      "label": "SHA1 hash",
+      "flags": ""
+    },
+    {
+      "regex": "createCipher\\s*\\(",
+      "label": "deprecated createCipher (use createCipheriv)",
+      "flags": ""
+    },
+    {
+      "regex": "DES|RC4|Blowfish",
+      "label": "weak cipher algorithm",
+      "flags": "i"
+    },
+    {
+      "regex": "\\bmd5\\s*\\(",
+      "label": "MD5 function call",
+      "flags": ""
+    },
+    {
+      "regex": "===?\\s*.{0,40}\\bhmac\\b|\\bhmac\\b.{0,40}===?",
+      "label": "Timing-unsafe HMAC comparison (use timingSafeEqual)",
+      "flags": ""
+    },
+    {
+      "regex": "===?\\s*.{0,40}\\bdigest\\b|\\bdigest\\b.{0,40}===?",
+      "label": "Timing-unsafe digest comparison",
+      "flags": ""
+    },
+    {
+      "regex": "===?\\s*.{0,40}\\bsignature\\b|\\bsignature\\b.{0,40}===?",
+      "label": "Timing-unsafe signature comparison",
+      "flags": ""
+    },
+    {
+      "regex": "Math\\.random\\s*\\(",
+      "label": "Math.random in security context",
+      "flags": ""
+    }
+  ],
+  "source": "insecure-crypto.ts"
+}

@@ -1,0 +1,95 @@
+{
+  "slug": "jvm-sql-raw",
+  "description": "Raw SQL across JVM DB libraries (JDBC, JPA/Hibernate, Spring JdbcTemplate, MyBatis, jOOQ, Exposed) \u2014 string concatenation or interpolation is SQL injection",
+  "filePatterns": [
+    "**/*.{java,kt}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:Statement|stmt)\\.executeQuery\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "Statement.executeQuery(",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:Statement|stmt)\\.execute(?:Update|Query|LargeUpdate)?\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "Statement.execute*(",
+      "flags": ""
+    },
+    {
+      "regex": "\\.createStatement\\s*\\(\\s*\\)\\s*\\.execute(?:Query|Update|LargeUpdate)?\\s*\\(",
+      "label": "createStatement().execute*(...) \u2014 JDBC Statement (no parameterization)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bDriverManager\\.getConnection\\s*\\(",
+      "label": "DriverManager.getConnection(...) \u2014 JDBC in use (informational)",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:em|entityManager|session)\\.createNativeQuery\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "createNativeQuery(",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:em|entityManager|session)\\.createQuery\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "createQuery(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsession\\.createSQLQuery\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "session.createSQLQuery(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bjdbcTemplate\\.(?:query|update|queryForObject|queryForList|execute|batchUpdate)\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "jdbcTemplate.<op>(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bnamedParameterJdbcTemplate\\.(?:query|update)\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "namedParameterJdbcTemplate.<op>(",
+      "flags": ""
+    },
+    {
+      "regex": "@Select\\s*\\(\\s*\"[^\"]{0,400}\\$\\{",
+      "label": "@Select(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bselectList\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+|\\bselectOne\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "selectList/selectOne(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bDSL\\.field\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "DSL.field(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdsl\\.execute\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "dsl.execute(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bDSL\\.sql\\s*\\(",
+      "label": "DSL.sql(...) \u2014 jOOQ raw SQL escape hatch",
+      "flags": ""
+    },
+    {
+      "regex": "\\bexec\\s*\\(\\s*\"[^\"]{0,400}\\$\\{",
+      "label": "exec(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bTransactionManager\\.current\\(\\)\\.exec\\s*\\(",
+      "label": "TransactionManager.current().exec(...) \u2014 Exposed raw exec",
+      "flags": ""
+    },
+    {
+      "regex": "\"\\s*(?:SELECT|INSERT|UPDATE|DELETE)[^\"]{0,400}\\$\\{",
+      "label": "",
+      "flags": ""
+    }
+  ],
+  "source": "jvm-sql-raw.ts"
+}

@@ -1,0 +1,35 @@
+{
+  "slug": "js-nosql-injection",
+  "description": "NoSQL injection \u2014 Mongoose / MongoDB driver raw operators ($where, JSON.parse(input)) and unsafe aggregations",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx,mjs,cjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\$where\\s*:\\s*\"[^\"]{0,200}\"\\s*\\+|\\$where\\s*:\\s*'[^']{0,200}'\\s*\\+|\\$where\\s*:\\s*function|\\$where\\s*:\\s*`[^`]{0,200}\\$\\{",
+      "label": "MongoDB $where with concatenation/function/template \u2014 server-side JS execution, injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\.find\\s*\\(\\s*JSON\\.parse\\s*\\(\\s*req\\.",
+      "label": "find(JSON.parse(req.*)) \u2014 operator injection via raw user JSON",
+      "flags": ""
+    },
+    {
+      "regex": "\\.aggregate\\s*\\(\\s*\\[?\\s*\\{[^}]{0,400}\\$where",
+      "label": "MongoDB aggregate() pipeline using $where \u2014 server-side JS execution",
+      "flags": ""
+    },
+    {
+      "regex": "\\bnew\\s+RegExp\\s*\\(\\s*req\\.",
+      "label": "new RegExp from req.* \u2014 ReDoS and NoSQL query-shape injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\.find(?:One)?\\s*\\(\\s*\\{[^}]{0,200}:\\s*req\\.\\w+\\.\\w+",
+      "label": "find/findOne with untyped req.* value \u2014 coerce to string or operator injection (e.g. { $ne: null })",
+      "flags": ""
+    }
+  ],
+  "source": "js-nosql-injection.ts"
+}

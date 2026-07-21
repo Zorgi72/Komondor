@@ -1,0 +1,30 @@
+{
+  "slug": "py-tornado-handler",
+  "description": "Tornado RequestHandler subclasses and routing (gated on Tornado)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "^class\\s+\\w+\\s*\\(\\s*(?:tornado\\.web\\.)?RequestHandler\\s*\\)",
+      "label": "RequestHandler subclass",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*def\\s+(get|post|put|patch|delete|head|options)\\s*\\(\\s*self\\b",
+      "label": "method handler",
+      "flags": "m"
+    },
+    {
+      "regex": "Application\\s*\\(\\s*\\[",
+      "label": "Application([(...handler...)])",
+      "flags": ""
+    },
+    {
+      "regex": "@tornado\\.web\\.authenticated\\b",
+      "label": "@authenticated decorator",
+      "flags": ""
+    }
+  ],
+  "source": "py-tornado-handler.ts"
+}

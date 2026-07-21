@@ -1,0 +1,35 @@
+{
+  "slug": "jvm-jaxrs-resource",
+  "description": "JAX-RS resources (Jersey, RESTEasy, Quarkus) \u2014 entry-point surface (gated on JAX-RS)",
+  "filePatterns": [
+    "**/*.{java,kt}"
+  ],
+  "patterns": [
+    {
+      "regex": "@Path\\s*\\(\\s*\"[^\"]+\"\\s*\\)",
+      "label": "@Path declaration",
+      "flags": ""
+    },
+    {
+      "regex": "@(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\\b",
+      "label": "JAX-RS method annotation",
+      "flags": ""
+    },
+    {
+      "regex": "@RolesAllowed\\s*\\(",
+      "label": "@RolesAllowed auth gate",
+      "flags": ""
+    },
+    {
+      "regex": "@PermitAll\\b",
+      "label": "@PermitAll opens public access",
+      "flags": ""
+    },
+    {
+      "regex": "@(?:Path|Query|Header|Form|Cookie)Param\\s*\\(",
+      "label": "param extractor (untrusted)",
+      "flags": ""
+    }
+  ],
+  "source": "jvm-jaxrs-resource.ts"
+}

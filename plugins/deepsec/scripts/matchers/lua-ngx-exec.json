@@ -1,0 +1,35 @@
+{
+  "slug": "lua-ngx-exec",
+  "description": "Lua ngx.exec/ngx.redirect/os.execute/io.popen with dynamic content",
+  "filePatterns": [
+    "**/*.lua"
+  ],
+  "patterns": [
+    {
+      "regex": "ngx\\.exec\\s*\\(",
+      "label": "ngx.exec (internal redirect)",
+      "flags": ""
+    },
+    {
+      "regex": "ngx\\.redirect\\s*\\(",
+      "label": "ngx.redirect (external redirect)",
+      "flags": ""
+    },
+    {
+      "regex": "os\\.execute\\s*\\(",
+      "label": "os.execute (shell command)",
+      "flags": ""
+    },
+    {
+      "regex": "io\\.popen\\s*\\(",
+      "label": "io.popen (shell command)",
+      "flags": ""
+    },
+    {
+      "regex": "ngx\\.location\\.capture\\s*\\(",
+      "label": "ngx.location.capture (subrequest)",
+      "flags": ""
+    }
+  ],
+  "source": "lua-ngx-exec.ts"
+}

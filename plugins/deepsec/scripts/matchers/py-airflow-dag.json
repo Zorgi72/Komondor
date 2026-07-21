@@ -1,0 +1,36 @@
+{
+  "slug": "py-airflow-dag",
+  "description": "Airflow DAGs and operators \u2014 sensitive prod surface (gated on Airflow)",
+  "filePatterns": [
+    "**/dags/**/*.py",
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bDAG\\s*\\(\\s*['\"]",
+      "label": "DAG(",
+      "flags": ""
+    },
+    {
+      "regex": "\\b@dag\\b\\s*\\(",
+      "label": "@dag decorator (TaskFlow API)",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:Bash|Python|Docker|Postgres|S3|HTTP)Operator\\s*\\(",
+      "label": "Operator instantiation (review templated args)",
+      "flags": ""
+    },
+    {
+      "regex": "\\{\\{\\s*[^}]+\\s*\\}\\}",
+      "label": "Jinja template \u2014 review for injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\bbash_command\\s*=\\s*f?['\"][^'\"]*\\{",
+      "label": "bash_command with templating",
+      "flags": ""
+    }
+  ],
+  "source": "py-airflow-dag.ts"
+}

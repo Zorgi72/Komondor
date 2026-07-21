@@ -1,0 +1,60 @@
+{
+  "slug": "rce",
+  "description": "exec, spawn, eval, Function constructor with potential user input",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "child_process.*exec\\s*\\(",
+      "label": "child_process exec",
+      "flags": ""
+    },
+    {
+      "regex": "\\bexec\\s*\\(\\s*[`'\"]",
+      "label": "exec with string",
+      "flags": ""
+    },
+    {
+      "regex": "\\bexecSync\\s*\\(",
+      "label": "execSync",
+      "flags": ""
+    },
+    {
+      "regex": "\\bspawn\\s*\\(",
+      "label": "spawn",
+      "flags": ""
+    },
+    {
+      "regex": "\\bspawnSync\\s*\\(",
+      "label": "spawnSync",
+      "flags": ""
+    },
+    {
+      "regex": "\\beval\\s*\\(",
+      "label": "eval",
+      "flags": ""
+    },
+    {
+      "regex": "new\\s+Function\\s*\\(",
+      "label": "new Function()",
+      "flags": ""
+    },
+    {
+      "regex": "require\\s*\\(\\s*['\"]child_process['\"]",
+      "label": "child_process import",
+      "flags": ""
+    },
+    {
+      "regex": "from\\s+['\"]child_process['\"]",
+      "label": "child_process import",
+      "flags": ""
+    },
+    {
+      "regex": "vm\\.runIn(New|This)Context\\s*\\(",
+      "label": "vm context execution",
+      "flags": ""
+    }
+  ],
+  "source": "rce.ts"
+}

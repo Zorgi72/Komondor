@@ -1,0 +1,75 @@
+{
+  "slug": "go-sql-raw",
+  "description": "Raw SQL across Go DB libraries (database/sql, GORM, sqlx, pgx) \u2014 fmt.Sprintf or + concatenation into queries is SQL injection",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bdb\\.(?:Query|QueryRow|Exec|QueryContext|QueryRowContext|ExecContext)\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "database/sql Query/Exec with string concat",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.(?:Query|QueryRow|Exec)\\s*\\(\\s*fmt\\.Sprintf\\s*\\(",
+      "label": "database/sql Query/Exec with fmt.Sprintf",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.Raw\\s*\\(\\s*fmt\\.Sprintf\\s*\\(",
+      "label": "GORM db.Raw with fmt.Sprintf",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.Raw\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "GORM db.Raw with string concat",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.Exec\\s*\\(\\s*fmt\\.Sprintf\\s*\\(",
+      "label": "GORM db.Exec with fmt.Sprintf",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.Where\\s*\\(\\s*fmt\\.Sprintf\\s*\\(",
+      "label": "GORM db.Where with fmt.Sprintf",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.Where\\s*\\(\\s*\"[^\"]{0,400}=\\s*'?\\s*\"\\s*\\+",
+      "label": "GORM db.Where with string concat",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.(?:Select|Get|QueryxContext|NamedQuery)\\s*\\(\\s*&?\\w*,?\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "sqlx Select/Get/Queryx with string concat",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsqlx\\.MustExec\\s*\\(\\s*\\w+\\s*,\\s*fmt\\.Sprintf",
+      "label": "sqlx.MustExec with fmt.Sprintf",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:conn|pool)\\.Query(?:Row)?(?:Context)?\\s*\\(\\s*\\w*,?\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "pgx conn/pool.Query with string concat",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:conn|pool)\\.Query(?:Row)?(?:Context)?\\s*\\(\\s*\\w*,?\\s*fmt\\.Sprintf",
+      "label": "pgx conn/pool.Query with fmt.Sprintf",
+      "flags": ""
+    },
+    {
+      "regex": "\\bpgx\\.Connect\\s*\\(",
+      "label": "pgx.Connect (informational signal)",
+      "flags": ""
+    },
+    {
+      "regex": "\"\\s*(?:SELECT|INSERT|UPDATE|DELETE)[^\"]{0,400}\"\\s*\\+\\s*\\w",
+      "label": "SQL keyword string literal followed by concat",
+      "flags": ""
+    }
+  ],
+  "source": "go-sql-raw.ts"
+}

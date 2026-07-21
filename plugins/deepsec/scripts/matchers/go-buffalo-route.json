@@ -1,0 +1,30 @@
+{
+  "slug": "go-buffalo-route",
+  "description": "Buffalo app routes and resources (gated on buffalo)",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bapp\\.(?:GET|POST|PUT|PATCH|DELETE)\\s*\\(",
+      "label": "Buffalo app.<VERB> registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\bapp\\.Resource\\s*\\(",
+      "label": "app.Resource() (CRUD)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bbuffalo\\.New\\s*\\(",
+      "label": "buffalo.New() init",
+      "flags": ""
+    },
+    {
+      "regex": "\\bc\\.(?:Param|Request|Bind|Value)\\b",
+      "label": "buffalo.Context accessor",
+      "flags": ""
+    }
+  ],
+  "source": "go-buffalo-route.ts"
+}

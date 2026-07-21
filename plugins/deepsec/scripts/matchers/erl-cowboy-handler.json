@@ -1,0 +1,25 @@
+{
+  "slug": "erl-cowboy-handler",
+  "description": "Erlang Cowboy HTTP handlers (gated on Erlang)",
+  "filePatterns": [
+    "**/*.erl"
+  ],
+  "patterns": [
+    {
+      "regex": "\\binit\\s*\\(\\s*Req\\s*,\\s*State\\s*\\)\\s*->",
+      "label": "init(Req, State) \u2014 cowboy handler entry",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcowboy_router:compile\\b",
+      "label": "cowboy_router:compile([...])",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcowboy_req:(?:binding|qs|read_body|header)\\b",
+      "label": "cowboy_req accessor",
+      "flags": ""
+    }
+  ],
+  "source": "erl-cowboy-handler.ts"
+}

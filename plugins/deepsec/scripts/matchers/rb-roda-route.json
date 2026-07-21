@@ -1,0 +1,25 @@
+{
+  "slug": "rb-roda-route",
+  "description": "Roda route trees (gated on Roda)",
+  "filePatterns": [
+    "**/*.rb"
+  ],
+  "patterns": [
+    {
+      "regex": "^class\\s+\\w+\\s*<\\s*Roda\\b",
+      "label": "class < Roda app",
+      "flags": "m"
+    },
+    {
+      "regex": "\\br\\.(?:get|post|put|patch|delete|on|is|root)\\b",
+      "label": "r.<verb>/r.on/r.is route node",
+      "flags": ""
+    },
+    {
+      "regex": "\\bplugin\\s+:[\\w_]+",
+      "label": "Roda plugin (auth/security/render)",
+      "flags": ""
+    }
+  ],
+  "source": "rb-roda-route.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "dotnet-azure-function",
+  "description": "Azure Functions C# entry points (gated on Azure Functions)",
+  "filePatterns": [
+    "**/*.cs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\[\\s*FunctionName\\s*\\(\\s*\"[^\"]+\"\\s*\\)\\s*\\]",
+      "label": "[FunctionName(...)] attribute",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*Function\\s*\\(\\s*\"[^\"]+\"\\s*\\)\\s*\\]",
+      "label": "[Function(...)] attribute",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*HttpTrigger\\s*\\(\\s*AuthorizationLevel\\.(Anonymous|Function|Admin)\\b",
+      "label": "[HttpTrigger(AuthorizationLevel.X)] \u2014 verify Anonymous is intentional",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*ServiceBusTrigger\\b|\\[\\s*QueueTrigger\\b",
+      "label": "queue trigger entry",
+      "flags": ""
+    }
+  ],
+  "source": "dotnet-azure-function.ts"
+}

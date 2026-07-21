@@ -1,0 +1,65 @@
+{
+  "slug": "rb-sql-raw",
+  "description": "Raw SQL across Ruby DB libraries (ActiveRecord raw, Sequel.lit, pg gem) \u2014 string interpolation is SQL injection",
+  "filePatterns": [
+    "**/*.rb"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bfind_by_sql\\s*\\(\\s*\"[^\"]{0,400}#\\{",
+      "label": "find_by_sql with #{} interpolation (SQL injection)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\.where\\s*\\(\\s*\"[^\"]{0,400}#\\{",
+      "label": ".where with #{} interpolation (SQL injection)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\.find_by_sql\\s*\\(\\s*\\[\\s*\"[^\"]{0,400}#\\{",
+      "label": "find_by_sql array form with #{} (SQL injection)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\.connection\\.execute\\s*\\(\\s*\"[^\"]{0,400}#\\{",
+      "label": "connection.execute with #{} interpolation (SQL injection)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bActiveRecord::Base\\.connection\\.execute\\s*\\(",
+      "label": "ActiveRecord::Base.connection.execute (raw SQL surface)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bSequel\\.lit\\s*\\(\\s*\"[^\"]{0,400}#\\{",
+      "label": "Sequel.lit with #{} interpolation (SQL injection)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bDB\\.fetch\\s*\\(\\s*\"[^\"]{0,400}#\\{",
+      "label": "Sequel DB.fetch with #{} interpolation (SQL injection)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bDB\\[:\\w+\\]\\.where\\s*\\(\\s*\"[^\"]{0,400}#\\{",
+      "label": "Sequel DB[:t].where with #{} interpolation (SQL injection)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bconn\\.exec\\s*\\(\\s*\"[^\"]{0,400}#\\{",
+      "label": "pg gem conn.exec with #{} interpolation (SQL injection)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bPG::Connection\\.new",
+      "label": "PG::Connection.new (informational signal)",
+      "flags": ""
+    },
+    {
+      "regex": "\"\\s*(?:SELECT|INSERT|UPDATE|DELETE)[^\"]{0,400}#\\{",
+      "label": "Raw SQL string with #{} interpolation (SQL injection)",
+      "flags": "m"
+    }
+  ],
+  "source": "rb-sql-raw.ts"
+}

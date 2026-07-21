@@ -1,0 +1,58 @@
+{
+  "slug": "github-workflow-security",
+  "description": "GitHub Actions workflow / composite-action with supply-chain or injection risk",
+  "filePatterns": [
+    ".github/workflows/**/*.yml",
+    ".github/workflows/**/*.yaml",
+    ".github/actions/**/*.yml",
+    ".github/actions/**/*.yaml"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*-\\s*pull_request_target\\b|^\\s*pull_request_target\\s*:",
+      "label": "pull_request_target trigger",
+      "flags": ""
+    },
+    {
+      "regex": "^\\s*-\\s*workflow_run\\b|^\\s*workflow_run\\s*:",
+      "label": "workflow_run trigger",
+      "flags": ""
+    },
+    {
+      "regex": "\\$\\{\\{\\s*github\\.event\\.(?:pull_request|head_commit|comment|issue|review)\\.\\w+",
+      "label": "github.event interpolation in run:",
+      "flags": ""
+    },
+    {
+      "regex": "\\$\\{\\{\\s*github\\.head_ref\\s*\\}\\}",
+      "label": "github.head_ref in script",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsecrets\\.[A-Z_][A-Z0-9_]+",
+      "label": "secret reference",
+      "flags": ""
+    },
+    {
+      "regex": "^\\s*permissions\\s*:\\s*write-all\\b",
+      "label": "permissions: write-all",
+      "flags": ""
+    },
+    {
+      "regex": "\\bid-token\\s*:\\s*write\\b",
+      "label": "id-token: write (OIDC)",
+      "flags": ""
+    },
+    {
+      "regex": "\\brun\\s*:\\s*\\|.*\\$\\{\\{[^}]*\\}\\}",
+      "label": "run block interpolating expression",
+      "flags": "s"
+    },
+    {
+      "regex": "\\bcurl\\s+[^|]*\\|\\s*(?:sh|bash)\\b",
+      "label": "curl | sh in workflow",
+      "flags": ""
+    }
+  ],
+  "source": "github-workflow-security.ts"
+}

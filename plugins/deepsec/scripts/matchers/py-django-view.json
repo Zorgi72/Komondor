@@ -1,0 +1,40 @@
+{
+  "slug": "py-django-view",
+  "description": "Django views, urlpatterns, and CBVs \u2014 entry points (gated on Django)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*path\\s*\\(",
+      "label": "urlpatterns path()",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*re_path\\s*\\(",
+      "label": "urlpatterns re_path()",
+      "flags": "m"
+    },
+    {
+      "regex": "^class\\s+\\w+\\s*\\([^)]*\\b(?:View|TemplateView|ListView|DetailView|FormView|APIView|ViewSet|ModelViewSet|GenericAPIView|CreateView|UpdateView|DeleteView)\\b",
+      "label": "class-based view",
+      "flags": "m"
+    },
+    {
+      "regex": "^def\\s+\\w+\\s*\\(\\s*request\\b",
+      "label": "function-based view (def view(request))",
+      "flags": "m"
+    },
+    {
+      "regex": "@csrf_exempt\\b",
+      "label": "@csrf_exempt \u2014 confirm alternate auth",
+      "flags": ""
+    },
+    {
+      "regex": "@api_view\\s*\\(",
+      "label": "DRF @api_view decorator",
+      "flags": ""
+    }
+  ],
+  "source": "py-django-view.ts"
+}

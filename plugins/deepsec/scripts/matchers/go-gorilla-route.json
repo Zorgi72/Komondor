@@ -1,0 +1,35 @@
+{
+  "slug": "go-gorilla-route",
+  "description": "Gorilla mux router registrations (gated on gorilla)",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bmux\\.NewRouter\\s*\\(\\s*\\)",
+      "label": "mux.NewRouter() init",
+      "flags": ""
+    },
+    {
+      "regex": "\\.HandleFunc\\s*\\(\\s*\"[^\"]+\"\\s*,",
+      "label": "router.HandleFunc(",
+      "flags": ""
+    },
+    {
+      "regex": "\\.Methods\\s*\\(\\s*\"(?:GET|POST|PUT|PATCH|DELETE)\"",
+      "label": ".Methods(",
+      "flags": ""
+    },
+    {
+      "regex": "\\.PathPrefix\\s*\\(",
+      "label": ".PathPrefix() subroute scope",
+      "flags": ""
+    },
+    {
+      "regex": "\\bmux\\.Vars\\s*\\(\\s*r\\s*\\)",
+      "label": "mux.Vars(r) (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "go-gorilla-route.ts"
+}

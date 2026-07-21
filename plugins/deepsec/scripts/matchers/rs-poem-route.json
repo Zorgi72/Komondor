@@ -1,0 +1,25 @@
+{
+  "slug": "rs-poem-route",
+  "description": "Poem route handlers (gated on Poem)",
+  "filePatterns": [
+    "**/*.rs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bRoute::new\\s*\\(\\s*\\)\\.at\\s*\\(\\s*\"[^\"]+\"\\s*,",
+      "label": "Route::new().at(",
+      "flags": ""
+    },
+    {
+      "regex": "#\\[\\s*handler\\s*\\]",
+      "label": "#[handler] attribute",
+      "flags": ""
+    },
+    {
+      "regex": "\\bget\\s*\\(|post\\s*\\(|put\\s*\\(|patch\\s*\\(|delete\\s*\\(",
+      "label": "handler verb wrapper",
+      "flags": ""
+    }
+  ],
+  "source": "rs-poem-route.ts"
+}

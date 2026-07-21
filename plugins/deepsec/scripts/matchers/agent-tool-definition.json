@@ -1,0 +1,54 @@
+{
+  "slug": "agent-tool-definition",
+  "description": "AI agent tool definitions \u2014 prompt injection attack surface (code execution, API access)",
+  "filePatterns": [
+    "**/tools/**/*.{ts,tsx,js,jsx}",
+    "**/agent/**/*.{ts,tsx,js,jsx}",
+    "**/agents/**/*.{ts,tsx,js,jsx}",
+    "**/*tool*.{ts,tsx,js,jsx}",
+    "**/*agent*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "tool\\s*\\(\\s*\\{",
+      "label": "AI SDK tool definition \u2014 agent-callable function",
+      "flags": ""
+    },
+    {
+      "regex": "createTool|defineTool",
+      "label": "Tool factory \u2014 agent-callable function",
+      "flags": ""
+    },
+    {
+      "regex": "exec\\(|execSync\\(|spawn\\(|child_process",
+      "label": "Tool executes shell commands \u2014 RCE via prompt injection",
+      "flags": ""
+    },
+    {
+      "regex": "eval\\(|new Function\\(|vm\\.run",
+      "label": "Tool evaluates code \u2014 RCE via prompt injection",
+      "flags": ""
+    },
+    {
+      "regex": "writeFile|fs\\.write|fs\\.mkdir",
+      "label": "Tool writes to filesystem",
+      "flags": ""
+    },
+    {
+      "regex": "fetch\\(|axios|http\\.request",
+      "label": "Tool makes HTTP requests \u2014 SSRF via prompt injection",
+      "flags": ""
+    },
+    {
+      "regex": "sandbox|Sandbox|runCode|executeCode",
+      "label": "Sandbox code execution tool",
+      "flags": ""
+    },
+    {
+      "regex": "DynamicTool|StructuredTool|BaseTool",
+      "label": "LangChain tool definition",
+      "flags": ""
+    }
+  ],
+  "source": "agent-tool-definition.ts"
+}

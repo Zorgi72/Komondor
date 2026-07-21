@@ -1,0 +1,40 @@
+{
+  "slug": "auth-bypass",
+  "description": "Auth checks, middleware guards, session validation that may be bypassable",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "isAdmin\\s*[=!]==?\\s*(true|false|req\\.)",
+      "label": "admin check comparison",
+      "flags": ""
+    },
+    {
+      "regex": "auth.{0,30}skip|skip.{0,30}auth|bypass.{0,30}auth",
+      "label": "auth skip/bypass",
+      "flags": "i"
+    },
+    {
+      "regex": "if\\s*\\(\\s*!?\\s*session\\s*\\)",
+      "label": "session null check",
+      "flags": ""
+    },
+    {
+      "regex": "verify(Token|JWT|Session|Auth)\\s*\\(",
+      "label": "auth verification call",
+      "flags": ""
+    },
+    {
+      "regex": "middleware.{0,30}auth|auth.{0,30}middleware",
+      "label": "auth middleware",
+      "flags": "i"
+    },
+    {
+      "regex": "req\\.headers\\[['\"]authorization['\"]\\]",
+      "label": "authorization header access",
+      "flags": ""
+    }
+  ],
+  "source": "auth-bypass.ts"
+}

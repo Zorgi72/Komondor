@@ -1,0 +1,40 @@
+{
+  "slug": "dotnet-aspnet-controller",
+  "description": "ASP.NET Core controllers and authorization attributes (gated on .NET)",
+  "filePatterns": [
+    "**/*.cs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bclass\\s+\\w+\\s*:\\s*(?:Controller|ControllerBase)\\b",
+      "label": "ControllerBase / Controller subclass",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*ApiController\\s*\\]",
+      "label": "[ApiController] attribute",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*Route\\s*\\(",
+      "label": "[Route] attribute",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*Http(?:Get|Post|Put|Patch|Delete|Head|Options)\\s*\\(?",
+      "label": "[HttpMethod] attribute",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*AllowAnonymous\\s*\\]",
+      "label": "[AllowAnonymous] \u2014 opens public access",
+      "flags": ""
+    },
+    {
+      "regex": "\\[\\s*Authorize(?:\\s*\\([^)]*\\))?\\s*\\]",
+      "label": "[Authorize] auth gate",
+      "flags": ""
+    }
+  ],
+  "source": "dotnet-aspnet-controller.ts"
+}

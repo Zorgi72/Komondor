@@ -1,0 +1,31 @@
+{
+  "slug": "php-magento-controller",
+  "description": "Magento 2 controllers and webapi routes (gated on Magento)",
+  "filePatterns": [
+    "**/Controller/**/*.php",
+    "**/etc/webapi.xml"
+  ],
+  "patterns": [
+    {
+      "regex": "extends\\s+\\\\?Magento\\\\Framework\\\\App\\\\Action\\\\Action\\b",
+      "label": "Magento Action subclass",
+      "flags": ""
+    },
+    {
+      "regex": "implements\\s+\\\\?Magento\\\\Framework\\\\App\\\\(?:Action\\\\)?HttpGetActionInterface",
+      "label": "HttpGetActionInterface implementation",
+      "flags": ""
+    },
+    {
+      "regex": "<route\\s+url=[\"'][^\"']+[\"']\\s+method=[\"'][A-Z]+[\"']",
+      "label": "webapi.xml <route> declaration",
+      "flags": ""
+    },
+    {
+      "regex": "\\$this->getRequest\\s*\\(\\s*\\)->getParam\\s*\\(",
+      "label": "request param accessor",
+      "flags": ""
+    }
+  ],
+  "source": "php-magento-controller.ts"
+}

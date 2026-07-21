@@ -1,0 +1,45 @@
+{
+  "slug": "cache-key-scope",
+  "description": "Cache keys that may lack user/team scoping \u2014 cross-tenant risk",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "redis\\.(get|set|hget|hset|setex)\\s*\\(\\s*`",
+      "label": "Redis template key",
+      "flags": ""
+    },
+    {
+      "regex": "redis\\.(get|set|hget|hset|setex)\\s*\\(\\s*['\"]",
+      "label": "Redis string key",
+      "flags": ""
+    },
+    {
+      "regex": "cache\\.(get|set|has)\\s*\\(\\s*`",
+      "label": "cache template key",
+      "flags": ""
+    },
+    {
+      "regex": "cache\\.(get|set|has)\\s*\\(\\s*['\"]",
+      "label": "cache string key",
+      "flags": ""
+    },
+    {
+      "regex": "cacheKey\\s*=\\s*`",
+      "label": "cacheKey template literal",
+      "flags": ""
+    },
+    {
+      "regex": "cache_key\\s*=\\s*`",
+      "label": "cache_key template literal",
+      "flags": ""
+    },
+    {
+      "regex": "\\.get\\s*\\(\\s*`[^`]*:",
+      "label": "KV get with colon-separated key",
+      "flags": ""
+    }
+  ],
+  "source": "cache-key-scope.ts"
+}

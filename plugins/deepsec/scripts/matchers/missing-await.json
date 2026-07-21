@@ -1,0 +1,40 @@
+{
+  "slug": "missing-await",
+  "description": "Async calls that may be missing await \u2014 race conditions, lost errors",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "(?<!await\\s)(?<!return\\s)with\\w*Mutex\\s*\\(",
+      "label": "mutex without await",
+      "flags": ""
+    },
+    {
+      "regex": "(?<!await\\s)(?<!return\\s)with\\w*Lock\\s*\\(",
+      "label": "lock without await",
+      "flags": ""
+    },
+    {
+      "regex": "(?<!await\\s)(?<!return\\s)with\\w*Transaction\\s*\\(",
+      "label": "transaction without await",
+      "flags": ""
+    },
+    {
+      "regex": "(?<!await\\s)(?<!return\\s)redis\\.\\w+\\s*\\(",
+      "label": "redis call without await",
+      "flags": ""
+    },
+    {
+      "regex": "(?<!await\\s)(?<!return\\s)prisma\\.\\w+\\.\\w+\\s*\\(",
+      "label": "prisma call without await",
+      "flags": ""
+    },
+    {
+      "regex": "(?<!await\\s)(?<!return\\s)db\\.\\w+\\.\\w+\\s*\\(",
+      "label": "db call without await",
+      "flags": ""
+    }
+  ],
+  "source": "missing-await.ts"
+}

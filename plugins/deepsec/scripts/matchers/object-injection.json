@@ -1,0 +1,25 @@
+{
+  "slug": "object-injection",
+  "description": "Prototype pollution via Object.assign/merge/defaults with user input",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "Object\\.assign\\s*\\(\\s*\\{\\s*\\}\\s*,\\s*(req|body|params|query)",
+      "label": "Object.assign from user input",
+      "flags": ""
+    },
+    {
+      "regex": "_\\.defaultsDeep\\s*\\(|defaultsDeep\\s*\\(",
+      "label": "defaultsDeep (prototype pollution)",
+      "flags": ""
+    },
+    {
+      "regex": "\\[req\\.\\w+\\]|body\\[[^\\]]{0,80}\\]\\s*=|params\\[[^\\]]{0,80}\\]\\s*=",
+      "label": "Dynamic property assignment from user input",
+      "flags": ""
+    }
+  ],
+  "source": "object-injection.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "go-echo-route",
+  "description": "Echo (labstack) route registrations (gated on Echo)",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:e|app|server|g)\\.(?:GET|POST|PUT|PATCH|DELETE|Any|Match)\\s*\\(",
+      "label": "Echo method registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:e|app|server)\\.Group\\s*\\(",
+      "label": "Echo .Group (auth scope)",
+      "flags": ""
+    },
+    {
+      "regex": "\\becho\\.New\\s*\\(\\s*\\)",
+      "label": "echo.New() init",
+      "flags": ""
+    },
+    {
+      "regex": "\\bc\\.(?:Param|QueryParam|FormValue|Bind|Request)\\b",
+      "label": "Request accessor (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "go-echo-route.ts"
+}

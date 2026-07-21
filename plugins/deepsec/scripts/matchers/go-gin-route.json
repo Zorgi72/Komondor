@@ -1,0 +1,30 @@
+{
+  "slug": "go-gin-route",
+  "description": "Gin route registrations and group middleware (gated on Gin)",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:r|router|engine|api|v\\d+)\\.(?:GET|POST|PUT|PATCH|DELETE|Any|Handle)\\s*\\(",
+      "label": "Gin method registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\.Group\\s*\\(",
+      "label": "Gin .Group (middleware scope)",
+      "flags": ""
+    },
+    {
+      "regex": "gin\\.Default\\s*\\(\\s*\\)|gin\\.New\\s*\\(\\s*\\)",
+      "label": "Gin engine init",
+      "flags": ""
+    },
+    {
+      "regex": "\\bc\\.(?:Query|Param|PostForm|GetHeader|ShouldBind\\w*)\\b",
+      "label": "Request data accessor (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "go-gin-route.ts"
+}

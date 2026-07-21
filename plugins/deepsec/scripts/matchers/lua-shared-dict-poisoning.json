@@ -1,0 +1,30 @@
+{
+  "slug": "lua-shared-dict-poisoning",
+  "description": "Writes to ngx.shared dictionaries \u2014 cross-worker cache poisoning risk",
+  "filePatterns": [
+    "**/*.lua"
+  ],
+  "patterns": [
+    {
+      "regex": "ngx\\.shared\\.\\w+:set\\s*\\(",
+      "label": "ngx.shared dict :set() (verify key not request-derived)",
+      "flags": ""
+    },
+    {
+      "regex": "ngx\\.shared\\.\\w+:add\\s*\\(",
+      "label": "ngx.shared dict :add()",
+      "flags": ""
+    },
+    {
+      "regex": "ngx\\.shared\\.\\w+:replace\\s*\\(",
+      "label": "ngx.shared dict :replace()",
+      "flags": ""
+    },
+    {
+      "regex": "ngx\\.shared\\.\\w+:incr\\s*\\(",
+      "label": "ngx.shared dict :incr()",
+      "flags": ""
+    }
+  ],
+  "source": "lua-shared-dict-poisoning.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "php-slim-route",
+  "description": "Slim Framework route registrations (gated on Slim)",
+  "filePatterns": [
+    "**/*.php"
+  ],
+  "patterns": [
+    {
+      "regex": "\\$app->(?:get|post|put|patch|delete|map|any)\\s*\\(",
+      "label": "$app->method route registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\$app->group\\s*\\(",
+      "label": "$app->group(...) middleware scope",
+      "flags": ""
+    },
+    {
+      "regex": "->add\\s*\\(\\s*new\\s+\\w+Middleware",
+      "label": "->add(new ...Middleware) attach",
+      "flags": ""
+    },
+    {
+      "regex": "\\$request->(?:getQueryParams|getParsedBody|getAttribute)\\s*\\(",
+      "label": "PSR-7 request accessor",
+      "flags": ""
+    }
+  ],
+  "source": "php-slim-route.ts"
+}

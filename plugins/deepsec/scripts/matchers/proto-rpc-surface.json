@@ -1,0 +1,25 @@
+{
+  "slug": "proto-rpc-surface",
+  "description": "Protobuf service or message file (RPC entry point / wire-format definition)",
+  "filePatterns": [
+    "**/*.proto"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*service\\s+\\w+\\s*\\{",
+      "label": "service block",
+      "flags": ""
+    },
+    {
+      "regex": "^\\s*rpc\\s+\\w+\\s*\\(",
+      "label": "rpc method",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:source|destination|path|target_path|source_url|url|digest|command|arguments|args|env|environment|mode|owner|group|uid|gid|key_id|kernel_args|rootfs|cmdline)\\s*=\\s*\\d+\\s*;",
+      "label": "sensitive field",
+      "flags": ""
+    }
+  ],
+  "source": "proto-rpc-surface.ts"
+}

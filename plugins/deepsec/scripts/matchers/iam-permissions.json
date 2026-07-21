@@ -1,0 +1,27 @@
+{
+  "slug": "iam-permissions",
+  "description": "withAuthentication/IAM permission checks \u2014 audit for correct Action/Resource pairs",
+  "filePatterns": [
+    "**/app/api/**/route.{ts,tsx}",
+    "**/app/**/actions.{ts,tsx}",
+    "**/api/**/*.{ts,tsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "withAuthentication\\s*\\(",
+      "label": "withAuthentication IAM wrapper (verify permissions)",
+      "flags": ""
+    },
+    {
+      "regex": "Action\\.\\w+.*Resource\\.\\w+",
+      "label": "IAM Action/Resource pair (verify correctness)",
+      "flags": ""
+    },
+    {
+      "regex": "permissions:\\s*\\[",
+      "label": "Permissions array (verify completeness)",
+      "flags": ""
+    }
+  ],
+  "source": "iam-permissions.ts"
+}

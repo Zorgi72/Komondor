@@ -1,0 +1,35 @@
+{
+  "slug": "js-graphql-resolver",
+  "description": "GraphQL resolvers (Apollo / Yoga / Mercurius) \u2014 entry-point surface (gated on graphql)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs,cjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bresolvers?\\s*[:=]\\s*\\{\\s*Query\\s*:",
+      "label": "resolvers Query map",
+      "flags": ""
+    },
+    {
+      "regex": "\\bMutation\\s*:\\s*\\{",
+      "label": "Mutation resolver map",
+      "flags": ""
+    },
+    {
+      "regex": "\\bSubscription\\s*:\\s*\\{",
+      "label": "Subscription resolver",
+      "flags": ""
+    },
+    {
+      "regex": "@(?:Query|Mutation|Resolver)\\s*\\(",
+      "label": "type-graphql / Nest GraphQL decorator",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcontext\\.\\w+",
+      "label": "context.* (auth identity carrier \u2014 confirm wiring)",
+      "flags": ""
+    }
+  ],
+  "source": "js-graphql-resolver.ts"
+}

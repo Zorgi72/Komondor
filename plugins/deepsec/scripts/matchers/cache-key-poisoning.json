@@ -1,0 +1,50 @@
+{
+  "slug": "cache-key-poisoning",
+  "description": "Cache key construction with attacker-controlled values \u2014 poisoning risk",
+  "filePatterns": [
+    "**/*.{lua,go,ts,js}"
+  ],
+  "patterns": [
+    {
+      "regex": "cache.{0,80}key.{0,80}host|cache_key.{0,80}host",
+      "label": "Cache key includes Host header",
+      "flags": "i"
+    },
+    {
+      "regex": "cache.{0,80}key.{0,80}header|cache_key.{0,80}header",
+      "label": "Cache key includes request header",
+      "flags": "i"
+    },
+    {
+      "regex": "cache.{0,80}key.{0,80}query|cache_key.{0,80}query",
+      "label": "Cache key includes query params",
+      "flags": "i"
+    },
+    {
+      "regex": "vary.{0,40}:.{0,80}accept|vary.{0,40}:.{0,80}cookie",
+      "label": "Vary header includes client-controlled values",
+      "flags": "i"
+    },
+    {
+      "regex": "ngx\\.shared\\.\\w+:set\\s*\\([^)]{0,200}ngx\\.var\\.host",
+      "label": "Shared dict keyed by Host header",
+      "flags": ""
+    },
+    {
+      "regex": "ngx\\.shared\\.\\w+:set\\s*\\([^)]{0,200}ngx\\.var\\.request_uri",
+      "label": "Shared dict keyed by request URI",
+      "flags": ""
+    },
+    {
+      "regex": "redis\\.\\w*set\\s*\\([^)]{0,200}req\\.|redis\\.\\w*set\\s*\\([^)]{0,200}host",
+      "label": "Redis set with request-derived key",
+      "flags": "i"
+    },
+    {
+      "regex": "\\.set\\s*\\([^)]{0,200}cache[^)]{0,80}req\\.|\\.set\\s*\\([^)]{0,200}cache[^)]{0,80}host",
+      "label": "Cache set with request-derived data",
+      "flags": "i"
+    }
+  ],
+  "source": "cache-key-poisoning.ts"
+}

@@ -1,0 +1,25 @@
+{
+  "slug": "js-hono-route",
+  "description": "Hono route registrations \u2014 entry points (weak candidate, gated on Hono)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:app|router|hono)\\.(?:get|post|put|patch|delete|options|all|use)\\s*\\(",
+      "label": "Hono method/use registration",
+      "flags": ""
+    },
+    {
+      "regex": "new\\s+Hono\\s*\\(",
+      "label": "new Hono() instantiation",
+      "flags": ""
+    },
+    {
+      "regex": "\\bc\\.req\\.(?:query|param|json|formData|text|valid)\\b",
+      "label": "Request data accessor",
+      "flags": ""
+    }
+  ],
+  "source": "js-hono-route.ts"
+}

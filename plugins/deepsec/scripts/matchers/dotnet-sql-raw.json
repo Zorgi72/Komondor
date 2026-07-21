@@ -1,0 +1,65 @@
+{
+  "slug": "dotnet-sql-raw",
+  "description": "Raw SQL across .NET DB libraries (ADO.NET SqlCommand, Dapper, EF Core FromSqlRaw) \u2014 string concat / interpolation is SQL injection (FromSqlInterpolated parameterizes correctly; only FromSqlRaw with concat or $",
+  "filePatterns": [
+    "**/*.cs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bnew\\s+SqlCommand\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "new SqlCommand(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bnew\\s+SqlCommand\\s*\\(\\s*\\$\"[^\"]{0,400}\\{",
+      "label": "new SqlCommand($",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcommand\\.CommandText\\s*=\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "command.CommandText = ",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcommand\\.CommandText\\s*=\\s*\\$\"[^\"]{0,400}\\{",
+      "label": "command.CommandText = $",
+      "flags": ""
+    },
+    {
+      "regex": "\\bconnection\\.(?:Query|QueryAsync|QueryFirst|QueryFirstOrDefault|QueryFirstAsync|Execute|ExecuteAsync|ExecuteScalar|ExecuteScalarAsync)\\s*(?:<[^>]+>)?\\s*\\(\\s*\\$\"[^\"]{0,400}\\{",
+      "label": "Dapper connection.Query/Execute with $",
+      "flags": ""
+    },
+    {
+      "regex": "\\bconnection\\.(?:Query|Execute|ExecuteScalar)\\s*(?:<[^>]+>)?\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "Dapper connection.Query/Execute with string concat",
+      "flags": ""
+    },
+    {
+      "regex": "\\bFromSqlRaw\\s*\\(\\s*\\$\"[^\"]{0,400}\\{",
+      "label": "FromSqlRaw with $",
+      "flags": ""
+    },
+    {
+      "regex": "\\bFromSqlRaw\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "FromSqlRaw with string concat",
+      "flags": ""
+    },
+    {
+      "regex": "\\bExecuteSqlRaw\\s*\\(\\s*\\$\"",
+      "label": "ExecuteSqlRaw with $",
+      "flags": ""
+    },
+    {
+      "regex": "\\bExecuteSqlRaw\\s*\\(\\s*\"[^\"]{0,400}\"\\s*\\+",
+      "label": "ExecuteSqlRaw with string concat",
+      "flags": ""
+    },
+    {
+      "regex": "\\$\"\\s*(?:SELECT|INSERT|UPDATE|DELETE)[^\"]{0,400}\\{",
+      "label": "interpolated SQL string with embedded {expr}",
+      "flags": ""
+    }
+  ],
+  "source": "dotnet-sql-raw.ts"
+}

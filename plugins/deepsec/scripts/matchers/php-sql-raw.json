@@ -1,0 +1,25 @@
+{
+  "slug": "php-sql-raw",
+  "description": "Raw SQL across PHP DB drivers (PDO, mysqli, Doctrine ORM/DBAL) \u2014 string concatenation is SQL injection",
+  "filePatterns": [
+    "**/*.php"
+  ],
+  "patterns": [
+    {
+      "regex": "new\\s+PDO\\s*\\(",
+      "label": "PDO connection (informational)",
+      "flags": ""
+    },
+    {
+      "regex": "mysqli_real_escape_string",
+      "label": "mysqli_real_escape_string (informational \u2014 manual escaping)",
+      "flags": ""
+    },
+    {
+      "regex": "(?:\"\\s*(?:SELECT|INSERT|UPDATE|DELETE)\\s+[^\"]{0,400}\"|'\\s*(?:SELECT|INSERT|UPDATE|DELETE)\\s+[^']{0,400}')\\s*\\.\\s*\\$\\w+",
+      "label": "Raw SQL string with concat (SQL injection)",
+      "flags": ""
+    }
+  ],
+  "source": "php-sql-raw.ts"
+}

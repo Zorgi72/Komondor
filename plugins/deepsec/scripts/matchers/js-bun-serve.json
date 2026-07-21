@@ -1,0 +1,25 @@
+{
+  "slug": "js-bun-serve",
+  "description": "Bun.serve fetch handlers \u2014 entry-point surface (gated on bun)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bBun\\.serve\\s*\\(\\s*\\{",
+      "label": "Bun.serve({ fetch(req) ... })",
+      "flags": ""
+    },
+    {
+      "regex": "(?:async\\s+)?fetch\\s*\\(\\s*req(?:uest)?\\s*[,)]",
+      "label": "fetch(req) handler body",
+      "flags": ""
+    },
+    {
+      "regex": "\\brequest\\.(?:url|headers|method)\\b",
+      "label": "request.* accessor",
+      "flags": ""
+    }
+  ],
+  "source": "js-bun-serve.ts"
+}

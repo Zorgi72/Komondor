@@ -1,0 +1,30 @@
+{
+  "slug": "unsafe-redirect",
+  "description": "Redirects that may bypass validNextRedirect() \u2014 open redirect risk",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "redirect\\s*\\(\\s*(req\\.|request\\.|params\\.|query\\.|searchParams|body\\.)",
+      "label": "redirect() with request-derived URL",
+      "flags": ""
+    },
+    {
+      "regex": "redirect\\s*\\(\\s*`[^`]*\\$\\{",
+      "label": "redirect() with interpolated URL",
+      "flags": ""
+    },
+    {
+      "regex": "NextResponse\\.redirect\\s*\\(\\s*new\\s+URL\\s*\\(",
+      "label": "NextResponse.redirect with dynamic URL",
+      "flags": ""
+    },
+    {
+      "regex": "x-app-redirect-uri|redirect.uri|redirectUrl|returnUrl|returnTo",
+      "label": "Redirect URL from header/param",
+      "flags": "i"
+    }
+  ],
+  "source": "unsafe-redirect.ts"
+}

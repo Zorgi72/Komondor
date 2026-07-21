@@ -1,0 +1,30 @@
+{
+  "slug": "android-manifest-export",
+  "description": "Exported Android components (Activity / Service / Receiver / Provider) \u2014 IPC entry points (gated on android)",
+  "filePatterns": [
+    "**/AndroidManifest.xml"
+  ],
+  "patterns": [
+    {
+      "regex": "<(?:activity|service|receiver|provider)\\b[^>]*android:exported=\"true\"",
+      "label": "exported component \u2014 confirm permissions",
+      "flags": ""
+    },
+    {
+      "regex": "<intent-filter\\b",
+      "label": "intent-filter \u2014 implicitly exported on pre-31 SDK",
+      "flags": ""
+    },
+    {
+      "regex": "android:permission=\"[^\"]+\"",
+      "label": "android:permission= guard",
+      "flags": ""
+    },
+    {
+      "regex": "<data\\s+android:scheme=",
+      "label": "deeplink scheme \u2014 review URL handling for SSRF/XSS",
+      "flags": ""
+    }
+  ],
+  "source": "android-manifest-export.ts"
+}

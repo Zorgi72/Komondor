@@ -1,0 +1,40 @@
+{
+  "slug": "lua-crypto-weakness",
+  "description": "Weak crypto patterns in Lua \u2014 hardcoded IVs, ECB mode, timing-unsafe comparisons",
+  "filePatterns": [
+    "**/*.lua"
+  ],
+  "patterns": [
+    {
+      "regex": "aes.{0,40}ecb|ecb.{0,40}aes",
+      "label": "AES ECB mode (no IV, deterministic)",
+      "flags": "i"
+    },
+    {
+      "regex": "==\\s*.{0,40}hmac|hmac.{0,40}==",
+      "label": "Timing-unsafe HMAC comparison (use constant-time)",
+      "flags": ""
+    },
+    {
+      "regex": "==\\s*.{0,40}hash|hash.{0,40}==",
+      "label": "Timing-unsafe hash comparison",
+      "flags": ""
+    },
+    {
+      "regex": "md5\\s*\\(|\\.md5",
+      "label": "MD5 usage",
+      "flags": ""
+    },
+    {
+      "regex": "sha1\\s*\\(|\\.sha1\\b",
+      "label": "SHA1 usage",
+      "flags": ""
+    },
+    {
+      "regex": "local\\s+iv\\s*=\\s*[\"']",
+      "label": "Hardcoded IV value",
+      "flags": ""
+    }
+  ],
+  "source": "lua-crypto-weakness.ts"
+}

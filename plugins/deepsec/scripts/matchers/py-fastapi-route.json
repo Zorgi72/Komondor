@@ -1,0 +1,30 @@
+{
+  "slug": "py-fastapi-route",
+  "description": "FastAPI route handlers \u2014 entry points (gated on FastAPI)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*@(?:app|router|api)\\.(?:get|post|put|patch|delete|options|head|websocket)\\s*\\(",
+      "label": "FastAPI route decorator",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bAPIRouter\\s*\\(",
+      "label": "APIRouter() factory",
+      "flags": ""
+    },
+    {
+      "regex": "=\\s*Depends\\s*\\(",
+      "label": "Depends(...) dependency (auth gate when wired up)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bSecurity\\s*\\(",
+      "label": "Security(...) \u2014 auth dependency",
+      "flags": ""
+    }
+  ],
+  "source": "py-fastapi-route.ts"
+}

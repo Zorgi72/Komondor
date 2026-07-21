@@ -1,0 +1,36 @@
+{
+  "slug": "php-cakephp-controller",
+  "description": "CakePHP controllers and component callbacks (gated on CakePHP)",
+  "filePatterns": [
+    "**/src/Controller/**/*.php",
+    "**/Controller/**/*.php"
+  ],
+  "patterns": [
+    {
+      "regex": "class\\s+\\w+Controller\\s+extends\\s+AppController\\b",
+      "label": "CakePHP controller class",
+      "flags": ""
+    },
+    {
+      "regex": "\\$this->Auth->allow\\s*\\(",
+      "label": "Auth->allow() \u2014 opens public access",
+      "flags": ""
+    },
+    {
+      "regex": "\\$this->loadComponent\\s*\\(\\s*['\"]Auth['\"]",
+      "label": "Auth component wiring",
+      "flags": ""
+    },
+    {
+      "regex": "\\$this->request->getData\\s*\\(",
+      "label": "request data accessor",
+      "flags": ""
+    },
+    {
+      "regex": "\\$this->Flash->",
+      "label": "flash response (post-redirect-get)",
+      "flags": ""
+    }
+  ],
+  "source": "php-cakephp-controller.ts"
+}

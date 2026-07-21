@@ -1,0 +1,30 @@
+{
+  "slug": "js-workers-fetch",
+  "description": "Cloudflare Workers / edge runtime default-export fetch handler (gated on workers)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "export\\s+default\\s*\\{\\s*(?:async\\s+)?fetch\\s*\\(",
+      "label": "Workers default export { fetch(req, env, ctx) }",
+      "flags": ""
+    },
+    {
+      "regex": "addEventListener\\s*\\(\\s*['\"]fetch['\"]",
+      "label": "addEventListener(",
+      "flags": ""
+    },
+    {
+      "regex": "\\benv\\.[A-Z][A-Z0-9_]+",
+      "label": "env.* binding access (KV, R2, secrets)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcaches\\.default\\b|\\bcaches\\.open\\s*\\(",
+      "label": "Workers cache API \u2014 review key composition",
+      "flags": ""
+    }
+  ],
+  "source": "js-workers-fetch.ts"
+}

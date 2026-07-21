@@ -2,3 +2,9 @@
 **/*.rs.bk
 .DS_Store
 target/
+
+# Python
+__pycache__/
+*.py[cod]
+
+plugins/deepsec/**/__pycache__/

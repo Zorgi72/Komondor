@@ -1,0 +1,45 @@
+{
+  "slug": "xss",
+  "description": "Unsafe innerHTML, dangerouslySetInnerHTML, template injection patterns",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx,html,ejs,hbs}"
+  ],
+  "patterns": [
+    {
+      "regex": "dangerouslySetInnerHTML",
+      "label": "dangerouslySetInnerHTML",
+      "flags": ""
+    },
+    {
+      "regex": "\\.innerHTML\\s*=",
+      "label": "innerHTML assignment",
+      "flags": ""
+    },
+    {
+      "regex": "\\.outerHTML\\s*=",
+      "label": "outerHTML assignment",
+      "flags": ""
+    },
+    {
+      "regex": "document\\.write\\s*\\(",
+      "label": "document.write",
+      "flags": ""
+    },
+    {
+      "regex": "\\$\\{[^}]{0,200}\\}.{0,120}<\\/?\\w+>|<\\w+[^>]{0,200}\\$\\{",
+      "label": "template literal in HTML",
+      "flags": ""
+    },
+    {
+      "regex": "v-html\\s*=",
+      "label": "Vue v-html directive",
+      "flags": ""
+    },
+    {
+      "regex": "\\[innerHTML\\]\\s*=",
+      "label": "Angular innerHTML binding",
+      "flags": ""
+    }
+  ],
+  "source": "xss.ts"
+}

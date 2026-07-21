@@ -1,0 +1,25 @@
+{
+  "slug": "js-fastify-route",
+  "description": "Fastify route registrations \u2014 entry points (weak candidate, gated on Fastify)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs,cjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:fastify|instance|app|server)\\.(?:get|post|put|patch|delete|head|options|route|register)\\s*\\(",
+      "label": "fastify method/route/register call",
+      "flags": ""
+    },
+    {
+      "regex": "\\.route\\s*\\(\\s*\\{[\\s\\S]*?method\\s*:",
+      "label": "fastify .route({ method, ... }) form",
+      "flags": ""
+    },
+    {
+      "regex": "addHook\\s*\\(\\s*['\"](?:onRequest|preHandler|preValidation)['\"]",
+      "label": "auth-relevant lifecycle hook",
+      "flags": ""
+    }
+  ],
+  "source": "js-fastify-route.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "js-bullmq-processor",
+  "description": "BullMQ workers and queue processors \u2014 background-job auth-gap surface (gated on bullmq)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs,cjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "new\\s+Worker\\s*\\(\\s*['\"][^'\"]+['\"]\\s*,",
+      "label": "new Worker(",
+      "flags": ""
+    },
+    {
+      "regex": "new\\s+Queue\\s*\\(\\s*['\"][^'\"]+['\"]",
+      "label": "new Queue() declaration",
+      "flags": ""
+    },
+    {
+      "regex": "\\.process\\s*\\(\\s*async\\s*\\(\\s*job\\b",
+      "label": "queue.process(async job => ...) handler body",
+      "flags": ""
+    },
+    {
+      "regex": "\\bjob\\.data\\b",
+      "label": "job.data \u2014 payload trust boundary",
+      "flags": ""
+    }
+  ],
+  "source": "js-bullmq-processor.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "py-aiohttp-route",
+  "description": "aiohttp route registrations (gated on aiohttp)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bapp\\.router\\.add_(?:get|post|put|patch|delete|route)\\s*\\(",
+      "label": "app.router.add_*",
+      "flags": ""
+    },
+    {
+      "regex": "^\\s*@routes\\.(?:get|post|put|patch|delete|view)\\s*\\(",
+      "label": "@routes.* decorator",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bweb\\.Application\\s*\\(",
+      "label": "web.Application() init",
+      "flags": ""
+    },
+    {
+      "regex": "\\brequest\\.(?:query|match_info|json|post|read)\\b",
+      "label": "request accessor",
+      "flags": ""
+    }
+  ],
+  "source": "py-aiohttp-route.ts"
+}

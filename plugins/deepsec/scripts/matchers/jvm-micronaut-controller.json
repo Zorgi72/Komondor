@@ -1,0 +1,35 @@
+{
+  "slug": "jvm-micronaut-controller",
+  "description": "Micronaut controllers and route methods (gated on Micronaut)",
+  "filePatterns": [
+    "**/*.{java,kt}"
+  ],
+  "patterns": [
+    {
+      "regex": "@Controller\\s*\\(",
+      "label": "@Controller(...) declaration",
+      "flags": ""
+    },
+    {
+      "regex": "@(?:Get|Post|Put|Patch|Delete|Head|Options)\\s*\\(",
+      "label": "Micronaut HTTP method annotation",
+      "flags": ""
+    },
+    {
+      "regex": "@Secured\\s*\\(",
+      "label": "@Secured(...) auth annotation",
+      "flags": ""
+    },
+    {
+      "regex": "@PermitAll\\b",
+      "label": "@PermitAll \u2014 public access",
+      "flags": ""
+    },
+    {
+      "regex": "\\bAuthentication\\s+\\w+",
+      "label": "Authentication arg in handler",
+      "flags": ""
+    }
+  ],
+  "source": "jvm-micronaut-controller.ts"
+}

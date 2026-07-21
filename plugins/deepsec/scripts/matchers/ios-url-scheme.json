@@ -1,0 +1,37 @@
+{
+  "slug": "ios-url-scheme",
+  "description": "iOS URL scheme / universal-link entry points and handlers (gated on iOS)",
+  "filePatterns": [
+    "**/Info.plist",
+    "**/*.swift",
+    "**/*.m"
+  ],
+  "patterns": [
+    {
+      "regex": "<key>CFBundleURLSchemes<\\/key>",
+      "label": "CFBundleURLSchemes \u2014 registers URL handler",
+      "flags": ""
+    },
+    {
+      "regex": "<key>NSUserActivityTypes<\\/key>",
+      "label": "NSUserActivityTypes \u2014 universal links",
+      "flags": ""
+    },
+    {
+      "regex": "func\\s+application\\s*\\([^)]*open\\s+url\\s*:\\s*URL",
+      "label": "application(_:open url:) \u2014 URL entry point",
+      "flags": ""
+    },
+    {
+      "regex": "func\\s+scene\\s*\\([^)]*openURLContexts\\b",
+      "label": "scene(_:openURLContexts:) \u2014 scene URL entry",
+      "flags": ""
+    },
+    {
+      "regex": "\\bWKWebView\\b|\\bUIWebView\\b",
+      "label": "WebView surface \u2014 review JS bridge / file:// loads",
+      "flags": ""
+    }
+  ],
+  "source": "ios-url-scheme.ts"
+}

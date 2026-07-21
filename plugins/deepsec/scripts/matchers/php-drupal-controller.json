@@ -1,0 +1,32 @@
+{
+  "slug": "php-drupal-controller",
+  "description": "Drupal controllers, routes, and form callbacks (gated on Drupal)",
+  "filePatterns": [
+    "**/src/Controller/**/*.php",
+    "**/modules/**/*.php",
+    "**/modules/**/*.routing.yml"
+  ],
+  "patterns": [
+    {
+      "regex": "class\\s+\\w+\\s+extends\\s+ControllerBase\\b",
+      "label": "Drupal ControllerBase subclass",
+      "flags": ""
+    },
+    {
+      "regex": "_permission\\s*:\\s*['\"]access\\s+content['\"]",
+      "label": "permission: access content (public-ish route)",
+      "flags": ""
+    },
+    {
+      "regex": "buildForm\\s*\\(\\s*array\\s+\\$form",
+      "label": "FormBase::buildForm() entry",
+      "flags": ""
+    },
+    {
+      "regex": "\\\\Drupal::request\\s*\\(\\s*\\)",
+      "label": "request() service accessor",
+      "flags": ""
+    }
+  ],
+  "source": "php-drupal-controller.ts"
+}

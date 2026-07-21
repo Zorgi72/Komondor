@@ -1,0 +1,25 @@
+{
+  "slug": "py-bottle-route",
+  "description": "Bottle route decorators (gated on Bottle)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*@(?:route|get|post|put|patch|delete)\\s*\\(\\s*['\"][^'\"]+['\"]",
+      "label": "Bottle @route/@method decorator",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bBottle\\s*\\(\\s*\\)",
+      "label": "Bottle() instance",
+      "flags": ""
+    },
+    {
+      "regex": "\\brequest\\.(?:query|forms|json|cookies)\\b",
+      "label": "request accessor",
+      "flags": ""
+    }
+  ],
+  "source": "py-bottle-route.ts"
+}

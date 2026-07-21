@@ -1,0 +1,122 @@
+{
+  "slug": "expensive-api-abuse",
+  "description": "Endpoints calling expensive APIs (LLM, AI, paid services) that may lack abuse protection",
+  "filePatterns": [
+    "**/app/api/**/route.{ts,tsx}",
+    "**/app/**/route.{ts,tsx}",
+    "**/pages/api/**/*.{ts,tsx}",
+    "**/routes/**/*.{ts,tsx}",
+    "**/server/**/*.{ts,tsx}",
+    "**/actions/**/*.{ts,tsx}",
+    "**/actions.{ts,tsx}",
+    "**/*.{ts,tsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bgenerateText\\s*\\(",
+      "label": "AI SDK generateText",
+      "flags": ""
+    },
+    {
+      "regex": "\\bstreamText\\s*\\(",
+      "label": "AI SDK streamText",
+      "flags": ""
+    },
+    {
+      "regex": "\\bgenerateObject\\s*\\(",
+      "label": "AI SDK generateObject",
+      "flags": ""
+    },
+    {
+      "regex": "\\bstreamObject\\s*\\(",
+      "label": "AI SDK streamObject",
+      "flags": ""
+    },
+    {
+      "regex": "\\bembed\\s*\\(",
+      "label": "AI SDK embed",
+      "flags": ""
+    },
+    {
+      "regex": "\\bembedMany\\s*\\(",
+      "label": "AI SDK embedMany",
+      "flags": ""
+    },
+    {
+      "regex": "openai\\.chat\\.completions\\.create",
+      "label": "OpenAI chat completion",
+      "flags": ""
+    },
+    {
+      "regex": "openai\\.completions\\.create",
+      "label": "OpenAI completion",
+      "flags": ""
+    },
+    {
+      "regex": "openai\\.embeddings\\.create",
+      "label": "OpenAI embedding",
+      "flags": ""
+    },
+    {
+      "regex": "openai\\.images\\.generate",
+      "label": "OpenAI image generation",
+      "flags": ""
+    },
+    {
+      "regex": "anthropic\\.messages\\.create",
+      "label": "Anthropic messages",
+      "flags": ""
+    },
+    {
+      "regex": "anthropic\\.completions\\.create",
+      "label": "Anthropic completion",
+      "flags": ""
+    },
+    {
+      "regex": "ai-gateway\\.vercel\\.sh",
+      "label": "Vercel AI Gateway",
+      "flags": ""
+    },
+    {
+      "regex": "\\/v1\\/chat\\/completions",
+      "label": "Chat completions API",
+      "flags": ""
+    },
+    {
+      "regex": "\\/v1\\/completions",
+      "label": "Completions API",
+      "flags": ""
+    },
+    {
+      "regex": "\\/v1\\/embeddings",
+      "label": "Embeddings API",
+      "flags": ""
+    },
+    {
+      "regex": "\\/v1\\/images\\/generations",
+      "label": "Image generation API",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsendgrid\\b.*\\.send\\b",
+      "label": "SendGrid email",
+      "flags": "i"
+    },
+    {
+      "regex": "\\bresend\\b.*\\.send\\b",
+      "label": "Resend email",
+      "flags": "i"
+    },
+    {
+      "regex": "\\btwilio\\b.*\\.create\\b",
+      "label": "Twilio SMS",
+      "flags": "i"
+    },
+    {
+      "regex": "\\bstripe\\b.*\\.create\\b",
+      "label": "Stripe API",
+      "flags": "i"
+    }
+  ],
+  "source": "expensive-api-abuse.ts"
+}

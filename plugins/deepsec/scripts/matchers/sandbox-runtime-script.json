@@ -1,0 +1,59 @@
+{
+  "slug": "sandbox-runtime-script",
+  "description": "Shell script that runs inside a sandbox container at runtime (customer-facing surface)",
+  "filePatterns": [
+    "**/containers/**/scripts/**/*.sh",
+    "**/containers/**/bin/**/*.sh",
+    "**/containers/**/*credential*.sh",
+    "**/containers/**/entrypoint*.sh",
+    "**/containers/**/start*.sh"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:eval|exec)\\s+[\"'`]?\\$",
+      "label": "eval/exec with env var",
+      "flags": ""
+    },
+    {
+      "regex": "\\bbash\\s+-c\\s+[\"'`].*\\$\\{?[A-Z]",
+      "label": "bash -c with env interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "\\$\\{?[A-Z][A-Z0-9_]+\\}?[^\"'`)]",
+      "label": "unquoted env var expansion",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:sudo|su\\s|chmod|chown)\\s",
+      "label": "privilege/permission op",
+      "flags": ""
+    },
+    {
+      "regex": "\\b0\\.0\\.0\\.0\\b",
+      "label": "binds 0.0.0.0",
+      "flags": ""
+    },
+    {
+      "regex": "\\bgit\\s+(?:config|credential|push|fetch|clone)\\b",
+      "label": "git credential / network op",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:TARGET|SANDBOX|CONTAINER)_[A-Z0-9_]+\\b",
+      "label": "TARGET_/SANDBOX_/CONTAINER_ env",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcurl\\b[^|]*\\|[\\s]*(?:sh|bash)",
+      "label": "curl | sh pattern",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:nohup|&\\s*$|disown)\\b",
+      "label": "background daemon launch",
+      "flags": ""
+    }
+  ],
+  "source": "sandbox-runtime-script.ts"
+}

@@ -1,0 +1,43 @@
+{
+  "slug": "rb-rails-controller",
+  "description": "Rails controllers, routes, and action methods (gated on Rails)",
+  "filePatterns": [
+    "**/app/controllers/**/*.rb",
+    "**/config/routes.rb",
+    "**/app/jobs/**/*.rb",
+    "**/app/mailers/**/*.rb"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*class\\s+\\w+Controller\\s*<\\s*\\w*Controller\\b",
+      "label": "Rails controller class",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*before_action\\s+",
+      "label": "before_action callback",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*skip_before_action\\s+",
+      "label": "skip_before_action (auth bypass \u2014 confirm intent)",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resources\\s+:\\w+",
+      "label": "routes.rb resources :foo (CRUD)",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*(?:get|post|put|patch|delete|match)\\s+['\"][^'\"]+['\"]\\s*,",
+      "label": "routes.rb verb registration",
+      "flags": "m"
+    },
+    {
+      "regex": "params\\.require\\s*\\(",
+      "label": "strong params boundary",
+      "flags": ""
+    }
+  ],
+  "source": "rb-rails-controller.ts"
+}

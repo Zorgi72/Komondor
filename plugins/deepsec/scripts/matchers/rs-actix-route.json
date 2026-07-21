@@ -1,0 +1,35 @@
+{
+  "slug": "rs-actix-route",
+  "description": "Actix-web route attributes and service registrations (gated on Actix)",
+  "filePatterns": [
+    "**/*.rs"
+  ],
+  "patterns": [
+    {
+      "regex": "#\\[\\s*(?:get|post|put|patch|delete|head|options)\\s*\\(\\s*\"[^\"]+\"\\s*\\)",
+      "label": "Actix route attribute",
+      "flags": ""
+    },
+    {
+      "regex": "App::new\\s*\\(\\s*\\)",
+      "label": "App::new() factory",
+      "flags": ""
+    },
+    {
+      "regex": "\\.service\\s*\\(",
+      "label": ".service(...) registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\bweb::scope\\s*\\(",
+      "label": "web::scope() group",
+      "flags": ""
+    },
+    {
+      "regex": "web::(?:Path|Query|Json|Form|Data)<[^>]+>",
+      "label": "extractor (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "rs-actix-route.ts"
+}

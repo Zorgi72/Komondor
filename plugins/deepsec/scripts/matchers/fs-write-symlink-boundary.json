@@ -1,0 +1,35 @@
+{
+  "slug": "fs-write-symlink-boundary",
+  "description": "Filesystem write to dynamic path \u2014 verify symlink boundary check (realpath/canonical resolve)",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx,mjs,cjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bfs\\.(?:mkdir|writeFile|createWriteStream|copyFile|symlink|link|rename|appendFile|chmod|chown|truncate)(?:Sync)?\\s*\\(\\s*`[^`]*\\$\\{",
+      "label": "fs write to template-literal path",
+      "flags": ""
+    },
+    {
+      "regex": "\\bfsp?\\.(?:mkdir|writeFile|copyFile|symlink|link|rename|appendFile|chmod|chown|truncate)\\s*\\(\\s*`[^`]*\\$\\{",
+      "label": "fsp/fs.promises write to template-literal path",
+      "flags": ""
+    },
+    {
+      "regex": "\\bfs\\.(?:mkdir|writeFile|createWriteStream|copyFile|symlink|link|rename|appendFile)(?:Sync)?\\s*\\(\\s*[A-Za-z_$][\\w$]*\\s*\\+\\s*",
+      "label": "fs write to concatenated path",
+      "flags": ""
+    },
+    {
+      "regex": "\\bfs\\.(?:mkdir|writeFile|createWriteStream|copyFile|symlink|link|rename|appendFile)(?:Sync)?\\s*\\(\\s*path\\.join\\([^)]*req\\.",
+      "label": "fs write to path.join with req.* component",
+      "flags": ""
+    },
+    {
+      "regex": "\\bfs\\.(?:mkdir|writeFile|createWriteStream|copyFile|symlink|link|rename|appendFile)(?:Sync)?\\s*\\(\\s*path\\.resolve\\([^)]*req\\.",
+      "label": "fs write to path.resolve with req.* component",
+      "flags": ""
+    }
+  ],
+  "source": "fs-write-symlink-boundary.ts"
+}

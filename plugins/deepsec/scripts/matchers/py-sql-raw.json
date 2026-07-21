@@ -1,0 +1,80 @@
+{
+  "slug": "py-sql-raw",
+  "description": "Raw SQL across popular Python DB drivers (SQLAlchemy, psycopg, pymysql, sqlite3, asyncpg, Django ORM raw) \u2014 f-string / %-format / .format / + interpolation is SQL injection",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bengine\\.execute\\s*\\(\\s*(?:text\\s*\\(\\s*)?f['\"]",
+      "label": "SQLAlchemy engine.execute with f-string \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsession\\.execute\\s*\\(\\s*(?:text\\s*\\(\\s*)?f['\"]",
+      "label": "SQLAlchemy session.execute with f-string \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\btext\\s*\\(\\s*f['\"]",
+      "label": "SQLAlchemy text() with f-string \u2014 bypasses parameterization",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsession\\.execute\\s*\\(\\s*(?:\"[^\"]{0,400}\"|'[^']{0,400}')\\s*%",
+      "label": "SQLAlchemy session.execute with %-formatting \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcursor\\.execute\\s*\\(\\s*f['\"]",
+      "label": "cursor.execute with f-string \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcursor\\.execute\\s*\\(\\s*(?:\"[^\"]{0,400}\"|'[^']{0,400}')\\s*%",
+      "label": "cursor.execute with %-formatting \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcursor\\.execute\\s*\\(\\s*(?:\"[^\"]{0,400}\"|'[^']{0,400}')\\s*\\.format\\s*\\(",
+      "label": "cursor.execute with .format() \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcursor\\.execute\\s*\\(\\s*(?:\"[^\"]{0,400}\"|'[^']{0,400}')\\s*\\+",
+      "label": "cursor.execute with string concatenation \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\bawait\\s+conn\\.(?:execute|fetch|fetchrow|fetchval)\\s*\\(\\s*f['\"]",
+      "label": "asyncpg conn.execute/fetch* with f-string \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\b\\w+\\.objects\\.raw\\s*\\(\\s*f['\"]",
+      "label": "Django Model.objects.raw with f-string \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\b\\w+\\.objects\\.raw\\s*\\(\\s*(?:\"[^\"]{0,400}\"|'[^']{0,400}')\\s*%",
+      "label": "Django Model.objects.raw with %-formatting \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\b\\w+\\.objects\\.extra\\s*\\(\\s*where\\s*=\\s*\\[\\s*f?['\"]",
+      "label": "Django Model.objects.extra(where=...) \u2014 string-built WHERE clause",
+      "flags": ""
+    },
+    {
+      "regex": "\\bconnection\\.cursor\\(\\)\\.execute\\s*\\(\\s*f['\"]",
+      "label": "Django connection.cursor().execute with f-string \u2014 SQL injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\bdb\\.execute\\s*\\(\\s*f['\"]\\s*(?:SELECT|INSERT|UPDATE|DELETE)",
+      "label": "db.execute with f-string SQL \u2014 SQL injection",
+      "flags": ""
+    }
+  ],
+  "source": "py-sql-raw.ts"
+}

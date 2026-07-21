@@ -1,0 +1,40 @@
+{
+  "slug": "response-header-leak",
+  "description": "Response headers exposing internal infrastructure details",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx,lua,go,conf}"
+  ],
+  "patterns": [
+    {
+      "regex": "x-powered-by",
+      "label": "X-Powered-By header",
+      "flags": "i"
+    },
+    {
+      "regex": "setHeader\\s*\\(\\s*['\"]server['\"]",
+      "label": "Server header set",
+      "flags": "i"
+    },
+    {
+      "regex": "x-debug|x-internal|x-trace-id",
+      "label": "Debug/internal header",
+      "flags": "i"
+    },
+    {
+      "regex": "add_header.{0,40}server_version|add_header.{0,40}x-debug",
+      "label": "Nginx debug header",
+      "flags": "i"
+    },
+    {
+      "regex": "ngx\\.header\\[['\"]x-debug",
+      "label": "Lua debug response header",
+      "flags": ""
+    },
+    {
+      "regex": "w\\.Header\\(\\)\\.Set\\s*\\(\\s*\"X-Debug|w\\.Header\\(\\)\\.Set\\s*\\(\\s*\"Server\"",
+      "label": "Go debug response header",
+      "flags": ""
+    }
+  ],
+  "source": "response-header-leak.ts"
+}

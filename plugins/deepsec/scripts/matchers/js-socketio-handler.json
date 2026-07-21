@@ -1,0 +1,30 @@
+{
+  "slug": "js-socketio-handler",
+  "description": "Socket.IO event handlers \u2014 entry-point surface (gated on socketio)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs,cjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bio\\.on\\s*\\(\\s*['\"]connection['\"]",
+      "label": "io.on(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsocket\\.on\\s*\\(\\s*['\"][^'\"]+['\"]",
+      "label": "socket.on(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bio\\.use\\s*\\(",
+      "label": "io.use(authMiddleware) \u2014 auth gate",
+      "flags": ""
+    },
+    {
+      "regex": "\\bsocket\\.handshake\\.(?:auth|headers|query)\\b",
+      "label": "handshake.auth/headers/query (untrusted input)",
+      "flags": ""
+    }
+  ],
+  "source": "js-socketio-handler.ts"
+}

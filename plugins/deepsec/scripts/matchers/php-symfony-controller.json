@@ -1,0 +1,42 @@
+{
+  "slug": "php-symfony-controller",
+  "description": "Symfony controllers and route attributes (gated on Symfony)",
+  "filePatterns": [
+    "**/src/**/*.php",
+    "**/src/Controller/**/*.php",
+    "**/Controller/**/*.php"
+  ],
+  "patterns": [
+    {
+      "regex": "#\\[\\s*Route\\s*\\(",
+      "label": "#[Route] attribute",
+      "flags": ""
+    },
+    {
+      "regex": "class\\s+\\w+Controller\\s+extends\\s+AbstractController\\b",
+      "label": "Symfony controller class",
+      "flags": ""
+    },
+    {
+      "regex": "#\\[\\s*IsGranted\\s*\\(",
+      "label": "#[IsGranted] auth gate",
+      "flags": ""
+    },
+    {
+      "regex": "#\\[\\s*AsEventListener\\s*\\(",
+      "label": "Event listener entry point",
+      "flags": ""
+    },
+    {
+      "regex": "#\\[\\s*AsMessageHandler\\s*\\(",
+      "label": "Messenger handler entry point",
+      "flags": ""
+    },
+    {
+      "regex": "\\$this->getUser\\s*\\(\\s*\\)",
+      "label": "auth identity accessor",
+      "flags": ""
+    }
+  ],
+  "source": "php-symfony-controller.ts"
+}

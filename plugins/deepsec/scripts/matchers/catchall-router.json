@@ -1,0 +1,35 @@
+{
+  "slug": "catchall-router",
+  "description": "Catch-all route with internal router (Elysia/Hono/Express) \u2014 single auth entry point",
+  "filePatterns": [
+    "**/*"
+  ],
+  "patterns": [
+    {
+      "regex": "from\\s+['\"]elysia['\"]|new\\s+Elysia",
+      "label": "Elysia router in catch-all route",
+      "flags": ""
+    },
+    {
+      "regex": "from\\s+['\"]hono['\"]|new\\s+Hono",
+      "label": "Hono router in catch-all route",
+      "flags": ""
+    },
+    {
+      "regex": "from\\s+['\"]express['\"]|express\\(\\)",
+      "label": "Express router in catch-all route",
+      "flags": ""
+    },
+    {
+      "regex": "from\\s+['\"]itty-router['\"]|Router\\(\\)",
+      "label": "itty-router in catch-all route",
+      "flags": ""
+    },
+    {
+      "regex": "createRouter|handleRequest",
+      "label": "Custom router in catch-all route",
+      "flags": ""
+    }
+  ],
+  "source": "js-nextjs-catchall-router.ts"
+}

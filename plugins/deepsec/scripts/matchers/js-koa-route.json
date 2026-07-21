@@ -1,0 +1,35 @@
+{
+  "slug": "js-koa-route",
+  "description": "Koa route registrations and middleware (gated on Koa)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs,cjs}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:router|app)\\.(?:get|post|put|patch|del|delete|all|use)\\s*\\(",
+      "label": "Koa router method registration",
+      "flags": ""
+    },
+    {
+      "regex": "new\\s+Koa\\s*\\(",
+      "label": "new Koa() instantiation",
+      "flags": ""
+    },
+    {
+      "regex": "\\bKoaRouter\\s*\\(|@koa\\/router",
+      "label": "@koa/router import or factory",
+      "flags": ""
+    },
+    {
+      "regex": "async\\s*\\(\\s*ctx\\s*[,)]",
+      "label": "Koa middleware (ctx) signature",
+      "flags": ""
+    },
+    {
+      "regex": "\\bctx\\.(?:request|query|params|state|throw)\\b",
+      "label": "ctx.* accessor",
+      "flags": ""
+    }
+  ],
+  "source": "js-koa-route.ts"
+}

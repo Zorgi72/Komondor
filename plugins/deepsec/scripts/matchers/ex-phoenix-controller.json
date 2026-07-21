@@ -1,0 +1,40 @@
+{
+  "slug": "ex-phoenix-controller",
+  "description": "Phoenix controllers, routers, and LiveView modules (gated on Phoenix)",
+  "filePatterns": [
+    "**/*.{ex,exs}"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*use\\s+\\w+,\\s+:controller\\b",
+      "label": "use ..., :controller \u2014 Phoenix controller",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*use\\s+\\w+,\\s+:live_view\\b",
+      "label": "use ..., :live_view",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*(?:get|post|put|patch|delete|live)\\s+\"[^\"]+\"\\s*,",
+      "label": "router pipeline verb",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*pipeline\\s+:\\w+\\s+do\\b",
+      "label": "pipeline :name do \u2014 auth scope",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bplug\\s+:\\w+",
+      "label": "plug :name (auth/middleware wiring)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bRepo\\.query!?\\s*\\(",
+      "label": "Repo.query \u2014 raw SQL surface",
+      "flags": ""
+    }
+  ],
+  "source": "ex-phoenix-controller.ts"
+}

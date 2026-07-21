@@ -1,0 +1,40 @@
+{
+  "slug": "open-redirect",
+  "description": "Redirects with user-controlled URLs",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "redirect\\s*\\(\\s*(req\\.|request\\.|params\\.|query\\.|body\\.)",
+      "label": "redirect with request-derived URL",
+      "flags": ""
+    },
+    {
+      "regex": "redirect\\s*\\(\\s*`[^`]*\\$\\{",
+      "label": "redirect with interpolated URL",
+      "flags": ""
+    },
+    {
+      "regex": "res\\.redirect\\s*\\(\\s*(req\\.|request\\.|params\\.|query\\.|body\\.)",
+      "label": "res.redirect with request-derived URL",
+      "flags": ""
+    },
+    {
+      "regex": "Location.*:\\s*(req\\.|request\\.|params\\.|query\\.|body\\.)",
+      "label": "Location header from request data",
+      "flags": ""
+    },
+    {
+      "regex": "window\\.location\\s*=\\s*(req|params|query|searchParams)",
+      "label": "window.location from user input",
+      "flags": ""
+    },
+    {
+      "regex": "returnUrl|redirectUrl|returnTo|next.*url",
+      "label": "redirect URL parameter",
+      "flags": "i"
+    }
+  ],
+  "source": "open-redirect.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "rs-tonic-grpc",
+  "description": "Tonic gRPC service implementations (gated on Tonic)",
+  "filePatterns": [
+    "**/*.rs"
+  ],
+  "patterns": [
+    {
+      "regex": "#\\[\\s*tonic::async_trait\\s*\\]",
+      "label": "#[tonic::async_trait] impl",
+      "flags": ""
+    },
+    {
+      "regex": "\\bimpl\\s+\\w+\\s+for\\s+\\w+\\s*\\{",
+      "label": "service trait implementation",
+      "flags": ""
+    },
+    {
+      "regex": "\\bRequest<[^>]+>|\\bResponse<[^>]+>",
+      "label": "Request/Response shape",
+      "flags": ""
+    },
+    {
+      "regex": "\\bStatus::(?:unauthenticated|permission_denied|invalid_argument)",
+      "label": "Status response",
+      "flags": ""
+    }
+  ],
+  "source": "rs-tonic-grpc.ts"
+}

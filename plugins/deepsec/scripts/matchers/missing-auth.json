@@ -1,0 +1,45 @@
+{
+  "slug": "missing-auth",
+  "description": "All HTTP request entry points \u2014 flagged as weak candidates for auth review",
+  "filePatterns": [
+    "**/api/**/*.{ts,tsx,js,jsx}",
+    "**/app/api/**/*.{ts,tsx,js,jsx}",
+    "**/pages/api/**/*.{ts,tsx,js,jsx}",
+    "**/routes/**/*.{ts,tsx,js,jsx}",
+    "**/server/**/*.{ts,tsx,js,jsx}",
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "export\\s+(async\\s+)?function\\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\\b",
+      "label": "Next.js App Router handler",
+      "flags": ""
+    },
+    {
+      "regex": "export\\s+(const|let)\\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\\s*=",
+      "label": "Next.js App Router handler (arrow)",
+      "flags": ""
+    },
+    {
+      "regex": "export\\s+default\\s+(async\\s+)?function",
+      "label": "default export handler",
+      "flags": ""
+    },
+    {
+      "regex": "router\\.(get|post|put|patch|delete|all)\\s*\\(",
+      "label": "router method handler",
+      "flags": ""
+    },
+    {
+      "regex": "app\\.(get|post|put|patch|delete|all)\\s*\\(",
+      "label": "app method handler",
+      "flags": ""
+    },
+    {
+      "regex": "\\.route\\s*\\(\\s*['\"]\\/",
+      "label": "route definition",
+      "flags": ""
+    }
+  ],
+  "source": "missing-auth.ts"
+}

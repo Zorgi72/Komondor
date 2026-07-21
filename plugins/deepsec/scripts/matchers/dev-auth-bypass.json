@@ -1,0 +1,40 @@
+{
+  "slug": "dev-auth-bypass",
+  "description": "Development auth bypasses \u2014 dev endpoints, NODE_ENV guards, test tokens in production",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\/auth\\/dev|\\/api\\/dev|\\/dev\\/login|\\/test\\/auth",
+      "label": "Dev/test auth endpoint \u2014 may be reachable in production",
+      "flags": ""
+    },
+    {
+      "regex": "NODE_ENV.{0,40}(?:development|test).{0,80}(?:skip|bypass|disable|return|mock).{0,40}auth",
+      "label": "Auth skipped in development/test \u2014 check production guard",
+      "flags": "i"
+    },
+    {
+      "regex": "(?:skip|bypass|disable|mock).{0,40}auth.{0,80}NODE_ENV",
+      "label": "Auth bypass gated by NODE_ENV \u2014 check production guard",
+      "flags": "i"
+    },
+    {
+      "regex": "if\\s*\\(\\s*(?:!?\\s*)?(?:isDev|isTest|isLocal|IS_DEV|IS_TEST)",
+      "label": "Auth conditional on isDev/isTest flag \u2014 fails open risk",
+      "flags": ""
+    },
+    {
+      "regex": "test[_-]?(?:token|bearer|api[_-]?key|secret)",
+      "label": "Test token/secret reference \u2014 may be accepted in production",
+      "flags": "i"
+    },
+    {
+      "regex": "mock[_-]?(?:session|user|auth)|auto[_-]?login|fake[_-]?auth",
+      "label": "Mock session/auth pattern \u2014 check production guard",
+      "flags": "i"
+    }
+  ],
+  "source": "dev-auth-bypass.ts"
+}

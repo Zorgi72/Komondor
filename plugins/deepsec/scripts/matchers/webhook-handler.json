@@ -1,0 +1,18 @@
+{
+  "slug": "webhook-handler",
+  "description": "Webhook endpoints that receive external payloads \u2014 must verify signatures",
+  "filePatterns": [
+    "**/*webhook*/**/*.{ts,tsx,js,jsx}",
+    "**/*hook*/**/route.{ts,js}",
+    "**/api/**/route.{ts,js}",
+    "**/services/**/src/**/*.ts"
+  ],
+  "patterns": [
+    {
+      "regex": "webhook",
+      "label": "Webhook handler (verify signature validation)",
+      "flags": "i"
+    }
+  ],
+  "source": "webhook-handler.ts"
+}

@@ -1,0 +1,51 @@
+{
+  "slug": "php-laravel-route",
+  "description": "Laravel route registrations and controller actions (gated on Laravel)",
+  "filePatterns": [
+    "**/routes/**/*.php",
+    "**/app/Http/Controllers/**/*.php"
+  ],
+  "patterns": [
+    {
+      "regex": "Route::(get|post|put|patch|delete|any|match)\\s*\\(",
+      "label": "Route::* registration",
+      "flags": ""
+    },
+    {
+      "regex": "Route::resource\\s*\\(",
+      "label": "Route::resource (CRUD)",
+      "flags": ""
+    },
+    {
+      "regex": "Route::group\\s*\\(",
+      "label": "Route::group (middleware scope)",
+      "flags": ""
+    },
+    {
+      "regex": "class\\s+\\w+Controller\\s+extends\\s+\\w*Controller\\b",
+      "label": "Controller class",
+      "flags": ""
+    },
+    {
+      "regex": "->middleware\\s*\\(\\s*['\"]auth",
+      "label": "Auth middleware (verify scope)",
+      "flags": ""
+    },
+    {
+      "regex": "\\$request->all\\s*\\(\\s*\\)",
+      "label": "$request->all() \u2014 mass-assignment surface",
+      "flags": ""
+    },
+    {
+      "regex": "DB::raw\\s*\\(",
+      "label": "DB::raw (SQL injection if interpolated)",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:whereRaw|selectRaw|orderByRaw)\\s*\\(",
+      "label": "*Raw query helper",
+      "flags": ""
+    }
+  ],
+  "source": "php-laravel-route.ts"
+}

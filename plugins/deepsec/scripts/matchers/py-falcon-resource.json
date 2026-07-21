@@ -1,0 +1,30 @@
+{
+  "slug": "py-falcon-resource",
+  "description": "Falcon resource classes with on_<method> handlers (gated on Falcon)",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*def\\s+on_(get|post|put|patch|delete|head|options)\\s*\\(\\s*self\\b",
+      "label": "on_<method>(self, req, resp) handler",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bfalcon\\.App\\s*\\(|\\bfalcon\\.API\\s*\\(",
+      "label": "falcon.App/API instance",
+      "flags": ""
+    },
+    {
+      "regex": "\\.add_route\\s*\\(\\s*['\"][^'\"]+['\"]",
+      "label": "app.add_route() registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\breq\\.(?:params|media|context|get_param)\\b",
+      "label": "req.* accessor",
+      "flags": ""
+    }
+  ],
+  "source": "py-falcon-resource.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "js-deno-route",
+  "description": "Deno HTTP server / Oak router handlers (gated on deno)",
+  "filePatterns": [
+    "**/*.{ts,tsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bDeno\\.serve\\s*\\(",
+      "label": "Deno.serve() entry point",
+      "flags": ""
+    },
+    {
+      "regex": "\\brouter\\.(?:get|post|put|patch|delete|all|use)\\s*\\(",
+      "label": "Oak router method",
+      "flags": ""
+    },
+    {
+      "regex": "import\\s*\\{[^}]*\\bApplication\\b[^}]*\\}\\s*from\\s*['\"]https?:\\/\\/deno\\.land\\/x\\/oak",
+      "label": "Oak Application import",
+      "flags": ""
+    },
+    {
+      "regex": "\\bctx\\.request\\.(?:url|body|headers)\\b",
+      "label": "Oak ctx.request accessor",
+      "flags": ""
+    }
+  ],
+  "source": "js-deno-route.ts"
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "go-cobra-command",
+  "description": "Cobra CLI commands \u2014 privileged-CLI surface (gated on cobra)",
+  "filePatterns": [
+    "**/*.go"
+  ],
+  "patterns": [
+    {
+      "regex": "&cobra\\.Command\\s*\\{",
+      "label": "cobra.Command{} declaration",
+      "flags": ""
+    },
+    {
+      "regex": "\\b(?:Run|RunE|PreRun|PostRun)\\s*:\\s*func\\b",
+      "label": "Run/RunE handler \u2014 privileged action body",
+      "flags": ""
+    },
+    {
+      "regex": "\\.PersistentFlags\\s*\\(\\s*\\)\\.(?:String|Bool|Int)Var",
+      "label": "PersistentFlags()",
+      "flags": ""
+    },
+    {
+      "regex": "\\.AddCommand\\s*\\(",
+      "label": "AddCommand registration",
+      "flags": ""
+    }
+  ],
+  "source": "go-cobra-command.ts"
+}

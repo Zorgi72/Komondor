@@ -1,0 +1,63 @@
+{
+  "slug": "slack-signing-verification",
+  "description": "Slack request handlers \u2014 verify HMAC signing + replay protection",
+  "filePatterns": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.mjs"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bexport\\s+(?:async\\s+)?function\\s+(?:POST|GET|handle)\\b",
+      "label": "Slack-context HTTP handler",
+      "flags": ""
+    },
+    {
+      "regex": "\\bnew\\s+App\\s*\\(\\s*\\{[^}]*signingSecret\\s*:",
+      "label": "Slack Bolt App construction",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bapp\\.\\s*command\\s*\\(",
+      "label": "Slack Bolt slash-command handler",
+      "flags": ""
+    },
+    {
+      "regex": "\\bapp\\.\\s*action\\s*\\(",
+      "label": "Slack Bolt action handler",
+      "flags": ""
+    },
+    {
+      "regex": "\\bapp\\.\\s*event\\s*\\(",
+      "label": "Slack Bolt event handler",
+      "flags": ""
+    },
+    {
+      "regex": "\\bapp\\.\\s*view\\s*\\(",
+      "label": "Slack Bolt view (modal) handler",
+      "flags": ""
+    },
+    {
+      "regex": "\\bapp\\.\\s*shortcut\\s*\\(",
+      "label": "Slack Bolt shortcut handler",
+      "flags": ""
+    },
+    {
+      "regex": "\\bawsLambdaReceiver\\b|\\bExpressReceiver\\b|\\bAwsLambdaReceiver\\b",
+      "label": "Slack Bolt receiver wiring",
+      "flags": ""
+    },
+    {
+      "regex": "\\bverifySlackRequest\\s*\\(",
+      "label": "Manual Slack signature verification",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcrypto\\.\\s*createHmac\\s*\\(\\s*[\"']sha256[\"'].*?(?:slack|signing)",
+      "label": "Slack HMAC-SHA256 verification",
+      "flags": "i"
+    }
+  ],
+  "source": "slack-signing-verification.ts"
+}

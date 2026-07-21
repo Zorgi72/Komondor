@@ -1,0 +1,35 @@
+{
+  "slug": "gcp-cloud-function",
+  "description": "GCP Cloud Functions handlers (gated on gcp-cloud-functions)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs,cjs,py,go}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bfunctions\\.http\\s*\\(\\s*['\"][^'\"]+['\"]\\s*,",
+      "label": "functions.http(",
+      "flags": ""
+    },
+    {
+      "regex": "\\bfunctions\\.cloudEvent\\s*\\(",
+      "label": "functions.cloudEvent(",
+      "flags": ""
+    },
+    {
+      "regex": "^\\s*@functions_framework\\.http\\b",
+      "label": "@functions_framework.http (Python)",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bfunctions\\.HTTP\\s*\\(\\s*\"[^\"]+\"\\s*,",
+      "label": "functions.HTTP() (Go) registration",
+      "flags": ""
+    },
+    {
+      "regex": "\\breq\\.(?:headers\\.authorization|get\\(['\"]Authorization)",
+      "label": "Authorization header use",
+      "flags": ""
+    }
+  ],
+  "source": "gcp-cloud-function.ts"
+}

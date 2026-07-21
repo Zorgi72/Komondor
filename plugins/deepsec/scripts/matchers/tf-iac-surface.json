@@ -1,0 +1,88 @@
+{
+  "slug": "tf-iac-surface",
+  "description": "Terraform/HCL/Sentinel file declaring security-critical infrastructure resources",
+  "filePatterns": [
+    "**/*.tf",
+    "**/*.tf.json",
+    "**/*.hcl",
+    "**/*.sentinel"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*resource\\s+\"aws_iam_(?:role|policy|user|group|policy_attachment|access_key|service_linked_role|openid_connect_provider|saml_provider|role_policy|role_policy_attachment|user_policy|group_policy)\"\\s+",
+      "label": "aws_iam_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"aws_kms_(?:key|alias|grant|key_policy)\"\\s+",
+      "label": "aws_kms_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"aws_eks_(?:cluster|node_group|fargate_profile|access_entry|access_policy_association|identity_provider_config|addon|pod_identity_association)\"\\s+",
+      "label": "aws_eks_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"aws_security_group(?:_rule)?\"\\s+",
+      "label": "aws_security_group",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"aws_network_acl(?:_rule|_association)?\"\\s+",
+      "label": "aws_network_acl_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"aws_vpc(?:_peering_connection|_endpoint|_endpoint_policy)?\"\\s+",
+      "label": "aws_vpc_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"aws_s3_bucket(?:_policy|_public_access_block|_versioning|_server_side_encryption_configuration|_acl|_lifecycle_configuration|_logging|_object_lock_configuration|_replication_configuration)?\"\\s+",
+      "label": "aws_s3_bucket_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"aws_route53_(?:record|zone|zone_association|delegation_set|health_check)\"\\s+",
+      "label": "aws_route53_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"aws_secretsmanager_(?:secret|secret_version|secret_policy|secret_rotation)\"\\s+",
+      "label": "aws_secretsmanager_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"aws_lb_listener(?:_rule|_certificate)?\"\\s+",
+      "label": "aws_lb_listener_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"kubernetes_(?:secret|cluster_role|cluster_role_binding|role|role_binding|service_account|network_policy|pod_security_policy|namespace|config_map)(?:_v1)?\"\\s+",
+      "label": "kubernetes_*",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+\"helm_release\"\\s+",
+      "label": "helm_release",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*data\\s+\"aws_iam_policy_document\"\\s+",
+      "label": "aws_iam_policy_document data",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*(?:rule|policy|main)\\s*=\\s*function\\s*\\(",
+      "label": "Sentinel rule/policy",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*import\\s+\"tfplan(?:-functions)?\"",
+      "label": "Sentinel tfplan import",
+      "flags": "m"
+    }
+  ],
+  "source": "tf-iac-surface.ts"
+}

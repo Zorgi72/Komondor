@@ -1,0 +1,40 @@
+{
+  "slug": "path-traversal",
+  "description": "File system operations with user-controlled paths",
+  "filePatterns": [
+    "**/*.{ts,tsx,js,jsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "readFile(Sync)?\\s*\\(\\s*(req\\.|request\\.|params\\.|query\\.|body\\.|parsed\\.)",
+      "label": "readFile with request-derived path",
+      "flags": ""
+    },
+    {
+      "regex": "readFile(Sync)?\\s*\\(\\s*`[^`]*(req\\.|request\\.|params\\.|query\\.|body\\.)",
+      "label": "readFile with request-derived interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "writeFile(Sync)?\\s*\\(\\s*(req\\.|request\\.|params\\.|query\\.|body\\.|parsed\\.)",
+      "label": "writeFile with request-derived path",
+      "flags": ""
+    },
+    {
+      "regex": "writeFile(Sync)?\\s*\\(\\s*`[^`]*(req\\.|request\\.|params\\.|query\\.|body\\.)",
+      "label": "writeFile with request-derived interpolation",
+      "flags": ""
+    },
+    {
+      "regex": "path\\.join\\s*\\([^)]*\\b(req\\.|request\\.|params\\.|query\\.|body\\.|parsed\\.)",
+      "label": "path.join with request-derived input",
+      "flags": ""
+    },
+    {
+      "regex": "path\\.resolve\\s*\\([^)]*\\b(req\\.|request\\.|params\\.|query\\.|body\\.|parsed\\.)",
+      "label": "path.resolve with request-derived input",
+      "flags": ""
+    }
+  ],
+  "source": "path-traversal.ts"
+}

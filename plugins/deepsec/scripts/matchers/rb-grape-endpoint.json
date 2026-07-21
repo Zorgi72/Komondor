@@ -1,0 +1,30 @@
+{
+  "slug": "rb-grape-endpoint",
+  "description": "Grape API endpoints (gated on Grape)",
+  "filePatterns": [
+    "**/*.rb"
+  ],
+  "patterns": [
+    {
+      "regex": "^\\s*(?:get|post|put|patch|delete)\\s+:\\w+",
+      "label": "Grape <verb> :name do",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*resource\\s+:\\w+",
+      "label": "resource :name do block",
+      "flags": "m"
+    },
+    {
+      "regex": "^\\s*before\\s+do\\b",
+      "label": "before do \u2014 auth filter",
+      "flags": "m"
+    },
+    {
+      "regex": "\\bdeclared\\s*\\(\\s*params\\s*\\)",
+      "label": "declared(params) \u2014 strong-params equivalent",
+      "flags": ""
+    }
+  ],
+  "source": "rb-grape-endpoint.ts"
+}

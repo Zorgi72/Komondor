@@ -1,0 +1,45 @@
+{
+  "slug": "py-nosql-injection",
+  "description": "PyMongo / Motor NoSQL injection \u2014 \\\\$where with f-strings, raw aggregation pipelines fed user input",
+  "filePatterns": [
+    "**/*.py"
+  ],
+  "patterns": [
+    {
+      "regex": "\\$where['\"]\\s*:\\s*f['\"]",
+      "label": "",
+      "flags": ""
+    },
+    {
+      "regex": "'\\$where'\\s*:\\s*f['\"]",
+      "label": "",
+      "flags": ""
+    },
+    {
+      "regex": "\\.find\\s*\\(\\s*\\{[^}]{0,200}\\$where",
+      "label": ".find() query containing $where \u2014 verify operands aren",
+      "flags": ""
+    },
+    {
+      "regex": "\\.aggregate\\s*\\(\\s*\\[?\\s*\\{[^}]{0,400}\\$where",
+      "label": ".aggregate() pipeline containing $where \u2014 verify operands aren",
+      "flags": ""
+    },
+    {
+      "regex": "\\bjson\\.loads\\s*\\(\\s*request\\.(?:args|json|data)",
+      "label": "json.loads on request body \u2014 operator smuggling into Mongo queries",
+      "flags": ""
+    },
+    {
+      "regex": "\\bre\\.compile\\s*\\(\\s*request\\.",
+      "label": "re.compile on request input \u2014 ReDoS / regex injection",
+      "flags": ""
+    },
+    {
+      "regex": "\\$regex['\"]\\s*:\\s*request\\.|'\\$regex'\\s*:\\s*request\\.",
+      "label": "$regex bound to request input \u2014 ReDoS / regex injection in MongoDB query",
+      "flags": ""
+    }
+  ],
+  "source": "py-nosql-injection.ts"
+}

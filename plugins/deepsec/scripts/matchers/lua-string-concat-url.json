@@ -1,0 +1,30 @@
+{
+  "slug": "lua-string-concat-url",
+  "description": "Lua URL construction via string concatenation \u2014 SSRF risk",
+  "filePatterns": [
+    "**/*.lua"
+  ],
+  "patterns": [
+    {
+      "regex": "[\"']https?:\\/\\/.*\\.\\.",
+      "label": "URL string concatenated with ..",
+      "flags": ""
+    },
+    {
+      "regex": "\\.\\..*[\"']https?:\\/\\/",
+      "label": "String concatenated into URL",
+      "flags": ""
+    },
+    {
+      "regex": "ngx\\.location\\.capture\\s*\\(.*\\.\\.",
+      "label": "ngx.location.capture with concatenation",
+      "flags": ""
+    },
+    {
+      "regex": "request_uri\\s*=.*\\.\\.",
+      "label": "request_uri built via concatenation",
+      "flags": ""
+    }
+  ],
+  "source": "lua-string-concat-url.ts"
+}

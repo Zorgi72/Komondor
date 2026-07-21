@@ -1,0 +1,31 @@
+{
+  "slug": "js-nuxt-route",
+  "description": "Nuxt server routes / event handlers (gated on Nuxt)",
+  "filePatterns": [
+    "**/server/api/**/*.{ts,js}",
+    "**/server/routes/**/*.{ts,js}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\bdefineEventHandler\\s*\\(",
+      "label": "defineEventHandler \u2014 Nuxt server entry point",
+      "flags": ""
+    },
+    {
+      "regex": "\\beventHandler\\s*\\(",
+      "label": "h3 eventHandler factory",
+      "flags": ""
+    },
+    {
+      "regex": "\\bgetRouterParam(?:s)?\\s*\\(|\\bgetQuery\\s*\\(|\\breadBody\\s*\\(",
+      "label": "h3 request accessor (untrusted input)",
+      "flags": ""
+    },
+    {
+      "regex": "\\bcreateError\\s*\\(",
+      "label": "createError() throw site",
+      "flags": ""
+    }
+  ],
+  "source": "js-nuxt-route.ts"
+}

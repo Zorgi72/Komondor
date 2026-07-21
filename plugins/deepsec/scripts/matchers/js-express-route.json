@@ -1,0 +1,30 @@
+{
+  "slug": "js-express-route",
+  "description": "Express.js route registrations \u2014 entry points (weak candidate, gated on Express)",
+  "filePatterns": [
+    "**/*.{ts,js,mjs,cjs,tsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "\\b(?:app|router)\\.(?:get|post|put|patch|delete|all|use)\\s*\\(",
+      "label": "app/router method registration",
+      "flags": ""
+    },
+    {
+      "regex": "express\\.Router\\s*\\(",
+      "label": "express.Router() factory",
+      "flags": ""
+    },
+    {
+      "regex": "\\(\\s*req\\s*,\\s*res(?:\\s*,\\s*next)?\\s*\\)\\s*=>",
+      "label": "(req, res) handler signature",
+      "flags": ""
+    },
+    {
+      "regex": "function\\s+\\w+\\s*\\(\\s*req\\s*,\\s*res(?:\\s*,\\s*next)?\\s*\\)",
+      "label": "function (req, res) handler",
+      "flags": ""
+    }
+  ],
+  "source": "js-express-route.ts"
+}

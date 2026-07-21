@@ -1,0 +1,34 @@
+{
+  "slug": "error-message-leak",
+  "description": "Error messages returned to client \u2014 may leak internal details",
+  "filePatterns": [
+    "**/app/api/**/route.{ts,tsx}",
+    "**/app/**/route.{ts,tsx}",
+    "**/pages/api/**/*.{ts,tsx}",
+    "**/routes/**/*.{ts,tsx}",
+    "**/endpoints/**/*.{ts,tsx}"
+  ],
+  "patterns": [
+    {
+      "regex": "err(or)?\\.message",
+      "label": "error.message in response",
+      "flags": ""
+    },
+    {
+      "regex": "err(or)?\\.stack",
+      "label": "error.stack in response",
+      "flags": ""
+    },
+    {
+      "regex": "\\.toString\\(\\)",
+      "label": "error.toString() in response",
+      "flags": ""
+    },
+    {
+      "regex": "String\\(err",
+      "label": "String(error) in response",
+      "flags": ""
+    }
+  ],
+  "source": "error-message-leak.ts"
+}
