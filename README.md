@@ -116,6 +116,8 @@ MCP servers, skills, plugins, hooks, headless mode, sandboxing, and more.
 
 | Path | Contents |
 |------|----------|
+| `plugins/deepsec/` | Native DeepSec security plugin (zero Node; upstream 2.2.4) |
+| `docs/DEEPSEC.md` | DeepSec documentation index |
 | `crates/codegen/xai-grok-pager-bin` | Composition-root package; builds the `xai-grok-pager` binary |
 | `crates/codegen/xai-grok-pager` | The TUI: scrollback, prompt, modals, rendering |
 | `crates/codegen/xai-grok-shell` | Agent runtime + leader/stdio/headless entry points |
