@@ -82,3 +82,12 @@ export ZYTH_CLI_EXCHANGE_URL=https://ai-gateway.zyth.app/zyth/cli/v1/exchange
 ## License
 
 Apache-2.0 (upstream). Personal/local fork.
+
+## Remote branches (Komondor)
+
+| Branch | Contents |
+|--------|----------|
+| `main` | Zyth fork features + **DeepSec plugin** (see [`docs/DEEPSEC.md`](docs/DEEPSEC.md)); tag `deepsec-v1.0.0` |
+| `upgrade/latest-upstream-with-zyth` | Latest xai-org/grok-build merge + Zyth + **hard-stripped product telemetry** (no unsolicited SpaceXAI phone-home) |
+
+Upstream DeepSec baseline for the port: **2.2.4** @ `97ebd04` — [`plugins/deepsec/UPSTREAM.md`](plugins/deepsec/UPSTREAM.md).
