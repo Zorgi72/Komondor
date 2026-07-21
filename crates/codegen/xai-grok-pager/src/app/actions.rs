@@ -589,18 +589,18 @@ pub enum Action {
     PermissionFollowup(String),
     /// User cancelled the front permission request (Ctrl-C / Esc in Options mode).
     PermissionCancel,
-    /// Log out: remove credentials and return to the login screen.
+    /// `/xailogout` — full SpaceXAI logout; return to the login screen.
     Logout,
     /// `/logout` / `/logoutzyth` — clear Zyth credentials only (keep SpaceXAI session).
     LogoutZyth,
     /// Log out and immediately start a new login flow.
     SwitchAccount,
-    /// User pressed login on the welcome screen.
+    /// `/xailogin` — SpaceXAI OAuth interactive login.
     Login,
-    /// `/login` / `/loginzyth` — Zyth AuthStack SSO + AI gateway virtual key.
+    /// `/login` / `/loginzyth` / welcome “Login with Zyth” — Zyth AuthStack SSO.
     LoginZyth,
     /// Cancel an in-progress login that was started from inside a session
-    /// (`/login` or a 401 re-auth prompt) and return to the previous view.
+    /// (`/login`, `/xailogin`, or a 401 re-auth prompt) and return to the previous view.
     /// Distinct from `Quit`: abandoning a mid-session re-auth must not exit
     /// the app or lose the open session.
     CancelLogin,
