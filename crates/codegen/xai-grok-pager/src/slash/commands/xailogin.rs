@@ -1,24 +1,24 @@
-//! `/loginzyth` — legacy alias for default `/login` (Zyth AuthStack SSO).
+//! `/xailogin` — SpaceXAI OAuth login (formerly bare `/login` upstream).
 
 use crate::app::actions::Action;
 use crate::slash::command::{CommandExecCtx, CommandResult, SlashCommand};
 
-pub struct LoginZythCommand;
+pub struct XaiLoginCommand;
 
-impl SlashCommand for LoginZythCommand {
+impl SlashCommand for XaiLoginCommand {
     fn name(&self) -> &str {
-        "loginzyth"
+        "xailogin"
     }
 
     fn description(&self) -> &str {
-        "Alias for /login — Zyth SSO (AuthStack) + Zyth AI gateway"
+        "Log in or re-authenticate with SpaceXAI (auth.x.ai)"
     }
 
     fn usage(&self) -> &str {
-        "/loginzyth"
+        "/xailogin"
     }
 
     fn run(&self, _ctx: &mut CommandExecCtx, _args: &str) -> CommandResult {
-        CommandResult::Action(Action::LoginZyth)
+        CommandResult::Action(Action::Login)
     }
 }

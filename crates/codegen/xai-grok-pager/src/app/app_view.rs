@@ -3177,7 +3177,8 @@ fn handle_welcome_input(ev: &Event, ctx: &mut WelcomeInputCtx<'_>) -> InputOutco
                     return InputOutcome::Action(Action::QuitConfirmed);
                 }
                 if key!('l').matches(key) || key!(Enter).matches(key) {
-                    return InputOutcome::Action(Action::Login);
+                    // Fork default welcome CTA: Zyth SSO (not SpaceXAI /xailogin).
+                    return InputOutcome::Action(Action::LoginZyth);
                 }
             }
             AuthState::Authenticating { .. } if *ctx.show_raw_url => {
@@ -3447,10 +3448,10 @@ fn handle_menu_nav(
     }
 }
 /// Dispatch an action for a welcome menu item when not yet authenticated.
-/// Menu layout: 0 = Login, 1 = Quit.
+/// Menu layout: 0 = Login (Zyth), 1 = Quit.
 fn dispatch_pending_menu_action(index: usize) -> InputOutcome {
     match index {
-        0 => InputOutcome::Action(Action::Login),
+        0 => InputOutcome::Action(Action::LoginZyth),
         1 => InputOutcome::Action(Action::Quit),
         _ => InputOutcome::Unchanged,
     }
@@ -8056,7 +8057,10 @@ pub(crate) mod tests {
         app.auth_state = AuthState::Pending { error: None };
         app.welcome_prompt_focused = false;
         let outcome = app.handle_input(&key_event(KeyCode::Char('l'), KeyModifiers::NONE));
-        assert!(matches!(outcome, InputOutcome::Action(Action::Login)));
+        assert!(matches!(
+            outcome,
+            InputOutcome::Action(Action::LoginZyth)
+        ));
     }
     #[test]
     fn welcome_pending_enter_triggers_login() {
@@ -8064,7 +8068,10 @@ pub(crate) mod tests {
         app.auth_state = AuthState::Pending { error: None };
         app.welcome_prompt_focused = false;
         let outcome = app.handle_input(&key_event(KeyCode::Enter, KeyModifiers::NONE));
-        assert!(matches!(outcome, InputOutcome::Action(Action::Login)));
+        assert!(matches!(
+            outcome,
+            InputOutcome::Action(Action::LoginZyth)
+        ));
     }
     #[test]
     fn welcome_pending_n_is_unchanged() {

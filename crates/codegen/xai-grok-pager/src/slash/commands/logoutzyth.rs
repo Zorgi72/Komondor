@@ -1,7 +1,4 @@
-//! `/logoutzyth` — remove Zyth gateway models and credentials only.
-//!
-//! Does **not** log out of the whole CLI or force the welcome screen. SpaceXAI
-//! `/login` sessions stay intact; the session and TUI remain usable.
+//! `/logoutzyth` — legacy alias for default `/logout` (Zyth-only credential clear).
 
 use crate::app::actions::Action;
 use crate::slash::command::{CommandExecCtx, CommandResult, SlashCommand};
@@ -14,7 +11,7 @@ impl SlashCommand for LogoutZythCommand {
     }
 
     fn description(&self) -> &str {
-        "Remove Zyth models / gateway access (keeps CLI session + SpaceXAI login)"
+        "Alias for /logout — remove Zyth models/gateway only"
     }
 
     fn usage(&self) -> &str {

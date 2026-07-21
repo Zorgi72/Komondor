@@ -15,12 +15,12 @@ use crate::scrollback::blocks::SessionEvent;
 // Auth dispatch
 // ---------------------------------------------------------------------------
 
-/// `/logout` -- ask the shell to clear auth, then return to the login screen.
+/// `/xailogout` (SpaceXAI) — clear auth, then return to the login screen.
 pub(super) fn dispatch_logout(_app: &mut AppView) -> Vec<Effect> {
     vec![Effect::Logout]
 }
 
-/// `/logoutzyth` — remove Zyth gateway models / credentials only.
+/// `/logout` / `/logoutzyth` — remove Zyth gateway models / credentials only.
 ///
 /// Never returns to the welcome screen or tears down the CLI session, even if
 /// Zyth was the only gateway credential. Outcome is a toast only.
@@ -178,7 +178,7 @@ pub(super) fn strip_trailing_auth_error_blocks(agent: &mut AgentView) {
     }
 }
 
-/// Start Zyth AuthStack SSO (`/loginzyth`): browser OIDC + gateway virtual key.
+/// Start Zyth AuthStack SSO (`/login`, `/loginzyth`, welcome “Login with Zyth”).
 ///
 /// Uses [`AuthMode::Command`] (browser wait, **no** token paste box). Zyth has
 /// no manually insertable token — the loopback callback completes SSO.
@@ -206,15 +206,14 @@ pub(super) fn dispatch_loginzyth(app: &mut AppView) -> Vec<Effect> {
     ]
 }
 
-/// Start an interactive login flow. Triggered by pressing 'l' on the
-/// welcome screen or by the `/login` slash command.
+/// Start SpaceXAI interactive login (`/xailogin`).
 ///
 /// When invoked mid-session (the active view is an agent/dashboard rather
 /// than the welcome screen), the auth UI — including the external auth
 /// provider's sign-in URL and status — is only rendered by the welcome
 /// view. We therefore stash the caller's view in `auth_return_view` and
 /// switch to `Welcome` so the flow is actually visible; the prior view is
-/// restored once auth completes or is cancelled. Without this, `/login`
+/// restored once auth completes or is cancelled. Without this, `/xailogin`
 /// with an external auth provider configured appeared to do nothing.
 pub(super) fn dispatch_login(app: &mut AppView) -> Vec<Effect> {
     ensure_login_method(app);

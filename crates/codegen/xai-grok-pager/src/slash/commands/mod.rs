@@ -33,6 +33,8 @@ pub mod imagine_video;
 pub mod import_claude;
 pub mod login;
 pub mod loginzyth;
+pub mod xailogin;
+pub mod xailogout;
 pub mod logout;
 pub mod logoutzyth;
 pub mod loop_cmd;
@@ -130,8 +132,10 @@ pub fn builtin_commands() -> Vec<Arc<dyn SlashCommand>> {
         Arc::new(rewind::RewindCommand),
         Arc::new(login::LoginCommand),
         Arc::new(loginzyth::LoginZythCommand),
+        Arc::new(xailogin::XaiLoginCommand),
         Arc::new(logout::LogoutCommand),
         Arc::new(logoutzyth::LogoutZythCommand),
+        Arc::new(xailogout::XaiLogoutCommand),
         Arc::new(import_claude::ImportClaudeCommand),
         Arc::new(usage::UsageCommand),
         Arc::new(queue::QueueCommand),
@@ -692,6 +696,56 @@ mod tests {
     fn loginzyth_and_logoutzyth_emit_actions() {
         let models = ModelState::default();
         let mut ctx = make_ctx(&models);
+        assert!(matches!(
+            loginzyth::LoginZythCommand.run(&mut ctx, ""),
+            CommandResult::Action(Action::LoginZyth)
+        ));
+        assert!(matches!(
+            logoutzyth::LogoutZythCommand.run(&mut ctx, ""),
+            CommandResult::Action(Action::LogoutZyth)
+        ));
+    }
+
+    /// Fork default: bare `/login` and `/logout` are Zyth; SpaceXAI is `/xai*`.
+    #[test]
+    fn default_login_logout_are_zyth_xai_renamed() {
+        let reg = CommandRegistry::new(builtin_commands());
+        assert!(reg.get("login").is_some());
+        assert!(reg.get("logout").is_some());
+        assert!(reg.get("xailogin").is_some());
+        assert!(reg.get("xailogout").is_some());
+
+        let models = ModelState::default();
+        let mut ctx = make_ctx(&models);
+        assert!(
+            matches!(
+                login::LoginCommand.run(&mut ctx, ""),
+                CommandResult::Action(Action::LoginZyth)
+            ),
+            "/login must dispatch LoginZyth (Zyth SSO)"
+        );
+        assert!(
+            matches!(
+                logout::LogoutCommand.run(&mut ctx, ""),
+                CommandResult::Action(Action::LogoutZyth)
+            ),
+            "/logout must dispatch LogoutZyth"
+        );
+        assert!(
+            matches!(
+                xailogin::XaiLoginCommand.run(&mut ctx, ""),
+                CommandResult::Action(Action::Login)
+            ),
+            "/xailogin must dispatch SpaceXAI Login"
+        );
+        assert!(
+            matches!(
+                xailogout::XaiLogoutCommand.run(&mut ctx, ""),
+                CommandResult::Action(Action::Logout)
+            ),
+            "/xailogout must dispatch SpaceXAI Logout"
+        );
+        // Aliases still work
         assert!(matches!(
             loginzyth::LoginZythCommand.run(&mut ctx, ""),
             CommandResult::Action(Action::LoginZyth)

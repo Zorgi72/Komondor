@@ -483,7 +483,8 @@ Manage personas -- create, edit, and delete personas. A subagent can apply a per
 
 ### `/login`
 
-Log in or re-authenticate with your account without leaving the session.
+**Fork default:** sign in with **Zyth** AuthStack SSO and use the Zyth AI gateway.
+(SpaceXAI OAuth is `/xailogin`. Legacy alias: `/loginzyth`.)
 
 ```
 /login
@@ -491,10 +492,28 @@ Log in or re-authenticate with your account without leaving the session.
 
 ### `/logout`
 
-Log out and return to the login screen.
+**Fork default:** remove **Zyth** models/gateway credentials only (keeps the CLI
+session and any SpaceXAI login; does not force the welcome screen).
+Full SpaceXAI logout is `/xailogout`. Legacy alias: `/logoutzyth`.
 
 ```
 /logout
+```
+
+### `/xailogin`
+
+Log in or re-authenticate with **SpaceXAI** (auth.x.ai) without leaving the session.
+
+```
+/xailogin
+```
+
+### `/xailogout`
+
+Log out of SpaceXAI and return to the login screen.
+
+```
+/xailogout
 ```
 
 ### `/usage`

@@ -1,4 +1,6 @@
-//! `/login` -- log in or re-authenticate with your account.
+//! `/login` — sign in with Zyth AuthStack SSO (fork default).
+//!
+//! SpaceXAI OAuth is `/xailogin`. Legacy alias: `/loginzyth`.
 
 use crate::app::actions::Action;
 use crate::slash::command::{CommandExecCtx, CommandResult, SlashCommand};
@@ -11,7 +13,7 @@ impl SlashCommand for LoginCommand {
     }
 
     fn description(&self) -> &str {
-        "Log in or re-authenticate with your account"
+        "Sign in with Zyth SSO (AuthStack) and use the Zyth AI gateway"
     }
 
     fn usage(&self) -> &str {
@@ -19,6 +21,6 @@ impl SlashCommand for LoginCommand {
     }
 
     fn run(&self, _ctx: &mut CommandExecCtx, _args: &str) -> CommandResult {
-        CommandResult::Action(Action::Login)
+        CommandResult::Action(Action::LoginZyth)
     }
 }

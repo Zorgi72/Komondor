@@ -674,7 +674,8 @@ pub fn render_welcome(
 
     let mut result = match params.auth_state {
         AuthState::Pending { error } => {
-            let label = params.login_label.unwrap_or("grok.com");
+            // Fork default CTA is Zyth SSO; SpaceXAI is `/xailogin`.
+            let label = params.login_label.unwrap_or("Zyth");
             let login_text = format!("Login with {}", label);
             let menu = [("l", login_text.as_str()), ("q", "Quit")];
             let msg = error.as_deref().map(|e| (e, theme.accent_error));

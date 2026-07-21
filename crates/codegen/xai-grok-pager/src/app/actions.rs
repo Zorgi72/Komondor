@@ -591,13 +591,13 @@ pub enum Action {
     PermissionCancel,
     /// Log out: remove credentials and return to the login screen.
     Logout,
-    /// `/logoutzyth` — clear Zyth credentials only (keep SpaceXAI session).
+    /// `/logout` / `/logoutzyth` — clear Zyth credentials only (keep SpaceXAI session).
     LogoutZyth,
     /// Log out and immediately start a new login flow.
     SwitchAccount,
     /// User pressed login on the welcome screen.
     Login,
-    /// `/loginzyth` — Zyth AuthStack SSO + AI gateway virtual key.
+    /// `/login` / `/loginzyth` — Zyth AuthStack SSO + AI gateway virtual key.
     LoginZyth,
     /// Cancel an in-progress login that was started from inside a session
     /// (`/login` or a 401 re-auth prompt) and return to the previous view.

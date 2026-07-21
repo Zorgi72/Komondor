@@ -1,17 +1,30 @@
-# `/loginzyth` and `/logoutzyth` — how they work
+# Zyth login (`/login`) — how it works
 
-This document explains **how Zyth SSO login is implemented**, how it differs from SpaceXAI `/login`, and how models/endpoints are managed.
+This document explains **how Zyth SSO login is implemented**, how it differs from SpaceXAI `/xailogin`, and how models/endpoints are managed.
+
+## Slash surface (this fork)
+
+| Slash | Backend |
+|-------|---------|
+| **`/login`** (default) | Zyth AuthStack SSO + AI gateway (`Action::LoginZyth`) |
+| `/loginzyth` | Alias for `/login` |
+| **`/logout`** (default) | Zyth-only credential clear (`Action::LogoutZyth`) |
+| `/logoutzyth` | Alias for `/logout` |
+| `/xailogin` | SpaceXAI OAuth (`Action::Login`) — former bare `/login` |
+| `/xailogout` | Full SpaceXAI logout (`Action::Logout`) — former bare `/logout` |
+
+Welcome **“Login with Zyth”** (and auto-start when unauthenticated) uses the Zyth path, not SpaceXAI.
 
 ## Architecture overview
 
 ```
-  User types /loginzyth in TUI
+  User types /login (or /loginzyth) in TUI
            │
            ▼
   ┌────────────────────┐
   │  Pager (zyth CLI)  │  slash → Action::LoginZyth → Effect → ACP
   └─────────┬──────────┘
-            │  x.ai/auth/loginzyth
+            │  x.ai/auth/loginzyth  (protocol method id; slash label is /login)
             ▼
   ┌────────────────────┐     browser      ┌──────────────────────┐
   │  Shell agent       │ ───────────────► │ auth.zyth.app (Auth0) │
@@ -62,13 +75,14 @@ Terraform resource: `auth0_client.zyth_cli` in [AuthStack](https://github.com/0x
 
 | Step | Code |
 |------|------|
-| Slash command | `crates/codegen/xai-grok-pager/src/slash/commands/loginzyth.rs` |
+| Slash command | `login.rs` (default) + `loginzyth.rs` (alias) under `xai-grok-pager/src/slash/commands/` |
 | Dispatch / effect | `app/dispatch/auth.rs`, `app/effects/helpers.rs` → `x.ai/auth/loginzyth` |
 | ACP handler | `crates/codegen/xai-grok-shell/src/extensions/auth.rs` |
 | OIDC + exchange | `auth/zyth/login.rs` |
 | Pure protocol (tested) | `auth/zyth/protocol.rs` |
 | Model catalog | `auth/zyth/models.rs` |
-| Logout | `auth/zyth/logout.rs` + slash `logoutzyth.rs` |
+| Logout | `auth/zyth/logout.rs` + slash `logout.rs` / `logoutzyth.rs` |
+| SpaceXAI login/out | slash `xailogin.rs` / `xailogout.rs` → `Action::Login` / `Logout` |
 | Defaults / ports | `auth/zyth/config.rs` |
 
 ### Loopback + paste
@@ -100,7 +114,7 @@ Live list comes from the gateway (example inventory):
 
 Metadata (context, reasoning) is enriched from known slugs and from any prior cache entry with the same id. Every gateway id is installed with `supported_in_api = true` and `base_url` = gateway.
 
-## `/logoutzyth`
+## `/logout` (and `/logoutzyth`)
 
 Removes **Zyth model access only** — never logs out of the whole CLI or forces the welcome screen.
 
@@ -111,7 +125,7 @@ Removes **Zyth model access only** — never logs out of the whole CLI or forces
 | Endpoints | Delete `zyth_endpoints.toml`; unset matching env |
 | Models | Restore `models_cache.pre-zyth.json` or strip gateway `base_url` entries |
 | SpaceXAI | **Never** deleted (integrity check fails closed) |
-| CLI session | **Always stays open** (toast only; never maps to full `/logout` welcome) |
+| CLI session | **Always stays open** (toast only; never maps to full `/xailogout` welcome) |
 
 ## Gateway exchange service
 
@@ -174,4 +188,4 @@ cargo test -p xai-grok-shell --test loginzyth_protocol
 | [0xpid00/Grok-Fork](https://github.com/0xpid00/Grok-Fork) | This CLI |
 | [0xpid00/AuthStack](https://github.com/0xpid00/AuthStack) | Auth0 Terraform (Zyth CLI client) |
 | AI-Gateway / litellm-cliproxy | LiteLLM + exchange + nginx edge |
-| [xai-org/grok-build](https://github.com/xai-org/grok-build) | Upstream template for `/login` |
+| [xai-org/grok-build](https://github.com/xai-org/grok-build) | Upstream template for SpaceXAI `/xailogin` (formerly bare `/login`) |
